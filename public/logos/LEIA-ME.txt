@@ -1,0 +1,9 @@
+Logótipos impressos nos cartões de voucher, da esquerda para a direita:
+
+  logo-1.png
+  logo-2.png
+  logo-3.png
+
+Extensão .png, .jpg ou .webp, de preferência com fundo transparente e pelo
+menos 300 px de altura. Cada logótipo é impresso com 8 mm de altura. Os que
+faltarem são ignorados, e os cartões mostram só o nome do programa.
