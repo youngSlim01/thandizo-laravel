@@ -1,0 +1,24 @@
+{
+    "name": "THANDIZO (Laravel + MySQL)",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+    },
+    "forwardPorts": [8000],
+    "portsAttributes": {
+        "8000": { "label": "THANDIZO", "onAutoForward": "openPreview" }
+    },
+    "postCreateCommand": "bash .devcontainer/setup.sh",
+    "postAttachCommand": "php artisan serve --host=0.0.0.0 --port=8000",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "bmewburn.vscode-intelephense-client",
+                "laravel.vscode-laravel",
+                "dbaeumer.vscode-eslint"
+            ]
+        }
+    }
+}

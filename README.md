@@ -19,6 +19,15 @@ Fase 1 — fundação:
 - Login, sessão e saída, com o mesmo ecrã do sistema actual. Utilizadores
   desativados não entram, e as tentativas são limitadas a 5 por minuto.
 
+## Correr no GitHub Codespaces
+
+No GitHub: **Code → Codespaces → Create codespace** na branch de trabalho.
+Na primeira vez, o Codespace instala tudo (PHP 8.3, MySQL 8, Node 22), cria a
+base de dados com dados de exemplo e compila o frontend. Isto demora alguns
+minutos. No fim abre-se a porta 8000 (separador **PORTS**).
+
+Login local: `admin@thandizo.test` / `password`.
+
 ## Correr localmente
 
 Requisitos: PHP 8.3+, Composer, Node 22+, MySQL 8.

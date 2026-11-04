@@ -1,0 +1,26 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../..:/workspaces:cached
+    command: sleep infinity
+    # Partilha a rede com o MySQL: a aplicação liga-se a 127.0.0.1:3306,
+    # como no .env.example.
+    network_mode: service:db
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: thandizo
+      MYSQL_USER: thandizo
+      MYSQL_PASSWORD: secret
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init.sql:/docker-entrypoint-initdb.d/mysql-init.sql:ro
+
+volumes:
+  mysql-data:
