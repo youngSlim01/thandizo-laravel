@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // A aplicação corre atrás de um proxy (Codespaces, Laravel Cloud):
+        // os endereços gerados usam o domínio e o https que o proxy indica.
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             HandleInertiaRequests::class,
         ]);
