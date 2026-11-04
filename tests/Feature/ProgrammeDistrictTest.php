@@ -101,6 +101,19 @@ class ProgrammeDistrictTest extends TestCase
         $this->assertSame('Mutarara', $existing->fresh()->name);
     }
 
+    public function test_existing_names_are_reused_ignoring_accents(): void
+    {
+        $gaza = Province::factory()->create(['name' => 'Gaza']);
+        District::factory()->inProgramme()->for($gaza)->create(['name' => 'Chókwè']);
+
+        $this->actingAs($this->manager())
+            ->post('/admin/districts', ['province' => 'Gazá', 'district' => 'Chokwe'])
+            ->assertSessionHas('success', 'Distrito Chókwè adicionado ao programa.');
+
+        $this->assertDatabaseCount('provinces', 1);
+        $this->assertDatabaseCount('districts', 1);
+    }
+
     public function test_district_outside_the_programme_is_activated(): void
     {
         $gaza = Province::factory()->create(['name' => 'Gaza']);
