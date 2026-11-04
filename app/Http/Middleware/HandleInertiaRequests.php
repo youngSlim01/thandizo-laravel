@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\District;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -24,6 +25,9 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'role' => $user->role->value,
                     'role_label' => $user->role->label(),
+                    'can' => [
+                        'view_districts' => $user->can('viewAny', District::class),
+                    ],
                 ] : null,
             ],
             'flash' => [

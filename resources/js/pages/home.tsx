@@ -27,6 +27,7 @@ export default function Home() {
                 </div>
 
                 <div className="quick-list home-secondary-links">
+                    {user.can.view_districts && <Link href="/admin/districts" className="quick-link">Distritos do programa →</Link>}
                     <Link href="/logout" method="post" as="button" className="quick-link">Sair</Link>
                 </div>
             </section>

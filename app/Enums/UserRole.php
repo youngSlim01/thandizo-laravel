@@ -24,7 +24,27 @@ enum UserRole: string
         };
     }
 
-    // Papéis que vendem no POS e por isso pertencem a um agrodealer.
+    /**
+     * Papéis centrais que vêem as operações de todo o programa
+     * (antigo private.can_view_all_operations).
+     */
+    public function canViewAllOperations(): bool
+    {
+        return in_array($this, [self::MealManager, self::MealOfficer, self::FinanceOfficer, self::SystemAdmin], true);
+    }
+
+    /**
+     * Papéis que gerem distritos, agrodealers, produtos e preços
+     * (antigo erro CATALOGUE_NOT_ALLOWED).
+     */
+    public function canManageCatalogue(): bool
+    {
+        return in_array($this, [self::MealManager, self::SystemAdmin], true);
+    }
+
+    /**
+     * Papéis que vendem no POS e por isso pertencem a um agrodealer.
+     */
     public function isSeller(): bool
     {
         return in_array($this, [self::AgrodealerOperator, self::AgrodealerManager], true);

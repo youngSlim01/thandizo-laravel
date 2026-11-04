@@ -14,6 +14,7 @@ export type AuthUser = {
     email: string;
     role: UserRole;
     role_label: string;
+    can: { view_districts: boolean };
 };
 
 export type SharedProps = {

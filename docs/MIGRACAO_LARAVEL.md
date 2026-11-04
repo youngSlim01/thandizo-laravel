@@ -118,16 +118,21 @@ parte e tem de ser ensaiada várias vezes antes do dia.
 ## 7. Ordem de construção (D6) — do menos ao mais dependente
 
 Derivada das chaves estrangeiras do schema actual. Cada nível só depende dos
-anteriores. As tabelas `redemptions` e `redemption_items` são legado
-(removidas em `20261008113400`) e não passam para MySQL.
+anteriores. As tabelas `programmes`, `redemptions` e `redemption_items` são legado
+(removidas ou movidas para o schema `legacy` em `20261008113400`) e não passam
+para MySQL. "Programa" no sistema actual é a marca `districts.programme_active`
+e os ciclos (`programme_cycles`, nível 8).
+
+`audit_logs` foi antecipada para o nível 0: só depende de `users` (que já
+existe desde a fundação) e a primeira regra migrada escreve nela.
 
 | Nível | Módulo | Tabelas |
 |---|---|---|
-| 0 | Programa e geografia base | `programmes`, `provinces`, `districts` |
+| 0 | Geografia base ✅ | `provinces`, `districts` (+ `audit_logs`, antecipada) |
 | 1 | Geografia detalhada | `administrative_posts`, `localities`, `communities` |
 | 2 | Produtos | `products` |
 | 3 | Agrodealers e POS | `agrodealers`, `agrodealer_pos` |
-| 4 | Utilizadores e acessos | `users` (ex-`app_users` + `auth.users`), `audit_logs` |
+| 4 | Utilizadores e acessos | `users` (ex-`app_users` + `auth.users`) |
 | 5 | Preços e catálogos | `price_lists`, `agrodealer_products` |
 | 6 | Beneficiários | `household_import_batches`, `households` |
 | 7 | Cartões e vouchers | `card_batches`, `vouchers` |
