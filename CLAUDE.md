@@ -5,6 +5,7 @@
 - Regras de negócio em `app/Services`, não em controllers nem no React. Antes de cada Service, reescrever em PHPUnit os testes SQL equivalentes de `supabase/tests` do repositório antigo.
 - Dinheiro: o ledger, os itens e as transacções nunca se alteram nem se apagam (triggers MySQL). Correcções fazem-se com movimentos inversos.
 - Ids em UUID (`HasUuids`), para manter os ids na migração dos dados.
+- Nomes (províncias, distritos, comunidades…) comparam-se sem diferenciar maiúsculas nem acentos: usar a collation `utf8mb4_unicode_ci` e não normalizar em PHP.
 - Testes correm em MySQL (`thandizo_test`), não em SQLite.
 
 <laravel-boost-guidelines>

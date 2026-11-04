@@ -20,6 +20,7 @@ repositório mostrou e as decisões que ainda estão em aberto.
 | Protecções na BD (D4) | **Recriar em MySQL** os triggers de imutabilidade (ledger, itens, transacções) e `CHECK` de saldo ≥ 0; RLS não é recriada (passa para Policies) |
 | Testes (D5) | Os 25 testes SQL são reescritos em Pest/PHPUnit **antes** de cada Service |
 | Ordem (D6) | Do menos dependente para o mais dependente (secção 7) |
+| Nomes e acentos | Comparação de nomes **sem diferenciar maiúsculas nem acentos** (collation `utf8mb4_unicode_ci`): "Chokwe" e "Chókwè" são o mesmo nome. Garantido também pelos índices únicos |
 | Alojamento (D7) | **Laravel Cloud**, com base de dados MySQL gerida pelo Laravel Cloud no mesmo ambiente/região |
 
 ## 2. O que existe hoje (auditoria)
