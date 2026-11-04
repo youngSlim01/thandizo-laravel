@@ -4,14 +4,20 @@
     "service": "app",
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     "features": {
-        "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "22"
+        }
     },
-    "forwardPorts": [8000],
+    "forwardPorts": [
+        8000
+    ],
     "portsAttributes": {
-        "8000": { "label": "THANDIZO", "onAutoForward": "openPreview" }
+        "8000": {
+            "label": "THANDIZO",
+            "onAutoForward": "openPreview"
+        }
     },
     "postCreateCommand": "bash .devcontainer/setup.sh",
-    "postAttachCommand": "php artisan serve --host=0.0.0.0 --port=8000",
     "customizations": {
         "vscode": {
             "extensions": [
@@ -20,5 +26,6 @@
                 "dbaeumer.vscode-eslint"
             ]
         }
-    }
+    },
+    "postStartCommand": "bash .devcontainer/start-server.sh"
 }

@@ -28,6 +28,13 @@ minutos. No fim abre-se a porta 8000 (separador **PORTS**).
 
 Login local: `admin@thandizo.test` / `password`.
 
+O servidor arranca sozinho sempre que o Codespace inicia. Se a página der
+erro 502 (servidor parado), arranca-o de novo com:
+
+```bash
+bash .devcontainer/start-server.sh
+```
+
 ## Correr localmente
 
 Requisitos: PHP 8.3+, Composer, Node 22+, MySQL 8.
