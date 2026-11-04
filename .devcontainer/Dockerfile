@@ -1,7 +1,6 @@
 FROM mcr.microsoft.com/devcontainers/php:1-8.3-bookworm
 
-# Extensões PHP que o Laravel precisa para MySQL, e o cliente mysql.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends default-mysql-client \
-    && docker-php-ext-install pdo_mysql \
-    && rm -rf /var/lib/apt/lists/*
+# Extensão PHP para o Laravel falar com o MySQL. Compila a partir do código
+# que já vem na imagem: não usa apt (os repositórios extra da imagem, como o
+# do Yarn, falham às vezes com chaves expiradas).
+RUN docker-php-ext-install pdo_mysql

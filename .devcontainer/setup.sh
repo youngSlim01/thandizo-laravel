@@ -12,7 +12,7 @@ fi
 
 echo "A aguardar o MySQL..."
 for _ in $(seq 1 60); do
-    if mysqladmin ping -h 127.0.0.1 -u thandizo -psecret --silent 2>/dev/null; then
+    if php -r 'new PDO("mysql:host=127.0.0.1;port=3306;dbname=thandizo", "thandizo", "secret");' 2>/dev/null; then
         break
     fi
     sleep 2
