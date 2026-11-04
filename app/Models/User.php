@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\RecordStatus;
 use App\Enums\UserRole;
-use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -24,7 +24,7 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
             'role' => UserRole::class,
-            'status' => UserStatus::class,
+            'status' => RecordStatus::class,
             'must_change_password' => 'boolean',
             'password_changed_at' => 'datetime',
         ];
@@ -32,6 +32,6 @@ class User extends Authenticatable
 
     public function isActive(): bool
     {
-        return $this->status === UserStatus::Active;
+        return $this->status === RecordStatus::Active;
     }
 }

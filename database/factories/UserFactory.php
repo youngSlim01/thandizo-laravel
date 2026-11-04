@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\RecordStatus;
 use App\Enums\UserRole;
-use App\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -23,7 +23,7 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'password' => static::$password ??= Hash::make('password'),
             'role' => UserRole::MealOfficer,
-            'status' => UserStatus::Active,
+            'status' => RecordStatus::Active,
             'remember_token' => Str::random(10),
         ];
     }
@@ -35,6 +35,6 @@ class UserFactory extends Factory
 
     public function inactive(): static
     {
-        return $this->state(fn () => ['status' => UserStatus::Inactive]);
+        return $this->state(fn () => ['status' => RecordStatus::Inactive]);
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\District;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -27,6 +28,7 @@ class HandleInertiaRequests extends Middleware
                     'role_label' => $user->role->label(),
                     'can' => [
                         'view_districts' => $user->can('viewAny', District::class),
+                        'view_products' => $user->can('viewAny', Product::class),
                     ],
                 ] : null,
             ],

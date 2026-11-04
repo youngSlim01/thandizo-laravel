@@ -34,6 +34,15 @@ enum UserRole: string
     }
 
     /**
+     * Papéis do back office MEAL (páginas de beneficiários, cartões,
+     * produtos…; antigo HOUSEHOLD_ROLES do frontend).
+     */
+    public function isMealBackOffice(): bool
+    {
+        return in_array($this, [self::MealManager, self::MealOfficer, self::SystemAdmin], true);
+    }
+
+    /**
      * Papéis que gerem distritos, agrodealers, produtos e preços
      * (antigo erro CATALOGUE_NOT_ALLOWED).
      */
