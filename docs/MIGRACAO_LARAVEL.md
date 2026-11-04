@@ -130,7 +130,7 @@ existe desde a fundação) e a primeira regra migrada escreve nela.
 | Nível | Módulo | Tabelas |
 |---|---|---|
 | 0 | Geografia base ✅ | `provinces`, `districts` (+ `audit_logs`, antecipada) |
-| 1 | Geografia detalhada | `administrative_posts`, `localities`, `communities` |
+| 1 | Geografia detalhada ✅ (sem ecrã: usada pela importação do nível 6) | `administrative_posts`, `localities`, `communities` |
 | 2 | Produtos | `products` |
 | 3 | Agrodealers e POS | `agrodealers`, `agrodealer_pos` |
 | 4 | Utilizadores e acessos | `users` (ex-`app_users` + `auth.users`) |
