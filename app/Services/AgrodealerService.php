@@ -17,8 +17,8 @@ use Illuminate\Support\Str;
  *
  * Substitui save_agrodealer, save_pos, list_agrodealers_admin,
  * next_agrodealer_code, next_pos_code e district_card_prefix
- * (20261008052549, 20261008114300, 20261008114600). O número de produtos no
- * catálogo entra no nível 5.
+ * (20261008052549, 20261008114300, 20261008114600). O catálogo de cada
+ * agrodealer está em CatalogueService.
  */
 class AgrodealerService
 {
@@ -38,7 +38,10 @@ class AgrodealerService
                 'province:id,name',
                 'pos' => fn ($query) => $query->orderBy('pos_code'),
             ])
-            ->withCount(['users as active_users_count' => fn ($query) => $query->where('status', RecordStatus::Active)])
+            ->withCount([
+                'users as active_users_count' => fn ($query) => $query->where('status', RecordStatus::Active),
+                'catalogue',
+            ])
             ->orderBy('status')
             ->orderBy('name')
             ->orderBy('id')

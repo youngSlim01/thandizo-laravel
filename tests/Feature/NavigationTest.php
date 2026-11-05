@@ -19,9 +19,9 @@ class NavigationTest extends TestCase
     public static function menus(): array
     {
         return [
-            'administrador' => [UserRole::SystemAdmin, ['/admin/agrodealers', '/admin/products', '/admin/districts', '/admin/users']],
-            'gestor MEAL' => [UserRole::MealManager, ['/admin/agrodealers', '/admin/products', '/admin/districts', '/admin/users']],
-            'oficial MEAL' => [UserRole::MealOfficer, ['/admin/agrodealers', '/admin/products', '/admin/districts']],
+            'administrador' => [UserRole::SystemAdmin, ['/admin/agrodealers', '/admin/products', '/admin/users']],
+            'gestor MEAL' => [UserRole::MealManager, ['/admin/agrodealers', '/admin/products', '/admin/users']],
+            'oficial MEAL' => [UserRole::MealOfficer, ['/admin/agrodealers', '/admin/products']],
             'finanças' => [UserRole::FinanceOfficer, []],
             'operador de agrodealer' => [UserRole::AgrodealerOperator, []],
         ];

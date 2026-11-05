@@ -14,27 +14,26 @@ class DistrictPolicyTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * @return array<string, array{UserRole, bool, bool}>
+     * @return array<string, array{UserRole, bool}>
      */
     public static function roles(): array
     {
-        // papel => [pode ver, pode adicionar]
+        // papel => pode adicionar distritos ao programa
         return [
-            'gestor MEAL' => [UserRole::MealManager, true, true],
-            'administrador' => [UserRole::SystemAdmin, true, true],
-            'oficial MEAL' => [UserRole::MealOfficer, true, false],
-            'finanças' => [UserRole::FinanceOfficer, false, false],
-            'gestor de agrodealer' => [UserRole::AgrodealerManager, false, false],
-            'operador de agrodealer' => [UserRole::AgrodealerOperator, false, false],
+            'gestor MEAL' => [UserRole::MealManager, true],
+            'administrador' => [UserRole::SystemAdmin, true],
+            'oficial MEAL' => [UserRole::MealOfficer, false],
+            'finanças' => [UserRole::FinanceOfficer, false],
+            'gestor de agrodealer' => [UserRole::AgrodealerManager, false],
+            'operador de agrodealer' => [UserRole::AgrodealerOperator, false],
         ];
     }
 
     #[DataProvider('roles')]
-    public function test_role_matrix(UserRole $role, bool $canView, bool $canCreate): void
+    public function test_role_matrix(UserRole $role, bool $canCreate): void
     {
         $user = User::factory()->role($role)->create();
 
-        $this->assertSame($canView, $user->can('viewAny', District::class));
         $this->assertSame($canCreate, $user->can('create', District::class));
     }
 
@@ -42,7 +41,6 @@ class DistrictPolicyTest extends TestCase
     {
         $user = User::factory()->role(UserRole::MealManager)->inactive()->create();
 
-        $this->assertFalse($user->can('viewAny', District::class));
         $this->assertFalse($user->can('create', District::class));
     }
 }

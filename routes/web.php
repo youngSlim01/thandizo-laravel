@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\AgrodealerCatalogueController;
 use App\Http\Controllers\Admin\AgrodealerController;
 use App\Http\Controllers\Admin\AgrodealerPosController;
+use App\Http\Controllers\Admin\PriceImportController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\ProductPriceController;
 use App\Http\Controllers\Admin\ProgrammeDistrictController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserPasswordController;
@@ -34,12 +37,13 @@ Route::middleware('auth')->group(function () {
     Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password');
 
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/districts', [ProgrammeDistrictController::class, 'index'])->name('districts.index');
         Route::post('/districts', [ProgrammeDistrictController::class, 'store'])->name('districts.store');
 
         Route::get('/products', [ProductController::class, 'index'])->name('products.index');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+        Route::put('/products/{product}/prices/{district}', [ProductPriceController::class, 'update'])->name('products.prices.update');
+        Route::post('/products/import', [PriceImportController::class, 'store'])->name('products.import');
 
         Route::get('/agrodealers', [AgrodealerController::class, 'index'])->name('agrodealers.index');
         Route::post('/agrodealers', [AgrodealerController::class, 'store'])->name('agrodealers.store');
@@ -48,6 +52,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/agrodealers/{agrodealer}/pos/{pos}', [AgrodealerPosController::class, 'update'])
             ->scopeBindings()
             ->name('agrodealers.pos.update');
+        Route::get('/agrodealers/{agrodealer}/catalogue', [AgrodealerCatalogueController::class, 'show'])->name('agrodealers.catalogue');
+        Route::put('/agrodealers/{agrodealer}/catalogue/{product}', [AgrodealerCatalogueController::class, 'update'])->name('agrodealers.catalogue.update');
 
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');

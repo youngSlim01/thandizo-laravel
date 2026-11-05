@@ -34,6 +34,7 @@ class AgrodealerController extends Controller
                 'address' => $agrodealer->address,
                 'contact_phone' => $agrodealer->contact_phone,
                 'users' => $agrodealer->active_users_count,
+                'catalogue_count' => $agrodealer->catalogue_count,
                 'pos' => $agrodealer->pos->map(fn (AgrodealerPos $pos): array => [
                     'id' => $pos->id,
                     'pos_code' => $pos->pos_code,

@@ -22,6 +22,9 @@ class StoreProductRequest extends FormRequest
             'name' => ['required', 'string', 'max:255', Rule::unique('products', 'name')],
             'unit' => ['required', 'string', 'max:50'],
             'category' => ['nullable', 'string', 'max:255'],
+            // Só ao criar: preço inicial por distrito (district_id => preço).
+            'prices' => ['nullable', 'array'],
+            'prices.*' => ['nullable', 'numeric', 'gt:0'],
         ];
     }
 
@@ -35,6 +38,8 @@ class StoreProductRequest extends FormRequest
             'unit.required' => 'Indique o nome e a unidade do produto.',
             'name.unique' => 'Já existe um produto com este nome.',
             '*.max' => 'O texto é demasiado longo.',
+            'prices.*.numeric' => 'Preço inválido: tem de ser maior que zero.',
+            'prices.*.gt' => 'Preço inválido: tem de ser maior que zero.',
         ];
     }
 }

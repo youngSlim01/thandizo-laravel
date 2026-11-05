@@ -129,12 +129,12 @@ existe desde a fundação) e a primeira regra migrada escreve nela.
 
 | Nível | Módulo | Tabelas |
 |---|---|---|
-| 0 | Geografia base ✅ | `provinces`, `districts` (+ `audit_logs`, antecipada) |
+| 0 | Geografia base ✅ (formulário de distritos na página de produtos) | `provinces`, `districts` (+ `audit_logs`, antecipada) |
 | 1 | Geografia detalhada ✅ (sem ecrã: usada pela importação do nível 6) | `administrative_posts`, `localities`, `communities` |
-| 2 | Produtos ✅ (página sem preços; colunas de preço no nível 5) | `products` |
-| 3 | Agrodealers e POS ✅ (catálogo no nível 5) | `agrodealers`, `agrodealer_pos` |
+| 2 | Produtos ✅ | `products` |
+| 3 | Agrodealers e POS ✅ | `agrodealers`, `agrodealer_pos` |
 | 4 | Utilizadores e acessos ✅ (+ palavra-passe, sessão, menu lateral) | `users` (ex-`app_users` + `auth.users`) |
-| 5 | Preços e catálogos | `price_lists`, `agrodealer_products` |
+| 5 | Preços e catálogos ✅ | `price_lists`, `agrodealer_products` |
 | 6 | Beneficiários | `household_import_batches`, `households` |
 | 7 | Cartões e vouchers | `card_batches`, `vouchers` |
 | 8 | Ciclos | `programme_cycles`, `cycle_households` |

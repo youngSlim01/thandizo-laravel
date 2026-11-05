@@ -27,8 +27,7 @@ class ProgrammeDistrictTest extends TestCase
 
     public function test_guest_is_sent_to_login(): void
     {
-        $this->get('/admin/districts')->assertRedirect('/login');
-        $this->post('/admin/districts', ['province' => 'Tete', 'district' => 'Mutarara'])->assertRedirect('/login');
+        $this->from('/admin/products')->post('/admin/districts', ['province' => 'Tete', 'district' => 'Mutarara'])->assertRedirect('/login');
     }
 
     public function test_list_shows_only_programme_districts_by_name_with_province(): void
@@ -39,28 +38,20 @@ class ProgrammeDistrictTest extends TestCase
         District::factory()->for($gaza)->create(['name' => 'Chókwè']);
 
         $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create())
-            ->get('/admin/districts')
+            ->get('/admin/products')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('admin/districts')
+                ->component('admin/products')
                 ->has('districts', 2)
                 ->where('districts.0.name', 'Mabalane')
                 ->where('districts.0.province', 'Gaza')
-                ->where('districts.1.name', 'Mapai')
-                ->where('canCreate', false));
-    }
-
-    public function test_agrodealer_cannot_see_the_list(): void
-    {
-        $this->actingAs(User::factory()->role(UserRole::AgrodealerOperator)->create())
-            ->get('/admin/districts')
-            ->assertForbidden();
+                ->where('districts.1.name', 'Mapai'));
     }
 
     public function test_meal_officer_cannot_add(): void
     {
         $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create())
-            ->post('/admin/districts', ['province' => 'Tete', 'district' => 'Moatize'])
+            ->from('/admin/products')->post('/admin/districts', ['province' => 'Tete', 'district' => 'Moatize'])
             ->assertForbidden();
 
         $this->assertDatabaseCount('districts', 0);
@@ -71,8 +62,8 @@ class ProgrammeDistrictTest extends TestCase
         $manager = $this->manager();
 
         $this->actingAs($manager)
-            ->post('/admin/districts', ['province' => '  Niassa ', 'district' => ' Lichinga  '])
-            ->assertRedirect('/admin/districts')
+            ->from('/admin/products')->post('/admin/districts', ['province' => '  Niassa ', 'district' => ' Lichinga  '])
+            ->assertRedirect('/admin/products')
             ->assertSessionHas('success', 'Distrito Lichinga adicionado ao programa.');
 
         $district = District::query()->where('name', 'Lichinga')->sole();
@@ -93,8 +84,8 @@ class ProgrammeDistrictTest extends TestCase
         $existing = District::factory()->inProgramme()->for($tete)->create(['name' => 'Mutarara']);
 
         $this->actingAs($this->manager())
-            ->post('/admin/districts', ['province' => 'TETE', 'district' => 'mutarara'])
-            ->assertRedirect('/admin/districts');
+            ->from('/admin/products')->post('/admin/districts', ['province' => 'TETE', 'district' => 'mutarara'])
+            ->assertRedirect('/admin/products');
 
         $this->assertDatabaseCount('provinces', 1);
         $this->assertDatabaseCount('districts', 1);
@@ -107,7 +98,7 @@ class ProgrammeDistrictTest extends TestCase
         District::factory()->inProgramme()->for($gaza)->create(['name' => 'Chókwè']);
 
         $this->actingAs($this->manager())
-            ->post('/admin/districts', ['province' => 'Gazá', 'district' => 'Chokwe'])
+            ->from('/admin/products')->post('/admin/districts', ['province' => 'Gazá', 'district' => 'Chokwe'])
             ->assertSessionHas('success', 'Distrito Chókwè adicionado ao programa.');
 
         $this->assertDatabaseCount('provinces', 1);
@@ -120,7 +111,7 @@ class ProgrammeDistrictTest extends TestCase
         $outside = District::factory()->for($gaza)->create(['name' => 'Chókwè']);
 
         $this->actingAs($this->manager())
-            ->post('/admin/districts', ['province' => 'Gaza', 'district' => 'Chókwè']);
+            ->from('/admin/products')->post('/admin/districts', ['province' => 'Gaza', 'district' => 'Chókwè']);
 
         $this->assertTrue($outside->fresh()->programme_active);
         $this->assertDatabaseCount('districts', 1);
@@ -132,7 +123,7 @@ class ProgrammeDistrictTest extends TestCase
         District::factory()->inProgramme()->for($tete)->create(['name' => 'Cidade']);
 
         $this->actingAs($this->manager())
-            ->post('/admin/districts', ['province' => 'Gaza', 'district' => 'Cidade']);
+            ->from('/admin/products')->post('/admin/districts', ['province' => 'Gaza', 'district' => 'Cidade']);
 
         $this->assertDatabaseCount('districts', 2);
     }
@@ -140,7 +131,7 @@ class ProgrammeDistrictTest extends TestCase
     public function test_province_and_district_are_required(): void
     {
         $this->actingAs($this->manager())
-            ->post('/admin/districts', ['province' => '   ', 'district' => ''])
+            ->from('/admin/products')->post('/admin/districts', ['province' => '   ', 'district' => ''])
             ->assertSessionHasErrors([
                 'province' => 'Indique a província e o distrito.',
                 'district' => 'Indique a província e o distrito.',

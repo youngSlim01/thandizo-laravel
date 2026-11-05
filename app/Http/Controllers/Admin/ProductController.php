@@ -5,8 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Models\District;
 use App\Models\Product;
+use App\Services\PriceImportService;
+use App\Services\PriceService;
 use App\Services\ProductService;
+use App\Services\ProgrammeDistrictService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -15,29 +19,52 @@ use Inertia\Response;
 
 class ProductController extends Controller
 {
-    public function index(Request $request, ProductService $products): Response
+    public function index(Request $request, ProductService $products, PriceService $prices, ProgrammeDistrictService $districts): Response
     {
         Gate::authorize('viewAny', Product::class);
+        $currentPrices = $prices->currentProgrammePrices();
 
         return Inertia::render('admin/products', [
-            'products' => $products->list()->map(fn (Product $product): array => [
+            'districts' => $districts->list()->map(fn (District $district): array => [
+                'id' => $district->id,
+                'name' => $district->name,
+                'province' => $district->province->name,
+            ]),
+            'products' => $products->list()->loadCount('agrodealers')->map(fn (Product $product): array => [
                 'id' => $product->id,
                 'code' => $product->code,
                 'name' => $product->name,
                 'unit' => $product->unit,
                 'category' => $product->category,
                 'status' => $product->status->value,
+                'prices' => $currentPrices[$product->id] ?? (object) [],
+                'agrodealers' => $product->agrodealers_count,
             ]),
             'canManage' => $request->user()->can('create', Product::class),
         ]);
     }
 
-    public function store(StoreProductRequest $request, ProductService $products): RedirectResponse
+    /**
+     * Produto e preços iniciais de uma só vez: gravam-se os dois ou nenhum
+     * (como no sistema antigo, é uma importação de uma linha).
+     */
+    public function store(StoreProductRequest $request, PriceImportService $import): RedirectResponse
     {
-        $product = $products->create($request->user(), $request->validated());
+        $prices = array_filter($request->validated('prices') ?? [], fn ($price) => $price !== null);
+        $result = $import->import($request->user(), [[
+            'code' => '',
+            'name' => $request->validated('name'),
+            'unit' => $request->validated('unit'),
+            'category' => $request->validated('category'),
+            'prices' => $prices,
+        ]], null);
 
-        return to_route('admin.products.index')
-            ->with('success', "Produto {$product->name} ({$product->code}) criado. Ainda não tem preço: não se vende até ter preço no distrito.");
+        $name = trim($request->validated('name'));
+        $count = count($prices);
+        $message = "Produto {$name} ({$result['last_code']}) criado"
+            .($count ? " com preço em {$count} distrito(s)." : ' sem preços: não se vende até ter preço no distrito.');
+
+        return to_route('admin.products.index')->with('success', $message);
     }
 
     public function update(UpdateProductRequest $request, Product $product, ProductService $products): RedirectResponse

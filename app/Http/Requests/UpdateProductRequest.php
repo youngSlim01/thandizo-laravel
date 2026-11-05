@@ -18,7 +18,7 @@ class UpdateProductRequest extends StoreProductRequest
     public function rules(): array
     {
         return [
-            ...parent::rules(),
+            ...collect(parent::rules())->except(['prices', 'prices.*'])->all(),
             'name' => ['required', 'string', 'max:255', Rule::unique('products', 'name')->ignore($this->route('product'))],
             'status' => ['required', Rule::enum(RecordStatus::class)],
         ];

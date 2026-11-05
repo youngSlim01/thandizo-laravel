@@ -70,7 +70,7 @@ class ProductTest extends TestCase
         $this->actingAs($manager)
             ->post('/admin/products', ['name' => ' Semente de milho ', 'unit' => 'kg', 'category' => ''])
             ->assertRedirect('/admin/products')
-            ->assertSessionHas('success', 'Produto Semente de milho (PRD-0001) criado. Ainda não tem preço: não se vende até ter preço no distrito.');
+            ->assertSessionHas('success', 'Produto Semente de milho (PRD-0001) criado sem preços: não se vende até ter preço no distrito.');
 
         $product = Product::query()->sole();
         $this->assertSame('PRD-0001', $product->code);

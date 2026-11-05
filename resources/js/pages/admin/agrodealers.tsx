@@ -1,5 +1,6 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { AdminLayout } from '@/components/admin-layout';
+import { CatalogueEditor } from '@/components/catalogue-editor';
 import { useState, type FormEvent } from 'react';
 import type { SharedProps } from '@/types';
 
@@ -9,7 +10,7 @@ type Pos = { id: string; pos_code: string; device_label: string | null; status: 
 type Agrodealer = {
     id: string; code: string; name: string; status: Status;
     district_id: string | null; district: string | null; province: string | null;
-    address: string | null; contact_phone: string | null; users: number; pos: Pos[];
+    address: string | null; contact_phone: string | null; users: number; catalogue_count: number; pos: Pos[];
 };
 type Props = { agrodealers: Agrodealer[]; districts: District[]; canManage: boolean };
 
@@ -118,7 +119,7 @@ function PosForm({ agrodealerId, pos, onDone }: { agrodealerId: string; pos: Pos
 }
 
 function AgrodealerCard({ agrodealer, districts, canManage }: { agrodealer: Agrodealer; districts: District[]; canManage: boolean }) {
-    const [panel, setPanel] = useState<'none' | 'edit' | 'newPos' | Pos>('none');
+    const [panel, setPanel] = useState<'none' | 'edit' | 'catalogue' | 'newPos' | Pos>('none');
     const close = () => setPanel('none');
 
     return (
@@ -134,7 +135,7 @@ function AgrodealerCard({ agrodealer, districts, canManage }: { agrodealer: Agro
                 <span className={`badge ${agrodealer.status === 'ACTIVE' ? 'badge-active' : ''}`}>{agrodealer.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}</span>
             </div>
             {!agrodealer.district_id && <div className="warning-box">Sem distrito: não consegue vender. Edite e escolha o distrito.</div>}
-            <div className="muted-text small-note">{agrodealer.pos.length} POS · {agrodealer.users} utilizador(es)</div>
+            <div className="muted-text small-note">{agrodealer.pos.length} POS · {agrodealer.catalogue_count} produto(s) no catálogo · {agrodealer.users} utilizador(es)</div>
 
             <div className="pos-list">
                 {agrodealer.pos.map((p) => (
@@ -146,16 +147,16 @@ function AgrodealerCard({ agrodealer, districts, canManage }: { agrodealer: Agro
                 ))}
             </div>
 
-            {canManage && (
-                <div className="admin-card-actions">
-                    <button className="quick-link" onClick={() => setPanel('newPos')}>+ POS</button>
-                    <button className="quick-link" onClick={() => setPanel('edit')}>Editar dados</button>
-                </div>
-            )}
+            <div className="admin-card-actions">
+                <button className="quick-link" onClick={() => setPanel(panel === 'catalogue' ? 'none' : 'catalogue')}>Catálogo →</button>
+                {canManage && <button className="quick-link" onClick={() => setPanel('newPos')}>+ POS</button>}
+                {canManage && <button className="quick-link" onClick={() => setPanel('edit')}>Editar dados</button>}
+            </div>
 
             {panel === 'edit' && <AgrodealerForm agrodealer={agrodealer} districts={districts} onDone={close} />}
             {panel === 'newPos' && <PosForm agrodealerId={agrodealer.id} pos={null} onDone={close} />}
             {typeof panel === 'object' && <PosForm key={panel.id} agrodealerId={agrodealer.id} pos={panel} onDone={close} />}
+            {panel === 'catalogue' && <CatalogueEditor agrodealerId={agrodealer.id} canManage={canManage} />}
         </div>
     );
 }

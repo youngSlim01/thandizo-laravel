@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Agrodealer;
-use App\Models\District;
 use App\Models\Product;
 use App\Models\User;
 
@@ -23,7 +22,6 @@ class NavigationService
         $sections = [
             ['href' => '/admin/agrodealers', 'label' => 'Agrodealers', 'icon' => '⌂', 'ability' => ['viewAny', Agrodealer::class]],
             ['href' => '/admin/products', 'label' => 'Produtos e preços', 'icon' => '◈', 'ability' => ['viewAny', Product::class]],
-            ['href' => '/admin/districts', 'label' => 'Distritos do programa', 'icon' => '◷', 'ability' => ['viewAny', District::class]],
             ['href' => '/admin/users', 'label' => 'Utilizadores', 'icon' => '♧', 'ability' => ['viewAny', User::class]],
         ];
 

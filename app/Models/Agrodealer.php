@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -52,6 +53,16 @@ class Agrodealer extends Model
     public function pos(): HasMany
     {
         return $this->hasMany(AgrodealerPos::class);
+    }
+
+    /**
+     * Produtos que o agrodealer vende (o preço vem do distrito).
+     *
+     * @return BelongsToMany<Product, $this>
+     */
+    public function catalogue(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'agrodealer_products');
     }
 
     /**
