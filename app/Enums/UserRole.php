@@ -52,6 +52,23 @@ enum UserRole: string
     }
 
     /**
+     * Papéis que gerem utilizadores e repõem palavras-passe
+     * (antigo USER_ADMIN_ROLES).
+     */
+    public function canAdministerUsers(): bool
+    {
+        return in_array($this, [self::MealManager, self::SystemAdmin], true);
+    }
+
+    /**
+     * Papel que trabalha numa só província (o Oficial MEAL).
+     */
+    public function needsProvince(): bool
+    {
+        return $this === self::MealOfficer;
+    }
+
+    /**
      * Papéis que vendem no POS e por isso pertencem a um agrodealer.
      */
     public function isSeller(): bool

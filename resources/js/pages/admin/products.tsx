@@ -1,4 +1,5 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { AdminLayout } from '@/components/admin-layout';
 import { useState, type FormEvent } from 'react';
 import type { SharedProps } from '@/types';
 
@@ -69,7 +70,7 @@ export default function Products({ products, canManage }: Props) {
     const visible = products.filter((p) => !term || p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term));
 
     return (
-        <main className="admin-shell">
+        <AdminLayout>
             <Head title="Produtos e preços" />
             <div className="admin-page-heading">
                 <div>
@@ -116,9 +117,6 @@ export default function Products({ products, canManage }: Props) {
                 </div>
             )}
 
-            <div className="quick-list">
-                <Link href="/" className="quick-link">← Início</Link>
-            </div>
-        </main>
+        </AdminLayout>
     );
 }

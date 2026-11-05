@@ -1,4 +1,5 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { AdminLayout } from '@/components/admin-layout';
 import { useState, type FormEvent } from 'react';
 import type { SharedProps } from '@/types';
 
@@ -170,7 +171,7 @@ export default function Agrodealers({ agrodealers, districts, canManage }: Props
         && (!term || a.name.toLowerCase().includes(term) || a.code.toLowerCase().includes(term)));
 
     return (
-        <main className="admin-shell">
+        <AdminLayout>
             <Head title="Agrodealers" />
             <div className="admin-page-heading">
                 <div>
@@ -199,9 +200,6 @@ export default function Agrodealers({ agrodealers, districts, canManage }: Props
             {visible.length === 0 && <p className="muted-text">Nenhum agrodealer.</p>}
             {visible.map((a) => <AgrodealerCard key={a.id} agrodealer={a} districts={districts} canManage={canManage} />)}
 
-            <div className="quick-list">
-                <Link href="/" className="quick-link">← Início</Link>
-            </div>
-        </main>
+        </AdminLayout>
     );
 }

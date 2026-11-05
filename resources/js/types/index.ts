@@ -14,10 +14,21 @@ export type AuthUser = {
     email: string;
     role: UserRole;
     role_label: string;
-    can: { view_districts: boolean; view_products: boolean; view_agrodealers: boolean };
+    province: string | null;
+};
+
+export type NavSection = { href: string; label: string; icon: string };
+
+export type Credentials = {
+    full_name: string;
+    role_label: string;
+    email: string;
+    password: string;
+    kind: 'created' | 'reset';
 };
 
 export type SharedProps = {
     auth: { user: AuthUser | null };
-    flash: { success: string | null; error: string | null };
+    navigation: NavSection[];
+    flash: { success: string | null; error: string | null; credentials: Credentials | null };
 };

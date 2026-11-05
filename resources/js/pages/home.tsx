@@ -22,14 +22,12 @@ export default function Home() {
                     <div>
                         <div className="eyebrow">{user.role_label}</div>
                         <h1>{greeting()}, {user.full_name.split(' ')[0]}</h1>
-                        <p>THANDIZO em Laravel: fundação pronta. Os módulos chegam um a um.</p>
+                        <p>A sua área (POS ou Finanças) ainda está a ser migrada para a nova versão do THANDIZO.</p>
                     </div>
                 </div>
 
                 <div className="quick-list home-secondary-links">
-                    {user.can.view_agrodealers && <Link href="/admin/agrodealers" className="quick-link">Agrodealers →</Link>}
-                    {user.can.view_products && <Link href="/admin/products" className="quick-link">Produtos e preços →</Link>}
-                    {user.can.view_districts && <Link href="/admin/districts" className="quick-link">Distritos do programa →</Link>}
+                    <Link href="/account" className="quick-link">O meu perfil →</Link>
                     <Link href="/logout" method="post" as="button" className="quick-link">Sair</Link>
                 </div>
             </section>

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -27,7 +28,24 @@ class User extends Authenticatable
             'status' => RecordStatus::class,
             'must_change_password' => 'boolean',
             'password_changed_at' => 'datetime',
+            'last_login_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return BelongsTo<Agrodealer, $this>
+     */
+    public function agrodealer(): BelongsTo
+    {
+        return $this->belongsTo(Agrodealer::class);
+    }
+
+    /**
+     * @return BelongsTo<Province, $this>
+     */
+    public function province(): BelongsTo
+    {
+        return $this->belongsTo(Province::class);
     }
 
     public function isActive(): bool

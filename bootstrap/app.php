@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountIsUsable;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->web(append: [
+            EnsureAccountIsUsable::class,
             HandleInertiaRequests::class,
         ]);
     })

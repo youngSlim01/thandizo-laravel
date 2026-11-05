@@ -1,4 +1,5 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import type { SharedProps } from '@/types';
 import type { FormEvent } from 'react';
 import { ThandizoMark } from '@/components/thandizo-mark';
 
@@ -6,11 +7,21 @@ import { ThandizoMark } from '@/components/thandizo-mark';
 // A diferença: o formulário é enviado ao Laravel (POST /login), que valida a
 // palavra-passe e abre a sessão. Os erros voltam em form.errors.
 export default function Login() {
+    const { flash } = usePage<SharedProps>().props;
     const form = useForm({ email: '', password: '', remember: true });
 
     function submit(event: FormEvent) {
         event.preventDefault();
         form.post('/login', { onFinish: () => form.reset('password') });
+    }
+
+    // Envia o link de recuperação para o email escrito no campo.
+    function recoverPassword() {
+        form.clearErrors();
+        router.post('/forgot-password', { email: form.data.email.trim() }, {
+            preserveState: true,
+            onError: (errors) => form.setError('email', errors.email),
+        });
     }
 
     const error = form.errors.email ?? form.errors.password;
@@ -104,10 +115,11 @@ export default function Login() {
                                 />
                                 <span>Manter sessão iniciada</span>
                             </label>
-                            {/* Recuperação por email: fase 2 (autenticação e papéis). */}
+                            <button type="button" className="thandizo-link" onClick={recoverPassword}>Esqueceu a palavra-passe?</button>
                         </div>
 
                         {error && <div className="error-box">{error}</div>}
+                        {!error && flash.success && <div className="success-box">{flash.success}</div>}
 
                         <button className="thandizo-login-button" type="submit" disabled={form.processing}>
                             {form.processing ? 'A ENTRAR…' : <>Entrar <span>→</span></>}

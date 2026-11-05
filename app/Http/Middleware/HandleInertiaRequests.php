@@ -2,9 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Agrodealer;
-use App\Models\District;
-use App\Models\Product;
+use App\Services\NavigationService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -27,16 +25,16 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'role' => $user->role->value,
                     'role_label' => $user->role->label(),
-                    'can' => [
-                        'view_districts' => $user->can('viewAny', District::class),
-                        'view_products' => $user->can('viewAny', Product::class),
-                        'view_agrodealers' => $user->can('viewAny', Agrodealer::class),
-                    ],
+                    'province' => $user->province?->name,
                 ] : null,
             ],
+            // Menu lateral do back office (vazio para quem não tem secções).
+            'navigation' => fn () => $user ? app(NavigationService::class)->sectionsFor($user) : [],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                // Palavra-passe temporária de uma conta criada ou reposta: mostrada uma só vez.
+                'credentials' => fn () => $request->session()->get('credentials'),
             ],
         ];
     }

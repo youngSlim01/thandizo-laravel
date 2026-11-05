@@ -7,11 +7,11 @@ use App\Models\User;
 class DistrictPolicy
 {
     /**
-     * Ver os distritos do programa.
+     * Ver a página dos distritos do programa (back office MEAL).
      */
     public function viewAny(User $user): bool
     {
-        return $user->isActive() && $user->role->canViewAllOperations();
+        return $user->isActive() && $user->role->isMealBackOffice();
     }
 
     /**

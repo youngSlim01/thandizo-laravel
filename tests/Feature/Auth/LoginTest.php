@@ -24,20 +24,15 @@ class LoginTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page->component('auth/login'));
     }
 
-    public function test_active_user_logs_in_and_sees_home_with_role(): void
+    public function test_active_user_logs_in_and_the_last_login_is_recorded(): void
     {
         $user = User::factory()->role(UserRole::MealManager)->create();
 
         $this->post('/login', ['email' => $user->email, 'password' => 'password'])
             ->assertRedirect('/');
-        $this->assertAuthenticatedAs($user);
 
-        $this->get('/')
-            ->assertInertia(fn (Assert $page) => $page
-                ->component('home')
-                ->where('auth.user.id', $user->id)
-                ->where('auth.user.role', 'MEAL_MANAGER')
-                ->where('auth.user.role_label', 'Gestor MEAL'));
+        $this->assertAuthenticatedAs($user);
+        $this->assertNotNull($user->fresh()->last_login_at);
     }
 
     public function test_wrong_password_is_refused(): void
