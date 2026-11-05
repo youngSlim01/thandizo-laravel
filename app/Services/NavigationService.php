@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Agrodealer;
+use App\Models\Household;
 use App\Models\Product;
 use App\Models\User;
 
@@ -20,6 +21,7 @@ class NavigationService
     public function sectionsFor(User $user): array
     {
         $sections = [
+            ['href' => '/admin/households', 'label' => 'Beneficiários', 'icon' => '♙', 'ability' => ['viewAny', Household::class]],
             ['href' => '/admin/agrodealers', 'label' => 'Agrodealers', 'icon' => '⌂', 'ability' => ['viewAny', Agrodealer::class]],
             ['href' => '/admin/products', 'label' => 'Produtos e preços', 'icon' => '◈', 'ability' => ['viewAny', Product::class]],
             ['href' => '/admin/users', 'label' => 'Utilizadores', 'icon' => '♧', 'ability' => ['viewAny', User::class]],

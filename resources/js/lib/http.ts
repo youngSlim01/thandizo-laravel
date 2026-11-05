@@ -7,7 +7,7 @@ function xsrfToken(): string {
     return match ? decodeURIComponent(match[1]) : '';
 }
 
-export async function requestJson<T>(method: 'GET' | 'PUT' | 'POST', url: string, body?: unknown): Promise<T> {
+export async function requestJson<T>(method: 'GET' | 'PUT' | 'POST' | 'PATCH' | 'DELETE', url: string, body?: unknown): Promise<T> {
     const response = await fetch(url, {
         method,
         credentials: 'same-origin',
@@ -26,4 +26,9 @@ export async function requestJson<T>(method: 'GET' | 'PUT' | 'POST', url: string
         throw new Error(first ?? (response.status === 403 ? 'Sem permissão para esta ação.' : 'Não foi possível concluir o pedido.'));
     }
     return data as T;
+}
+
+// Mensagem de um erro apanhado num catch, para mostrar ao utilizador.
+export function errorText(err: unknown, fallback = 'Não foi possível concluir o pedido.'): string {
+    return err instanceof Error && err.message ? err.message : fallback;
 }

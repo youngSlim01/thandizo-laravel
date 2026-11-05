@@ -19,9 +19,9 @@ class NavigationTest extends TestCase
     public static function menus(): array
     {
         return [
-            'administrador' => [UserRole::SystemAdmin, ['/admin/agrodealers', '/admin/products', '/admin/users']],
-            'gestor MEAL' => [UserRole::MealManager, ['/admin/agrodealers', '/admin/products', '/admin/users']],
-            'oficial MEAL' => [UserRole::MealOfficer, ['/admin/agrodealers', '/admin/products']],
+            'administrador' => [UserRole::SystemAdmin, ['/admin/households', '/admin/agrodealers', '/admin/products', '/admin/users']],
+            'gestor MEAL' => [UserRole::MealManager, ['/admin/households', '/admin/agrodealers', '/admin/products', '/admin/users']],
+            'oficial MEAL' => [UserRole::MealOfficer, ['/admin/households', '/admin/agrodealers', '/admin/products']],
             'finanças' => [UserRole::FinanceOfficer, []],
             'operador de agrodealer' => [UserRole::AgrodealerOperator, []],
         ];
@@ -39,7 +39,7 @@ class NavigationTest extends TestCase
     {
         $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create())
             ->get('/')
-            ->assertRedirect('/admin/agrodealers');
+            ->assertRedirect('/admin/households');
     }
 
     public function test_roles_without_sections_see_the_provisional_home(): void

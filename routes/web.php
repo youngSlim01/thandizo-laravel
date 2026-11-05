@@ -4,6 +4,8 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\AgrodealerCatalogueController;
 use App\Http\Controllers\Admin\AgrodealerController;
 use App\Http\Controllers\Admin\AgrodealerPosController;
+use App\Http\Controllers\Admin\HouseholdController;
+use App\Http\Controllers\Admin\HouseholdImportController;
 use App\Http\Controllers\Admin\PriceImportController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductPriceController;
@@ -54,6 +56,18 @@ Route::middleware('auth')->group(function () {
             ->name('agrodealers.pos.update');
         Route::get('/agrodealers/{agrodealer}/catalogue', [AgrodealerCatalogueController::class, 'show'])->name('agrodealers.catalogue');
         Route::put('/agrodealers/{agrodealer}/catalogue/{product}', [AgrodealerCatalogueController::class, 'update'])->name('agrodealers.catalogue.update');
+
+        Route::get('/households', [HouseholdController::class, 'index'])->name('households.index');
+        Route::post('/households/search', [HouseholdController::class, 'search'])->name('households.search');
+        Route::get('/households/geography', [HouseholdController::class, 'geography'])->name('households.geography');
+        Route::post('/households/import', [HouseholdImportController::class, 'store'])->name('households.import');
+        Route::get('/households/import/batches', [HouseholdImportController::class, 'batches'])->name('households.import.batches');
+        Route::post('/households', [HouseholdController::class, 'store'])->name('households.store');
+        Route::get('/households/{household}', [HouseholdController::class, 'show'])->name('households.show');
+        Route::get('/households/{household}/history', [HouseholdController::class, 'history'])->name('households.history');
+        Route::patch('/households/{household}', [HouseholdController::class, 'update'])->name('households.update');
+        Route::put('/households/{household}/status', [HouseholdController::class, 'updateStatus'])->name('households.status');
+        Route::delete('/households/{household}', [HouseholdController::class, 'destroy'])->name('households.destroy');
 
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');

@@ -52,6 +52,15 @@ enum UserRole: string
     }
 
     /**
+     * Papéis que registam, alteram, desactivam e eliminam agregados
+     * (antigo HOUSEHOLD_EDIT_NOT_ALLOWED / HOUSEHOLD_STATUS_NOT_ALLOWED).
+     */
+    public function canManageHouseholds(): bool
+    {
+        return in_array($this, [self::MealManager, self::SystemAdmin], true);
+    }
+
+    /**
      * Papéis que gerem utilizadores e repõem palavras-passe
      * (antigo USER_ADMIN_ROLES).
      */

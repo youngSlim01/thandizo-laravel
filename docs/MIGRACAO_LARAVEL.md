@@ -135,7 +135,7 @@ existe desde a fundação) e a primeira regra migrada escreve nela.
 | 3 | Agrodealers e POS ✅ | `agrodealers`, `agrodealer_pos` |
 | 4 | Utilizadores e acessos ✅ (+ palavra-passe, sessão, menu lateral) | `users` (ex-`app_users` + `auth.users`) |
 | 5 | Preços e catálogos ✅ | `price_lists`, `agrodealer_products` |
-| 6 | Beneficiários | `household_import_batches`, `households` |
+| 6 | Beneficiários ✅ (dados de cartão e compras na ficha chegam nos níveis 7 e 9) | `household_import_batches`, `households` |
 | 7 | Cartões e vouchers | `card_batches`, `vouchers` |
 | 8 | Ciclos | `programme_cycles`, `cycle_households` |
 | 9 | POS e resgate | `transactions`, `transaction_items`, `voucher_ledger`, `reversals` |

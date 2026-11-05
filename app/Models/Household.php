@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\RecordStatus;
+use Database\Factories\HouseholdFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+/**
+ * Agregado familiar (beneficiário), identificado pelo CODIGO AF da lista MEAL
+ * (1234AF000001), que nunca muda.
+ */
+#[Fillable([
+    'household_code', 'representative_name', 'representative_first_name', 'representative_last_name',
+    'representative_sex', 'representative_birth_date', 'representative_relationship',
+    'province_id', 'district_id', 'administrative_post_id', 'locality_id', 'community_id',
+    'status', 'status_reason', 'status_changed_at', 'status_changed_by', 'import_batch_id',
+])]
+class Household extends Model
+{
+    /** @use HasFactory<HouseholdFactory> */
+    use HasFactory, HasUuids;
+
+    protected function casts(): array
+    {
+        return [
+            'representative_birth_date' => 'date:Y-m-d',
+            'status' => RecordStatus::class,
+            'status_changed_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<Community, $this>
+     */
+    public function community(): BelongsTo
+    {
+        return $this->belongsTo(Community::class);
+    }
+
+    /**
+     * @return BelongsTo<HouseholdImportBatch, $this>
+     */
+    public function importBatch(): BelongsTo
+    {
+        return $this->belongsTo(HouseholdImportBatch::class, 'import_batch_id');
+    }
+}
