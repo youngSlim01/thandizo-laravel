@@ -174,3 +174,24 @@ testes Pest verificam que a base de dados recusa estas operações.
 
 Até ao corte, o sistema Next.js + Supabase actual continua em produção sem
 alterações.
+
+## 9. Estado (05/11/2026)
+
+Níveis 0 a 11 construídos, com 214 testes PHPUnit em MySQL. Todos os ecrãs
+abrem com cada papel, e uma venda completa no POS (voucher → recibo) foi
+verificada no browser.
+
+Os ecrãs dos níveis 7 a 11 são os do sistema actual, copiados para
+`resources/js/legacy`. Uma camada de compatibilidade liga-os ao Laravel:
+`next/link` e `next/navigation` (em `resources/js/compat`) e `callRpc`, que
+chama `POST /rpc/{nome}` (controllers em `app/Http/Controllers/Rpc`). Os ecrãs
+dos níveis 0 a 6 já são páginas Inertia.
+
+Em aberto antes de passar para `main`:
+
+- Substituir a camada de compatibilidade por páginas Inertia (ou decidir
+  mantê-la).
+- Comando de migração dos dados (secção 6).
+- Laravel Cloud: confirmar que a base MySQL aceita
+  `log_bin_trust_function_creators` (necessário para os triggers).
+- Fornecedor de email para a recuperação da palavra-passe.

@@ -18,7 +18,7 @@ for _ in $(seq 1 60); do
     sleep 2
 done
 
-php artisan migrate --seed --no-interaction
+php artisan migrate --seed --seeder=DemoSeeder --no-interaction
 npm run build
 
 echo

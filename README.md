@@ -50,11 +50,17 @@ Criar as bases `thandizo` e `thandizo_test` no MySQL (utilizador e palavra-passe
 em `.env` / `phpunit.xml`), depois:
 
 ```bash
-php artisan migrate --seed
+php artisan migrate --seed --seeder=DemoSeeder
 composer run dev
 ```
 
-Utilizador local criado pelo seeder: `admin@thandizo.test` / `password`.
+O `DemoSeeder` cria dados para experimentar: 3 produtos com preço, um ciclo
+aberto e 20 agregados com cartão entregue (`VCH-MUT-000001-8`, …). Utilizadores,
+todos com a palavra-passe `password`: `admin`, `operador`, `gestor-agro`,
+`meal`, `gestor-meal` e `financas` `@thandizo.test`.
+
+O MySQL precisa de `log_bin_trust_function_creators=1` para criar os triggers
+(`SET GLOBAL log_bin_trust_function_creators=1;`).
 
 ## Testes
 

@@ -13,6 +13,9 @@ services:
   db:
     image: mysql:8.0
     restart: unless-stopped
+    # Os triggers de imutabilidade do ledger exigem esta opção quando o
+    # binlog está ligado (o padrão no MySQL 8).
+    command: --log-bin-trust-function-creators=1
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: thandizo
