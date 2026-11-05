@@ -12,14 +12,9 @@ return new class extends Migration
      * Equivalente a public.administrative_posts, public.localities e
      * public.communities (0001_initial_schema + 20261007195344).
      *
-     * No PostgreSQL as comunidades tinham dois índices únicos parciais:
-     * (locality_id, name) para as que têm localidade e (district_id, name)
-     * para as antigas sem localidade. O MySQL não tem índices parciais:
-     * - (locality_id, name) já ignora as linhas sem localidade, porque o MySQL
-     *   trata NULL como diferente de NULL num índice único;
-     * - para as antigas, a coluna gerada legacy_district_id só tem valor
-     *   quando locality_id é NULL, e o índice (legacy_district_id, name) faz o
-     *   mesmo papel do índice parcial.
+     * Toda a comunidade tem localidade (no sistema antigo podia faltar, mas
+     * não há nenhuma assim e os dados não são migrados). O distrito fica
+     * também na comunidade, para os filtros não precisarem de três joins.
      */
     public function up(): void
     {
@@ -46,15 +41,12 @@ return new class extends Migration
         Schema::create('communities', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('district_id')->constrained();
-            $table->foreignUuid('locality_id')->nullable()->constrained();
+            $table->foreignUuid('locality_id')->constrained();
             $table->string('name');
             $table->string('code')->nullable();
-            $table->uuid('legacy_district_id')->nullable()
-                ->storedAs('if(locality_id is null, district_id, null)');
             $table->timestamp('created_at')->useCurrent();
 
             $table->unique(['locality_id', 'name']);
-            $table->unique(['legacy_district_id', 'name']);
         });
     }
 

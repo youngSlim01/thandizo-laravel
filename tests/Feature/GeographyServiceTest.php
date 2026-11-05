@@ -121,24 +121,4 @@ class GeographyServiceTest extends TestCase
             'name' => 'bairro délta',
         ]);
     }
-
-    public function test_old_communities_without_locality_are_unique_per_district(): void
-    {
-        $district = District::factory()->create();
-        Community::query()->create(['district_id' => $district->id, 'name' => 'Bairro Antigo']);
-
-        $this->expectException(QueryException::class);
-        Community::query()->create(['district_id' => $district->id, 'name' => 'BAIRRO ANTIGO']);
-    }
-
-    public function test_old_community_name_does_not_block_a_new_one_with_locality(): void
-    {
-        $locality = Locality::factory()->create();
-        $districtId = $locality->administrativePost->district_id;
-        Community::query()->create(['district_id' => $districtId, 'name' => 'Bairro Antigo']);
-
-        Community::query()->create(['district_id' => $districtId, 'locality_id' => $locality->id, 'name' => 'Bairro Antigo']);
-
-        $this->assertSame(2, Community::query()->count());
-    }
 }

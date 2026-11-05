@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
 use App\Models\Agrodealer;
 use App\Models\Household;
 use App\Models\Product;
@@ -20,6 +21,19 @@ class NavigationService
      */
     public function sectionsFor(User $user): array
     {
+        // Finanças tem a sua área; os produtos e preços só para consulta.
+        if ($user->role === UserRole::FinanceOfficer) {
+            $sections = [
+                ['href' => '/finance', 'label' => 'Painel', 'icon' => '▣', 'ability' => ['finance']],
+                ['href' => '/finance/settlements', 'label' => 'Reconciliações', 'icon' => '▤', 'ability' => ['finance']],
+                ['href' => '/finance/transactions', 'label' => 'Transações', 'icon' => '⇄', 'ability' => ['finance']],
+                ['href' => '/finance/reports', 'label' => 'Relatórios', 'icon' => '◫', 'ability' => ['finance']],
+                ['href' => '/admin/products', 'label' => 'Produtos e preços', 'icon' => '◈', 'ability' => ['viewAny', Product::class]],
+            ];
+
+            return $this->allowed($user, $sections);
+        }
+
         $sections = [
             ['href' => '/admin/dashboard', 'label' => 'Painel MEAL', 'icon' => '▦', 'ability' => ['meal-back-office']],
             ['href' => '/admin/households', 'label' => 'Beneficiários', 'icon' => '♙', 'ability' => ['viewAny', Household::class]],
@@ -34,6 +48,15 @@ class NavigationService
             ['href' => '/finance/settlements', 'label' => 'Validação Finance', 'icon' => '▤', 'ability' => ['finance']],
         ];
 
+        return $this->allowed($user, $sections);
+    }
+
+    /**
+     * @param  list<array{href: string, label: string, icon: string, ability: array<int, string>}>  $sections
+     * @return list<array{href: string, label: string, icon: string}>
+     */
+    private function allowed(User $user, array $sections): array
+    {
         return array_values(array_map(
             fn (array $section): array => ['href' => $section['href'], 'label' => $section['label'], 'icon' => $section['icon']],
             array_filter($sections, fn (array $section): bool => $user->can(...$section['ability'])),

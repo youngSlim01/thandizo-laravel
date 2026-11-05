@@ -86,35 +86,22 @@ Cada função SQL abaixo dá origem a um Service PHP e aos testes correspondente
     (`HandleInertiaRequests`).
   - Páginas `app/**/page.tsx` → `resources/js/Pages/**`.
 
-## 6. Migração dos dados e dia do corte
+## 6. Dados e dia do corte
 
-Como o corte é feito de uma só vez, a migração dos dados é um projecto à
-parte e tem de ser ensaiada várias vezes antes do dia.
+**Decisão (05/11/2026): os dados não são migrados.** Passa só a estrutura
+(migrações Laravel); os dados são repostos durante os testes de homologação.
+Por isso não há comando de importação do Supabase nem verificações de
+contagens e saldos entre origem e destino.
 
-- **Comando Laravel de migração** (`php artisan thandizo:import-supabase`) com
-  duas ligações (`pgsql` de origem, `mysql` de destino). Tem de poder correr
-  várias vezes do zero, porque o sistema antigo continua a receber dados até
-  ao corte.
-- **Ordem:** geografia → produtos e preços → agrodealers e POS → utilizadores
-  → agregados familiares → cartões e vouchers → ciclos → transacções e itens
-  → ledger → reconciliações → auditoria.
-- **Utilizadores:** copiar o hash bcrypt de `auth.users.encrypted_password`.
-  Ainda falta confirmar se o Laravel aceita o prefixo `$2a$` ou se é preciso
-  normalizar para `$2y$`. Os UUID de utilizador mantêm-se, para não partir
-  as referências.
-- **Verificações obrigatórias depois de cada ensaio** (o corte só avança se
-  todas baterem certo):
-  - contagem de linhas por tabela, origem = destino;
-  - saldo de cada voucher = soma do seu ledger, em MySQL;
-  - soma dos saldos, das transacções e dos copagamentos, origem = destino;
-  - estado de cada reconciliação, origem = destino.
-- **No dia do corte:**
-  1. congelar o sistema antigo (só leitura);
-  2. correr a migração final e as verificações;
-  3. apontar o domínio para o Laravel.
+No dia do corte:
 
-  O sistema antigo fica disponível em leitura durante algum tempo, como
-  plano de recuo.
+1. base MySQL de produção criada pelas migrações;
+2. dados de referência carregados (geografia, produtos e preços,
+   agrodealers, utilizadores, agregados) pelos ecrãs de importação;
+3. domínio apontado para o Laravel.
+
+O repositório antigo (`voucher-link-gcf.sci`) é descontinuado e apagado
+quando este estiver pronto.
 
 ## 7. Ordem de construção (D6) — do menos ao mais dependente
 
@@ -167,9 +154,9 @@ testes Pest verificam que a base de dados recusa estas operações.
    por província do MEAL Officer).
 3. **Módulos:** para cada um, testes → Service → páginas Inertia, pela ordem
    da secção 7.
-4. **Migração dos dados:** comando de importação e verificações (secção 6),
-   ensaiado com cópias da produção.
-5. **Homologação:** utilizadores reais testam com dados migrados.
+4. **Ecrãs em Inertia:** os ecrãs dos níveis 7 a 11, que vieram do Next.js,
+   são reescritos como páginas Inertia (decisão de 05/11/2026).
+5. **Homologação:** utilizadores reais testam, repondo os dados.
 6. **Corte:** secção 6.
 
 Até ao corte, o sistema Next.js + Supabase actual continua em produção sem
@@ -189,9 +176,11 @@ dos níveis 0 a 6 já são páginas Inertia.
 
 Em aberto antes de passar para `main`:
 
-- Substituir a camada de compatibilidade por páginas Inertia (ou decidir
-  mantê-la).
-- Comando de migração dos dados (secção 6).
+- Substituir a camada de compatibilidade por páginas Inertia (decidido).
 - Laravel Cloud: confirmar que a base MySQL aceita
   `log_bin_trust_function_creators` (necessário para os triggers).
-- Fornecedor de email para a recuperação da palavra-passe.
+- Fornecedor de email para a recuperação da palavra-passe (na produção).
+
+Respostas de 05/11/2026: Finanças vê produtos e preços sem alterar; não há
+produtos com nomes repetidos (o nome já é único); não há comunidades sem
+localidade, por isso a localidade passou a obrigatória.

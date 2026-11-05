@@ -29,10 +29,15 @@ class ProductTest extends TestCase
         $this->get('/admin/products')->assertRedirect('/login');
     }
 
-    public function test_finance_cannot_open_the_page(): void
+    public function test_finance_sees_the_page_without_changing_anything(): void
     {
-        $this->actingAs(User::factory()->role(UserRole::FinanceOfficer)->create())
-            ->get('/admin/products')
+        $finance = User::factory()->role(UserRole::FinanceOfficer)->create();
+        $product = Product::factory()->create();
+
+        $this->actingAs($finance)->get('/admin/products')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('canManage', false));
+        $this->actingAs($finance)->put("/admin/products/{$product->id}", ['name' => 'Outro', 'unit' => 'kg', 'status' => 'ACTIVE'])
             ->assertForbidden();
     }
 

@@ -279,7 +279,7 @@ class HouseholdService
     /**
      * Os cinco níveis de localização a partir da comunidade.
      *
-     * @return array{community_id: string, locality_id: string|null, administrative_post_id: string|null, district_id: string, province_id: string|null}
+     * @return array{community_id: string, locality_id: string, administrative_post_id: string, district_id: string, province_id: string}
      */
     private function location(mixed $communityId): array
     {
@@ -293,7 +293,7 @@ class HouseholdService
         return [
             'community_id' => $community->id,
             'locality_id' => $community->locality_id,
-            'administrative_post_id' => $community->locality?->administrative_post_id,
+            'administrative_post_id' => $community->locality->administrative_post_id,
             'district_id' => $community->district_id,
             'province_id' => $community->district->province_id,
         ];

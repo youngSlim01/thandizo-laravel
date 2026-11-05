@@ -23,7 +23,7 @@ class ProductPolicyTest extends TestCase
             'gestor MEAL' => [UserRole::MealManager, true, true],
             'administrador' => [UserRole::SystemAdmin, true, true],
             'oficial MEAL' => [UserRole::MealOfficer, true, false],
-            'finanças' => [UserRole::FinanceOfficer, false, false],
+            'finanças' => [UserRole::FinanceOfficer, true, false],
             'gestor de agrodealer' => [UserRole::AgrodealerManager, false, false],
             'operador de agrodealer' => [UserRole::AgrodealerOperator, false, false],
         ];

@@ -4,19 +4,16 @@ namespace App\Models;
 
 use Database\Factories\CommunityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Comunidade (bairro). Tem sempre o distrito; as criadas desde o registo de
- * agregados (20261007195344) têm também a localidade. As antigas sem
- * localidade continuam válidas.
+ * Comunidade (bairro), sempre dentro de uma localidade. Guarda também o
+ * distrito, para filtrar sem subir a cadeia toda.
  */
 #[Fillable(['district_id', 'locality_id', 'name', 'code'])]
-#[Hidden(['legacy_district_id'])]
 class Community extends Model
 {
     /** @use HasFactory<CommunityFactory> */

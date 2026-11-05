@@ -8,11 +8,12 @@ use App\Models\User;
 class ProductPolicy
 {
     /**
-     * Ver a página de produtos (back office MEAL).
+     * Ver a página de produtos e preços: back office MEAL e Finanças (só
+     * leitura).
      */
     public function viewAny(User $user): bool
     {
-        return $user->isActive() && $user->role->isMealBackOffice();
+        return $user->isActive() && ($user->role->isMealBackOffice() || $user->role->isFinance());
     }
 
     /**
