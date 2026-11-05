@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserRole;
+use App\Http\Controllers\Pos\PosController;
 use App\Services\NavigationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,7 @@ class HomeController extends Controller
         $user = $request->user();
         // Quem vende abre o início do POS; as Finanças a sua área.
         if ($user->can('pos')) {
-            return Inertia::render('legacy/app/page');
+            return app(PosController::class)->home($request);
         }
         if ($user->role === UserRole::FinanceOfficer && $user->can('finance')) {
             $request->session()->reflash();

@@ -3,6 +3,7 @@
 namespace Tests\Concerns;
 
 use App\Enums\UserRole;
+use App\Exceptions\DomainRuleException;
 use App\Models\AdministrativePost;
 use App\Models\Agrodealer;
 use App\Models\AgrodealerPos;
@@ -16,7 +17,6 @@ use App\Services\CardService;
 use App\Services\CycleService;
 use App\Services\PriceService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Testing\TestResponse;
 
 /**
  * Cenário de dinheiro para os testes dos níveis 7 a 11: um distrito do
@@ -85,10 +85,17 @@ trait MoneyScenario
     }
 
     /**
-     * @param  array<string, mixed>  $params
+     * A acção tem de ser recusada pela regra com este código.
      */
-    protected function rpc(User $user, string $name, array $params = []): TestResponse
+    protected function assertRuleFails(string $code, callable $action): void
     {
-        return $this->actingAs($user)->postJson("/rpc/{$name}", $params);
+        try {
+            $action();
+        } catch (DomainRuleException $exception) {
+            $this->assertSame($code, $exception->errorCode);
+
+            return;
+        }
+        $this->fail("A regra {$code} devia recusar a acção.");
     }
 }

@@ -254,7 +254,7 @@ class ReportService
         $sum = fn (Collection $rows, string $f): float => round($rows->sum(fn ($r) => (float) $r->{$f}), 2);
 
         $firstDay = collect([$households->min('day'), $sales->min('day'), $today->toDateString()])->filter()->min();
-        $months = collect(CarbonPeriod::create(CarbonImmutable::parse($firstDay)->startOfMonth(), '1 month', $today->startOfMonth()))
+        $months = collect(CarbonPeriod::create(CarbonImmutable::parse($firstDay, $today->timezone)->startOfMonth(), '1 month', $today->startOfMonth()))
             ->map(fn ($m) => $m->format('Y-m'))->reverse()->values()->all();
 
         $cardHouseholds = $cards->pluck('household_id')->flip();
@@ -343,7 +343,7 @@ class ReportService
 
         return [
             'month' => $start->format('Y-m'),
-            'months' => collect(CarbonPeriod::create(CarbonImmutable::parse($first.'-01'), '1 month', $today->startOfMonth()))
+            'months' => collect(CarbonPeriod::create(CarbonImmutable::parse($first.'-01', $today->timezone), '1 month', $today->startOfMonth()))
                 ->map(fn ($m) => $m->format('Y-m'))->reverse()->values()->all(),
             'trend' => collect(range(5, 0))->map(function (int $back) use ($start, $byMonth) {
                 $m = $start->subMonths($back)->format('Y-m');

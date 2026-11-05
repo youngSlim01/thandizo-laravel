@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\MoneyScenario;
 use Tests\Concerns\SellsInThePast;
 use Tests\TestCase;
@@ -40,59 +41,83 @@ class SettlementsTest extends TestCase
 
     private function create(User $user, string $from = '2026-10-01', string $to = '2026-10-31'): TestResponse
     {
-        return $this->rpc($user, 'create_agrodealer_settlement', ['agrodealer_id' => $this->agrodealer->id, 'period_start' => $from, 'period_end' => $to]);
+        return $this->actingAs($user)->post('/admin/settlements', ['agrodealer_id' => $this->agrodealer->id, 'period_start' => $from, 'period_end' => $to]);
+    }
+
+    private function settlementId(): string
+    {
+        return DB::table('settlement_batches')->orderByDesc('created_at')->orderByDesc('id')->value('id');
+    }
+
+    private function statusOf(string $id): string
+    {
+        return DB::table('settlement_batches')->where('id', $id)->value('status');
     }
 
     public function test_a_settlement_takes_the_confirmed_sales_of_the_period_in_mozambique_time(): void
     {
-        $id = $this->create($this->officer)->assertOk()->json();
+        $this->create($this->officer)->assertSessionHas('success');
+        $id = $this->settlementId();
+        $this->actingAs($this->officer)->get('/admin/settlements?open='.$id)
+            ->assertInertia(fn (Assert $page) => $page->component('admin/settlements')->where('openId', $id)->has('settlements', 1));
 
         $batch = DB::table('settlement_batches')->where('id', $id)->first();
         $this->assertSame([2, '3000.00', '3000.00', 'RECONCILED'], [$batch->transaction_count, $batch->voucher_amount, $batch->payable_amount, $batch->status]);
-        $this->create($this->officer)->assertJson(['code' => 'SETTLEMENT_ALREADY_EXISTS']);
-        $this->create($this->officer, '2026-11-01', '2099-01-01')->assertJson(['code' => 'SETTLEMENT_PERIOD_NOT_CLOSED']);
-        $this->create($this->officer, '2026-09-01', '2026-09-30')->assertJson(['code' => 'NO_SETTLEMENT_TRANSACTIONS']);
+        $this->create($this->officer)->assertSessionHasErrors(['rule' => 'Já existe uma liquidação para este agrodealer e período.']);
+        $this->create($this->officer, '2026-11-01', '2099-01-01')->assertSessionHasErrors(['rule' => 'Só se liquidam dias fechados: a data final tem de ser anterior a hoje (hora de Moçambique).']);
+        $this->create($this->officer, '2026-09-01', '2026-09-30')->assertSessionHasErrors(['rule' => 'Não existem transações confirmadas ainda não liquidadas neste período.']);
     }
 
     public function test_officer_then_manager_then_finance(): void
     {
-        $id = $this->create($this->officer)->json();
+        $this->create($this->officer);
+        $id = $this->settlementId();
 
-        $this->rpc($this->officer, 'submit_agrodealer_settlement', ['settlement_id' => $id])->assertExactJson(['PENDING_MANAGER']);
-        $this->rpc($this->officer, 'manager_approve_settlement', ['settlement_id' => $id])->assertJson(['code' => 'SETTLEMENT_APPROVAL_NOT_ALLOWED']);
-        $this->rpc($this->finance, 'finance_validate_settlement', ['settlement_id' => $id])->assertJson(['code' => 'SETTLEMENT_NOT_READY_FOR_VALIDATION']);
-        $this->rpc($this->manager, 'manager_approve_settlement', ['settlement_id' => $id])->assertOk();
-        $this->rpc($this->finance, 'finance_validate_settlement', ['settlement_id' => $id])->assertOk();
+        $this->actingAs($this->officer)->post("/admin/settlements/{$id}/submission")->assertSessionHas('success', 'Enviada ao gestor MEAL para aprovação.');
+        $this->assertSame('PENDING_MANAGER', $this->statusOf($id));
+        $this->actingAs($this->officer)->post("/admin/settlements/{$id}/approval")
+            ->assertSessionHasErrors(['rule' => 'Só o gestor MEAL ou um administrador pode aprovar ou devolver reconciliações.']);
+        $this->actingAs($this->finance)->post("/finance/settlements/{$id}/validation")
+            ->assertSessionHasErrors(['rule' => 'Esta reconciliação ainda não foi submetida à Finance ou já foi processada.']);
+        $this->actingAs($this->manager)->post("/admin/settlements/{$id}/approval")->assertSessionHas('success');
+        $this->actingAs($this->finance)->post("/finance/settlements/{$id}/validation")->assertSessionHas('success');
 
-        $this->assertSame('VALIDATED', DB::table('settlement_batches')->where('id', $id)->value('status'));
-        $this->rpc($this->finance, 'get_settlement_transactions', ['settlement_id' => $id])->assertJsonCount(2);
+        $this->assertSame('VALIDATED', $this->statusOf($id));
+        $this->actingAs($this->finance)->getJson("/settlements/{$id}/transactions")->assertJsonCount(2);
+        $this->actingAs($this->finance)->get('/finance/settlements')
+            ->assertInertia(fn (Assert $page) => $page->component('finance/settlements')->where('settlements.0.agrodealer', $this->agrodealer->name));
     }
 
     public function test_a_manager_sends_straight_to_finance(): void
     {
-        $id = $this->create($this->manager)->json();
+        $this->create($this->manager);
+        $id = $this->settlementId();
 
-        $this->rpc($this->manager, 'submit_agrodealer_settlement', ['settlement_id' => $id])->assertExactJson(['SUBMITTED_TO_FINANCE']);
+        $this->actingAs($this->manager)->post("/admin/settlements/{$id}/submission")->assertSessionHas('success', 'Enviada para Finance.');
+        $this->assertSame('SUBMITTED_TO_FINANCE', $this->statusOf($id));
     }
 
     public function test_a_returned_settlement_frees_its_sales_for_a_new_one(): void
     {
-        $id = $this->create($this->manager)->json();
-        $this->rpc($this->manager, 'submit_agrodealer_settlement', ['settlement_id' => $id]);
+        $this->create($this->manager);
+        $id = $this->settlementId();
+        $this->actingAs($this->manager)->post("/admin/settlements/{$id}/submission");
 
-        $this->rpc($this->finance, 'finance_return_settlement', ['settlement_id' => $id, 'reason' => ''])->assertJson(['code' => 'FINANCE_REJECTION_REASON_REQUIRED']);
-        $this->rpc($this->finance, 'finance_return_settlement', ['settlement_id' => $id, 'reason' => 'falta factura'])->assertOk();
+        $this->actingAs($this->finance)->post("/finance/settlements/{$id}/return", ['reason' => ''])->assertSessionHasErrors('reason');
+        $this->actingAs($this->finance)->post("/finance/settlements/{$id}/return", ['reason' => 'falta factura'])->assertSessionHas('success');
 
         $this->assertSame(0, DB::table('settlement_items')->where('settlement_id', $id)->where('active', true)->count());
-        $this->create($this->manager)->assertOk();
+        $this->create($this->manager)->assertSessionHas('success');
     }
 
     public function test_an_officer_of_another_province_does_not_see_the_agrodealer(): void
     {
         $elsewhere = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => Province::factory()->create()->id]);
+        $this->create($this->manager);
 
-        $this->create($elsewhere)->assertJson(['code' => 'AGRODEALER_NOT_FOUND']);
-        $this->rpc($elsewhere, 'list_settlements')->assertJsonCount(0);
-        $this->rpc($this->operator, 'list_settlements')->assertJson(['code' => 'SETTLEMENT_NOT_ALLOWED']);
+        $this->create($elsewhere)->assertSessionHasErrors(['rule' => 'Agrodealer não encontrado.']);
+        $this->actingAs($elsewhere)->get('/admin/settlements')->assertInertia(fn (Assert $page) => $page->has('settlements', 0)->has('agrodealers', 0));
+        $this->actingAs($this->operator)->get('/admin/settlements')->assertForbidden();
+        $this->actingAs($this->finance)->post('/admin/settlements', [])->assertForbidden();
     }
 }

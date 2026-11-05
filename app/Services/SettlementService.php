@@ -198,22 +198,6 @@ class SettlementService
     }
 
     /**
-     * Lista das Finanças: todas as reconciliações com o nome do agrodealer
-     * (antiga leitura directa de settlement_batches com agrodealers(name)).
-     *
-     * @return list<array<string, mixed>>
-     */
-    public function financeList(User $viewer): array
-    {
-        $this->requireFinance($viewer);
-
-        return DB::table('settlement_batches as b')->join('agrodealers as a', 'a.id', '=', 'b.agrodealer_id')
-            ->orderByDesc('b.created_at')->orderByDesc('b.id')->get(['b.*', 'a.name as agrodealer_name'])
-            ->map(fn ($b) => [...collect((array) $b)->except('agrodealer_name')->all(), 'agrodealers' => ['name' => $b->agrodealer_name]])
-            ->all();
-    }
-
-    /**
      * Vendas de uma reconciliação (antiga leitura directa de
      * settlement_items + transactions).
      *
@@ -234,7 +218,7 @@ class SettlementService
             ->join('vouchers as v', 'v.id', '=', 't.voucher_id')
             ->where('si.settlement_id', $settlementId)->orderBy('t.confirmed_at')
             ->get(['t.id', 't.transaction_code', 't.total_amount', 't.voucher_amount', 't.copayment_amount', 't.status', 't.confirmed_at', 'v.voucher_code'])
-            ->map(fn ($t) => [...collect((array) $t)->except('voucher_code')->all(), 'created_at' => $t->confirmed_at, 'vouchers' => ['voucher_code' => $t->voucher_code]])
+            ->map(fn ($t) => (array) $t)
             ->all();
     }
 

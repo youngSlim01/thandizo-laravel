@@ -9,16 +9,31 @@ use App\Services\CardService;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Concerns\MoneyScenario;
 use Tests\TestCase;
 
 /**
  * Equivalente PHP dos testes SQL 0004 (ledger protegido), 0011 (lotes de
- * cartões), 0018 (distribuição cartão a cartão) e 0019 (substituto).
+ * cartões), 0018 (distribuição cartão a cartão) e 0019 (substituto), mais o
+ * acesso à página.
  */
 class CardsTest extends TestCase
 {
     use MoneyScenario, RefreshDatabase;
+
+    private function cards(): CardService
+    {
+        return app(CardService::class);
+    }
+
+    /**
+     * @return array{batch_id: string, batch_code: string, card_count: int}
+     */
+    private function generate(): array
+    {
+        return $this->cards()->generateBatch($this->admin, $this->community->id);
+    }
 
     public function test_a_batch_creates_a_pending_card_without_money_for_each_household_without_card(): void
     {
@@ -26,11 +41,12 @@ class CardsTest extends TestCase
         $this->household();
         $this->household(['status' => 'INACTIVE']);
 
-        $batch = $this->rpc($this->admin, 'generate_card_batch', ['community_id' => $this->community->id])
-            ->assertOk()->assertJson(['card_count' => 2])->json();
+        $this->actingAs($this->admin)->post('/admin/cards/batches', ['community_id' => $this->community->id])
+            ->assertRedirect()->assertSessionHas('success');
+        $batch = DB::table('card_batches')->sole();
 
-        $this->assertMatchesRegularExpression('/^LOTE-MUT-\d{4}$/', $batch['batch_code']);
-        $cards = DB::table('vouchers')->where('card_batch_id', $batch['batch_id'])->get();
+        $this->assertMatchesRegularExpression('/^LOTE-MUT-\d{4}$/', $batch->batch_code);
+        $cards = DB::table('vouchers')->where('card_batch_id', $batch->id)->get();
         $this->assertCount(2, $cards);
         foreach ($cards as $card) {
             $this->assertSame('PENDING', $card->status);
@@ -41,25 +57,26 @@ class CardsTest extends TestCase
         }
         $this->assertSame(0, DB::table('voucher_ledger')->count());
 
-        $this->rpc($this->admin, 'generate_card_batch', ['community_id' => $this->community->id])
-            ->assertUnprocessable()->assertJson(['code' => 'NO_HOUSEHOLDS_WITHOUT_CARD']);
+        $this->actingAs($this->admin)->post('/admin/cards/batches', ['community_id' => $this->community->id])
+            ->assertSessionHasErrors(['rule' => 'Todos os agregados deste bairro já têm cartão.']);
     }
 
     public function test_distribution_activates_only_the_delivered_cards_with_6000_and_puts_them_in_the_cycle(): void
     {
         $this->household();
         $this->household();
-        $batch = $this->rpc($this->admin, 'generate_card_batch', ['community_id' => $this->community->id])->json();
+        $batch = $this->generate();
         [$first, $second] = DB::table('vouchers')->where('card_batch_id', $batch['batch_id'])->orderBy('voucher_code')->pluck('id')->all();
 
-        $this->rpc($this->admin, 'distribute_cards', ['batch_id' => $batch['batch_id'], 'voucher_ids' => [$first]])
-            ->assertJson(['code' => 'CARD_BATCH_NOT_PRINTED']);
-        $this->rpc($this->admin, 'mark_card_batch_printed', ['batch_id' => $batch['batch_id']])->assertJson(['status' => 'PRINTED']);
+        $this->assertRuleFails('CARD_BATCH_NOT_PRINTED', fn () => $this->cards()->distribute($this->admin, $batch['batch_id'], [$first], []));
+        $this->actingAs($this->admin)->put("/admin/cards/batches/{$batch['batch_id']}/printed")->assertSessionHas('success');
+        $this->assertSame('PRINTED', DB::table('card_batches')->value('status'));
 
-        $this->rpc($this->admin, 'distribute_cards', [
-            'batch_id' => $batch['batch_id'], 'voucher_ids' => [$first],
-            'substitutes' => [['voucher_id' => $first, 'name' => 'Rosa', 'relationship' => 'SPOUSE']],
-        ])->assertOk()->assertJson(['activated' => 1, 'remaining' => 1, 'status' => 'IN_DISTRIBUTION']);
+        $this->actingAs($this->admin)->post("/admin/cards/batches/{$batch['batch_id']}/distribution", [
+            'voucher_ids' => [$first],
+            'substitutes' => [['voucher_id' => $first, 'name' => 'Rosa', 'relationship' => 'CONJUGE']],
+        ])->assertSessionHas('success', '1 cartão ativado com 6 000 MT. Faltam entregar 1.');
+        $this->assertSame('IN_DISTRIBUTION', DB::table('card_batches')->value('status'));
 
         $card = DB::table('vouchers')->where('id', $first)->first();
         $this->assertSame(['ACTIVE', '6000.00', 'Rosa'], [$card->status, $card->current_balance, $card->received_by_name]);
@@ -68,57 +85,62 @@ class CardsTest extends TestCase
         $this->assertSame('DELIVERY', DB::table('cycle_households')->where('voucher_id', $first)->value('source'));
         $this->assertSame('PENDING', DB::table('vouchers')->where('id', $second)->value('status'));
 
-        $this->rpc($this->admin, 'distribute_cards', ['batch_id' => $batch['batch_id'], 'voucher_ids' => [$second]])
-            ->assertJson(['status' => 'DISTRIBUTED', 'remaining' => 0]);
+        $result = $this->cards()->distribute($this->admin, $batch['batch_id'], [$second], []);
+        $this->assertSame(['DISTRIBUTED', 0], [$result['status'], $result['remaining']]);
     }
 
     public function test_distribution_rules(): void
     {
         $household = $this->household();
-        $batch = $this->rpc($this->admin, 'generate_card_batch', ['community_id' => $this->community->id])->json();
-        $this->rpc($this->admin, 'mark_card_batch_printed', ['batch_id' => $batch['batch_id']]);
+        $batch = $this->generate();
+        $this->cards()->markPrinted($this->admin, $batch['batch_id']);
         $card = DB::table('vouchers')->where('household_id', $household->id)->value('id');
+        $distribute = fn (array $substitutes = []) => $this->cards()->distribute($this->admin, $batch['batch_id'], [$card], $substitutes);
 
-        $this->rpc($this->admin, 'distribute_cards', ['batch_id' => $batch['batch_id'], 'voucher_ids' => []])->assertJson(['code' => 'CARDS_REQUIRED']);
-        $this->rpc($this->admin, 'distribute_cards', [
-            'batch_id' => $batch['batch_id'], 'voucher_ids' => [$card], 'substitutes' => [['voucher_id' => $card, 'name' => 'Rosa']],
-        ])->assertJson(['code' => 'CARD_SUBSTITUTE_INCOMPLETE']);
+        $this->assertRuleFails('CARDS_REQUIRED', fn () => $this->cards()->distribute($this->admin, $batch['batch_id'], [], []));
+        $this->assertRuleFails('CARD_SUBSTITUTE_INCOMPLETE', fn () => $distribute([['voucher_id' => $card, 'name' => 'Rosa']]));
 
         DB::table('households')->where('id', $household->id)->update(['status' => 'INACTIVE']);
-        $this->rpc($this->admin, 'distribute_cards', ['batch_id' => $batch['batch_id'], 'voucher_ids' => [$card]])->assertJson(['code' => 'CARD_HOUSEHOLD_INACTIVE']);
+        $this->assertRuleFails('CARD_HOUSEHOLD_INACTIVE', $distribute);
 
         DB::table('households')->where('id', $household->id)->update(['status' => 'ACTIVE']);
         DB::table('programme_cycles')->update(['status' => 'CLOSED', 'closed_at' => now()]);
-        $this->rpc($this->admin, 'distribute_cards', ['batch_id' => $batch['batch_id'], 'voucher_ids' => [$card]])->assertJson(['code' => 'NO_OPEN_CYCLE']);
+        $this->assertRuleFails('NO_OPEN_CYCLE', $distribute);
         $this->assertSame('PENDING', DB::table('vouchers')->where('id', $card)->value('status'));
     }
 
     public function test_cancelling_before_delivery_frees_the_households_and_only_managers_cancel(): void
     {
         $this->household();
-        $batch = $this->rpc($this->admin, 'generate_card_batch', ['community_id' => $this->community->id])->json();
+        $batch = $this->generate();
         $officer = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $this->district->province_id]);
+        $url = "/admin/cards/batches/{$batch['batch_id']}/cancellation";
 
-        $this->rpc($officer, 'cancel_card_batch', ['batch_id' => $batch['batch_id'], 'reason' => 'erro'])->assertJson(['code' => 'CARD_BATCH_CANCEL_NOT_ALLOWED']);
-        $this->rpc($this->admin, 'cancel_card_batch', ['batch_id' => $batch['batch_id'], 'reason' => ' '])->assertJson(['code' => 'CANCEL_REASON_REQUIRED']);
-        $this->rpc($this->admin, 'cancel_card_batch', ['batch_id' => $batch['batch_id'], 'reason' => 'nomes errados'])
-            ->assertJson(['status' => 'CANCELLED', 'cancelled_cards' => 1]);
+        $this->actingAs($officer)->post($url, ['reason' => 'erro'])->assertForbidden();
+        $this->actingAs($this->admin)->post($url, ['reason' => ' '])->assertSessionHasErrors(['reason' => 'Indique o motivo do cancelamento.']);
+        $this->actingAs($this->admin)->post($url, ['reason' => 'nomes errados'])->assertSessionHas('success');
+        $this->assertSame('CANCELLED', DB::table('card_batches')->value('status'));
+        $this->assertSame('CANCELLED', DB::table('vouchers')->value('status'));
 
-        $this->rpc($this->admin, 'generate_card_batch', ['community_id' => $this->community->id])->assertJson(['card_count' => 1]);
+        $this->assertSame(1, $this->generate()['card_count']);
     }
 
     public function test_a_lost_card_is_replaced_and_its_balance_moves_to_the_new_card(): void
     {
         ['household' => $household, 'voucher' => $old] = $this->householdWithCard();
+        $officer = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $this->district->province_id]);
+        $url = '/admin/cards/'.strtolower($old->voucher_code).'/replacement';
 
-        $result = $this->rpc($this->admin, 'replace_voucher', ['voucher_code' => strtolower($old->voucher_code), 'reason' => 'perdido'])
+        $this->actingAs($officer)->postJson($url, ['reason' => 'perdido'])->assertForbidden();
+        $result = $this->actingAs($this->admin)->postJson($url, ['reason' => 'perdido'])
             ->assertOk()->assertJson(['old_voucher_code' => $old->voucher_code, 'transferred' => '6000.00'])->json();
 
         $this->assertSame(['REPLACED', '0.00'], [DB::table('vouchers')->where('id', $old->id)->value('status'), DB::table('vouchers')->where('id', $old->id)->value('current_balance')]);
         $new = DB::table('vouchers')->where('voucher_code', $result['new_voucher_code'])->first();
         $this->assertSame(['ACTIVE', '6000.00', $household->id], [$new->status, $new->current_balance, $new->household_id]);
         $this->assertSame(2, DB::table('voucher_ledger')->where('entry_type', 'REPLACEMENT_TRANSFER')->count());
-        $this->rpc($this->admin, 'replace_voucher', ['voucher_code' => $old->voucher_code, 'reason' => 'outra'])->assertJson(['code' => 'VOUCHER_NOT_ACTIVE']);
+        $this->actingAs($this->admin)->postJson($url, ['reason' => 'outra'])
+            ->assertUnprocessable()->assertJson(['code' => 'VOUCHER_NOT_ACTIVE', 'message' => 'Este voucher não está ativo.']);
     }
 
     public function test_the_ledger_can_never_be_changed_or_deleted(): void
@@ -139,14 +161,18 @@ class CardsTest extends TestCase
         }
     }
 
-    public function test_a_meal_officer_only_sees_batches_of_the_province(): void
+    public function test_page_lists_communities_and_batches_and_a_meal_officer_sees_only_the_province(): void
     {
         $this->household();
-        $batch = $this->rpc($this->admin, 'generate_card_batch', ['community_id' => $this->community->id])->json();
+        $batch = $this->generate();
         $elsewhere = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => Province::factory()->create()->id]);
 
-        $this->rpc($elsewhere, 'list_card_batches')->assertJsonCount(0);
-        $this->rpc($elsewhere, 'get_card_batch_cards', ['batch_id' => $batch['batch_id']])->assertJson(['code' => 'CARD_BATCH_NOT_FOUND']);
-        $this->rpc(User::factory()->role(UserRole::AgrodealerOperator)->create(), 'list_card_batches')->assertJson(['code' => 'CARD_BATCH_NOT_ALLOWED']);
+        $this->actingAs($this->admin)->get('/admin/cards')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('admin/cards')->has('communities', 1)->has('batches', 1)->where('canManage', true));
+        $this->actingAs($elsewhere)->get('/admin/cards')->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('communities', 0)->has('batches', 0)->where('canManage', false));
+        $this->actingAs($elsewhere)->getJson("/admin/cards/batches/{$batch['batch_id']}/cards")
+            ->assertUnprocessable()->assertJson(['code' => 'CARD_BATCH_NOT_FOUND']);
+        $this->actingAs(User::factory()->role(UserRole::AgrodealerOperator)->create())->get('/admin/cards')->assertForbidden();
     }
 }

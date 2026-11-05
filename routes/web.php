@@ -4,27 +4,29 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\AgrodealerCatalogueController;
 use App\Http\Controllers\Admin\AgrodealerController;
 use App\Http\Controllers\Admin\AgrodealerPosController;
+use App\Http\Controllers\Admin\CardController;
+use App\Http\Controllers\Admin\CycleController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\HouseholdController;
 use App\Http\Controllers\Admin\HouseholdImportController;
 use App\Http\Controllers\Admin\PriceImportController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductPriceController;
 use App\Http\Controllers\Admin\ProgrammeDistrictController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SettlementController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserPasswordController;
 use App\Http\Controllers\Auth\FirstPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Finance\DashboardController as FinanceDashboardController;
+use App\Http\Controllers\Finance\ReportController as FinanceReportController;
+use App\Http\Controllers\Finance\SettlementController as FinanceSettlementController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\Rpc\CardRpcController;
-use App\Http\Controllers\Rpc\CycleRpcController;
-use App\Http\Controllers\Rpc\HouseholdRpcController;
-use App\Http\Controllers\Rpc\PosRpcController;
-use App\Http\Controllers\Rpc\ReportRpcController;
-use App\Http\Controllers\Rpc\SettlementRpcController;
+use App\Http\Controllers\Pos\PosController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
-use Inertia\Inertia;
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
@@ -46,61 +48,63 @@ Route::middleware('auth')->group(function () {
     Route::get('/account', [AccountController::class, 'show'])->name('account');
     Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password');
 
-    // Endpoints das antigas funções SQL usadas pelos ecrãs vindos do Next.js:
-    // POST /rpc/<nome>, mesmos parâmetros sem p_ (ver Rpc\RpcController).
-    Route::prefix('rpc')->group(function () {
-        $rpc = [
-            CardRpcController::class => [
-                'list_card_communities', 'generate_card_batch', 'list_card_batches', 'get_card_batch_cards',
-                'mark_card_batch_printed', 'distribute_cards', 'cancel_card_batch', 'find_household_cards', 'replace_voucher',
-            ],
-            PosRpcController::class => [
-                'lookup_voucher_for_pos', 'get_agrodealer_catalogue', 'preview_voucher_redemption', 'confirm_pos_redemption',
-                'get_transaction_receipt', 'list_my_recent_transactions', 'void_voucher_transaction',
-            ],
-            CycleRpcController::class => [
-                'list_programme_cycles', 'cycle_summary', 'open_programme_cycle', 'allocate_cycle', 'close_programme_cycle',
-            ],
-            SettlementRpcController::class => [
-                'list_settlements', 'finance_list_settlements', 'get_settlement_transactions', 'create_agrodealer_settlement',
-                'submit_agrodealer_settlement', 'manager_approve_settlement', 'manager_return_settlement',
-                'finance_validate_settlement', 'finance_return_settlement',
-            ],
-            HouseholdRpcController::class => ['search_households', 'list_household_geography', 'get_household_detail'],
-            ReportRpcController::class => [
-                'list_agrodealer_options', 'search_transactions', 'agrodealer_transactions_report', 'list_report_prints',
-                'meal_dashboard_month', 'finance_dashboard_month',
-            ],
-        ];
-        foreach ($rpc as $controller => $names) {
-            foreach ($names as $name) {
-                Route::post("/{$name}", [$controller, Str::camel($name)])->name("rpc.{$name}");
-            }
-        }
+    Route::middleware('can:meal-back-office')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/cards', [CardController::class, 'index'])->name('cards.index');
+        Route::post('/cards/batches', [CardController::class, 'store'])->name('cards.batches.store');
+        Route::get('/cards/batches/{batch}/cards', [CardController::class, 'cards'])->whereUuid('batch')->name('cards.batches.cards');
+        Route::put('/cards/batches/{batch}/printed', [CardController::class, 'printed'])->whereUuid('batch')->name('cards.batches.printed');
+        Route::post('/cards/batches/{batch}/distribution', [CardController::class, 'distribute'])->whereUuid('batch')->name('cards.batches.distribute');
+        Route::post('/cards/batches/{batch}/cancellation', [CardController::class, 'cancel'])->whereUuid('batch')->name('cards.batches.cancel');
+        Route::get('/cards/search', [CardController::class, 'search'])->name('cards.search');
+        Route::post('/cards/{voucherCode}/replacement', [CardController::class, 'replace'])->name('cards.replace');
+
+        Route::get('/cycles', [CycleController::class, 'index'])->name('cycles.index');
+        Route::post('/cycles', [CycleController::class, 'store'])->name('cycles.store');
+        Route::post('/cycles/{cycle}/allocation/preview', [CycleController::class, 'previewAllocation'])->whereUuid('cycle')->name('cycles.allocation.preview');
+        Route::post('/cycles/{cycle}/allocation', [CycleController::class, 'allocate'])->whereUuid('cycle')->name('cycles.allocation');
+        Route::get('/cycles/{cycle}/closing', [CycleController::class, 'previewClose'])->whereUuid('cycle')->name('cycles.closing.preview');
+        Route::post('/cycles/{cycle}/closing', [CycleController::class, 'close'])->whereUuid('cycle')->name('cycles.closing');
+
+        Route::get('/dashboard', DashboardController::class)->name('dashboard');
+        Route::get('/transactions', [TransactionController::class, 'index'])->defaults('area', 'meal')->name('transactions');
+        Route::get('/settlements', [SettlementController::class, 'index'])->name('settlements.index');
+        Route::post('/settlements', [SettlementController::class, 'store'])->name('settlements.store');
+        Route::post('/settlements/{settlement}/submission', [SettlementController::class, 'submit'])->whereUuid('settlement')->name('settlements.submit');
+        Route::post('/settlements/{settlement}/approval', [SettlementController::class, 'approve'])->whereUuid('settlement')->name('settlements.approve');
+        Route::post('/settlements/{settlement}/return', [SettlementController::class, 'return'])->whereUuid('settlement')->name('settlements.return');
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+        Route::post('/reports/agrodealer', [ReportController::class, 'agrodealer'])->name('reports.agrodealer');
+    });
+    Route::middleware('can:finance')->prefix('finance')->name('finance.')->group(function () {
+        Route::get('/', FinanceDashboardController::class)->name('dashboard');
+        Route::get('/settlements', [FinanceSettlementController::class, 'index'])->name('settlements.index');
+        Route::post('/settlements/{settlement}/validation', [FinanceSettlementController::class, 'validateSettlement'])->whereUuid('settlement')->name('settlements.validate');
+        Route::post('/settlements/{settlement}/return', [FinanceSettlementController::class, 'return'])->whereUuid('settlement')->name('settlements.return');
+        Route::get('/transactions', [TransactionController::class, 'index'])->defaults('area', 'finance')->name('transactions');
+        Route::get('/reports', FinanceReportController::class)->name('reports');
     });
 
-    // Ecrãs vindos do Next.js (resources/js/legacy), por área.
-    Route::middleware('can:meal-back-office')->prefix('admin')->group(function () {
-        foreach (['dashboard', 'cards', 'cycles', 'transactions', 'settlements', 'reports'] as $screen) {
-            Route::get("/{$screen}", fn () => Inertia::render("legacy/app/admin/{$screen}/page"))->name("admin.{$screen}");
-        }
+    // Leituras partilhadas pelo MEAL e pelas Finanças.
+    Route::middleware('can:view-operations')->group(function () {
+        Route::post('/transactions/search', [TransactionController::class, 'search'])->name('transactions.search');
+        Route::get('/transactions/households/{household}', [TransactionController::class, 'household'])->name('transactions.household');
+        Route::get('/settlements/{settlement}/transactions', [SettlementController::class, 'transactions'])->whereUuid('settlement')->name('settlements.transactions');
+        Route::get('/cycles/{cycle}/summary', [CycleController::class, 'summary'])->whereUuid('cycle')->name('cycles.summary');
     });
-    Route::middleware('can:finance')->prefix('finance')->group(function () {
-        Route::get('/', fn () => Inertia::render('legacy/app/finance/page'))->name('finance');
-        foreach (['settlements', 'transactions', 'reports'] as $screen) {
-            Route::get("/{$screen}", fn () => Inertia::render("legacy/app/finance/{$screen}/page"))->name("finance.{$screen}");
-        }
-    });
+
     Route::middleware('can:pos')->group(function () {
-        foreach (['voucher', 'products', 'cart', 'discount', 'payment', 'confirmation'] as $step) {
-            Route::get("/pos/{$step}", fn () => Inertia::render("legacy/app/pos/{$step}/page"))->name("pos.{$step}");
-        }
-        Route::get('/sales', fn () => Inertia::render('legacy/app/sales/page'))->name('sales');
-        Route::get('/catalogue', fn () => Inertia::render('legacy/app/catalogue/page'))->name('catalogue');
-        Route::get('/profile', fn () => Inertia::render('legacy/app/profile/page'))->name('profile');
-        Route::get('/receipt/{id}', fn (string $id) => Inertia::render('legacy/app/receipt/[id]/page', ['params' => ['id' => $id]]))
-            ->whereUuid('id')
-            ->name('receipt');
+        Route::post('/pos/terminal', [PosController::class, 'chooseTerminal'])->name('pos.terminal');
+        Route::delete('/pos/terminal', [PosController::class, 'forgetTerminal'])->name('pos.terminal.forget');
+        Route::get('/pos/products', [PosController::class, 'products'])->name('pos.products');
+        Route::get('/pos/{step}', [PosController::class, 'step'])->whereIn('step', ['voucher', 'cart', 'discount', 'payment', 'confirmation'])->name('pos.step');
+        Route::post('/pos/lookup', [PosController::class, 'lookup'])->name('pos.lookup');
+        Route::post('/pos/preview', [PosController::class, 'preview'])->name('pos.preview');
+        Route::post('/pos/sales', [PosController::class, 'confirm'])->name('pos.confirm');
+        Route::get('/sales', [PosController::class, 'sales'])->name('sales');
+        Route::post('/sales/{transaction}/void', [PosController::class, 'void'])->whereUuid('transaction')->name('sales.void');
+        Route::get('/receipt/{transaction}', [PosController::class, 'receipt'])->whereUuid('transaction')->name('receipt');
+        Route::get('/catalogue', [PosController::class, 'catalogue'])->name('catalogue');
+        Route::get('/profile', [PosController::class, 'profile'])->name('profile');
     });
 
     Route::prefix('admin')->name('admin.')->group(function () {

@@ -164,23 +164,32 @@ alterações.
 
 ## 9. Estado (05/11/2026)
 
-Níveis 0 a 11 construídos, com 214 testes PHPUnit em MySQL. Todos os ecrãs
-abrem com cada papel, e uma venda completa no POS (voucher → recibo) foi
-verificada no browser.
+Níveis 0 a 11 construídos, todos os ecrãs em páginas Inertia
+(`resources/js/pages`), com 216 testes PHPUnit em MySQL. Verificado no
+browser: todos os ecrãs com cada papel, uma venda completa no POS com
+desconto e anulação, e uma reconciliação do oficial MEAL ao gestor e às
+Finanças.
 
-Os ecrãs dos níveis 7 a 11 são os do sistema actual, copiados para
-`resources/js/legacy`. Uma camada de compatibilidade liga-os ao Laravel:
-`next/link` e `next/navigation` (em `resources/js/compat`) e `callRpc`, que
-chama `POST /rpc/{nome}` (controllers em `app/Http/Controllers/Rpc`). Os ecrãs
-dos níveis 0 a 6 já são páginas Inertia.
+Como os ecrãs falam com o servidor:
 
-Em aberto antes de passar para `main`:
+- dados da página como props do controller (`Inertia::render`);
+- acções que mudam dados com `router.post/put` e resposta `back()` com a
+  mensagem em `flash.success` (`resources/js/lib/action.ts`);
+- pesquisas, pré-visualizações e PDFs com pedidos JSON
+  (`resources/js/lib/http.ts`);
+- regras de negócio recusadas com `DomainRuleException`: a mensagem em
+  português está em `lang/pt/rules.php` (num JSON vem também o código).
 
-- Substituir a camada de compatibilidade por páginas Inertia (decidido).
+O POS escolhido fica na sessão (`PosTerminal`); com um só POS activo no
+agrodealer é esse.
+
+Em aberto:
+
 - Laravel Cloud: confirmar que a base MySQL aceita
   `log_bin_trust_function_creators` (necessário para os triggers).
 - Fornecedor de email para a recuperação da palavra-passe (na produção).
 
 Respostas de 05/11/2026: Finanças vê produtos e preços sem alterar; não há
 produtos com nomes repetidos (o nome já é único); não há comunidades sem
-localidade, por isso a localidade passou a obrigatória.
+localidade, por isso a localidade passou a obrigatória; os ecrãs vindos do
+Next.js foram reescritos em Inertia e a camada de compatibilidade saiu.

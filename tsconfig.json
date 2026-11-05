@@ -14,12 +14,6 @@
         "paths": {
             "@/*": [
                 "./resources/js/*"
-            ],
-            "next/link": [
-                "./resources/js/compat/next-link.tsx"
-            ],
-            "next/navigation": [
-                "./resources/js/compat/next-navigation.ts"
             ]
         }
     },

@@ -10,11 +10,11 @@ function BrandMark() {
 }
 
 // Nome e papel de quem está ligado, no canto superior direito; abre o perfil.
-export function UserMenu() {
+export function UserMenu({ className = '' }: { className?: string }) {
     const { auth } = usePage<SharedProps>().props;
     const user = auth.user;
     return (
-        <Link href="/account" className="user-menu" title="Abrir o meu perfil">
+        <Link href="/account" className={`user-menu ${className}`.trim()} title="Abrir o meu perfil">
             <span className="user-menu-avatar" aria-hidden="true">{initials(user?.full_name)}</span>
             <span className="user-menu-text">
                 <strong>{user?.full_name ?? 'Utilizador'}</strong>

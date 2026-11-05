@@ -12,15 +12,18 @@ use App\Models\Locality;
 use App\Models\User;
 use App\Services\CardService;
 use App\Services\CycleService;
+use App\Services\PosService;
 use App\Services\PriceService;
 use App\Services\ProductService;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Dados de demonstração para experimentar o sistema no browser:
  * utilizadores de cada papel (palavra-passe "password"), produtos com
- * preço, catálogo, ciclo aberto e 20 agregados com cartão entregue.
+ * preço, catálogo, ciclo aberto, 20 agregados com cartão entregue e 5 vendas
+ * do mês passado (para experimentar as reconciliações).
  *
  * php artisan db:seed --class=DemoSeeder (só desenvolvimento).
  */
@@ -51,6 +54,9 @@ class DemoSeeder extends Seeder
             User::query()->create(['email' => $email, 'full_name' => $name, 'password' => 'password', 'role' => $role, ...$extra]);
         }
 
+        // Tudo começa no início do mês passado, para haver vendas já fechadas.
+        Carbon::setTestNow(now()->subMonthNoOverflow()->startOfMonth()->setTime(8, 0));
+
         $prices = app(PriceService::class);
         foreach ([['Semente de milho', 'kg', 150], ['Fertilizante NPK', 'saco 50 kg', 2500], ['Enxada', 'unidade', 450]] as [$name, $unit, $price]) {
             $product = app(ProductService::class)->create($admin, ['name' => $name, 'unit' => $unit]);
@@ -70,6 +76,18 @@ class DemoSeeder extends Seeder
         $cards->markPrinted($admin, $batch['batch_id']);
         $voucherIds = DB::table('vouchers')->where('card_batch_id', $batch['batch_id'])->pluck('id')->all();
         $cards->distribute($admin, $batch['batch_id'], $voucherIds, []);
+
+        $operator = User::query()->where('email', 'operador@thandizo.test')->firstOrFail();
+        $pos = $agrodealer->pos()->firstOrFail();
+        $seed = $agrodealer->catalogue()->orderBy('name')->firstOrFail();
+        $sales = app(PosService::class);
+        foreach (DB::table('vouchers')->orderBy('voucher_code')->limit(5)->pluck('voucher_code') as $day => $code) {
+            Carbon::setTestNow(Carbon::getTestNow()->addDays(2)->setTime(10, 0));
+            $items = [['product_id' => $seed->id, 'quantity' => $day + 2]];
+            $preview = $sales->preview($operator, $code, $agrodealer->id, $pos->id, $operator->id, $items, null, 0);
+            $sales->confirm($operator, "demo-{$code}", $code, $pos->id, $items, null, 0, $preview['total_amount'], $preview['voucher_amount']);
+        }
+        Carbon::setTestNow();
 
         $this->command?->info('Pronto. Utilizadores: admin, operador, gestor-agro, meal, gestor-meal, financas @thandizo.test — palavra-passe "password".');
     }

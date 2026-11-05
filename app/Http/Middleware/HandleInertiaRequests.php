@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
-use App\Enums\RecordStatus;
 use App\Models\AgrodealerPos;
 use App\Services\NavigationService;
+use App\Services\PosTerminal;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -17,6 +17,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $terminal = app(PosTerminal::class);
 
         return [
             ...parent::share($request),
@@ -31,16 +32,13 @@ class HandleInertiaRequests extends Middleware
                     'province_id' => $user->province_id,
                     'agrodealer_id' => $user->agrodealer_id,
                     'agrodealer_name' => $user->agrodealer?->name,
-                    // POS activos do agrodealer, para quem vende (escolha do POS).
-                    'pos_list' => $user->role->isSeller() && $user->agrodealer_id
-                        ? AgrodealerPos::query()
-                            ->where('agrodealer_id', $user->agrodealer_id)
-                            ->where('status', RecordStatus::Active)
-                            ->orderBy('pos_code')
-                            ->get(['id', 'pos_code', 'device_label'])
-                            ->map(fn (AgrodealerPos $pos): array => ['id' => $pos->id, 'code' => $pos->pos_code, 'label' => $pos->device_label])
-                            ->all()
-                        : [],
+                    // POS activos do agrodealer e o escolhido, para quem vende.
+                    'pos_list' => $terminal->available($user)
+                        ->map(fn (AgrodealerPos $pos): array => ['id' => $pos->id, 'code' => $pos->pos_code, 'label' => $pos->device_label])
+                        ->values()->all(),
+                    'pos' => ($pos = $terminal->current($user, $request->session()))
+                        ? ['id' => $pos->id, 'code' => $pos->pos_code, 'label' => $pos->device_label]
+                        : null,
                 ] : null,
             ],
             // Menu lateral do back office (vazio para quem não tem secções).

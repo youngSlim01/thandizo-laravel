@@ -26,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
         // Áreas do sistema, por grupo de papéis (antigos AdminGate,
         // FinanceGate e OperatorGate do Next.js). Só contas activas.
         Gate::define('meal-back-office', fn (User $user): bool => $user->isActive() && $user->role->isMealBackOffice());
+        // Gestor MEAL e administrador: cancelar lotes, substituir cartões, gerir ciclos.
+        Gate::define('meal-manager', fn (User $user): bool => $user->isActive() && $user->role->canManageHouseholds());
+        // Ver as operações de todo o programa: back office MEAL e Finanças.
+        Gate::define('view-operations', fn (User $user): bool => $user->isActive() && $user->role->canViewAllOperations());
         Gate::define('finance', fn (User $user): bool => $user->isActive() && $user->role->isFinance());
         Gate::define('pos', fn (User $user): bool => $user->isActive() && $user->role->isSeller() && $user->agrodealer_id !== null);
 

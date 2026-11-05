@@ -1,6 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState, type ChangeEvent, type FormEvent } from 'react';
-import { AdminLayout } from '@/components/admin-layout';
+import { BackOfficeLayout } from '@/components/finance-layout';
 import { formatMT } from '@/lib/format';
 import { downloadPriceTemplate, parsePrice, priceChanges, readPriceFile, type PriceFile } from '@/lib/price-import';
 import type { SharedProps } from '@/types';
@@ -281,7 +281,7 @@ export default function Products({ products, districts, canManage }: Props) {
     const visible = products.filter((p) => !term || p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term));
 
     return (
-        <AdminLayout>
+        <BackOfficeLayout>
             <Head title="Produtos e preços" />
             <div className="admin-page-heading">
                 <div>
@@ -338,6 +338,6 @@ export default function Products({ products, districts, canManage }: Props) {
                     </table>
                 </div>
             )}
-        </AdminLayout>
+        </BackOfficeLayout>
     );
 }

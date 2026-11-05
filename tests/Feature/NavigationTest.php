@@ -50,7 +50,7 @@ class NavigationTest extends TestCase
         $this->actingAs(User::factory()->role(UserRole::FinanceOfficer)->create())->get('/')->assertRedirect('/finance');
 
         $seller = User::factory()->role(UserRole::AgrodealerOperator)->create(['agrodealer_id' => Agrodealer::factory()->create()->id]);
-        $this->actingAs($seller)->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page->component('legacy/app/page'));
+        $this->actingAs($seller)->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page->component('pos/home'));
     }
 
     public function test_an_account_without_any_area_sees_the_provisional_home(): void
