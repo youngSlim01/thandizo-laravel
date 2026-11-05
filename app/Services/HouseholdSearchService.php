@@ -13,12 +13,14 @@ use InvalidArgumentException;
  *
  * Substitui search_households, list_household_geography,
  * private.household_province e private.in_scope_household (20261008114200,
- * 20261008114600). Os dados de cartão (código, saldo, situação) entram com
- * o nível 7; até lá todos os agregados aparecem "Sem cartão".
+ * 20261008114600). Cada linha traz o cartão vivo mais recente (código, situação, saldo).
  */
 class HouseholdSearchService
 {
     public const MAX_ROWS = 20000;
+
+    /** Situação do cartão: sem cartão, por distribuir, activo com saldo, sem saldo. */
+    private const CARD_STATUS = "case when v.id is null then 'NONE' when v.status = 'PENDING' then 'PENDING' when v.current_balance > 0 then 'ACTIVE' else 'EMPTY' end";
 
     /** @var list<string> */
     private const CARD_STATUSES = ['NONE', 'PENDING', 'ACTIVE', 'EMPTY'];
@@ -30,22 +32,40 @@ class HouseholdSearchService
      */
     public function baseQuery(User $viewer): Builder
     {
-        $query = DB::table('households as h')
+        return $this->inScope($this->locationQuery(), $viewer, 'p.id');
+    }
+
+    /**
+     * Agregados com a localização completa, sem limite de província (para
+     * quem já verificou a visibilidade).
+     */
+    public function locationQuery(): Builder
+    {
+        return DB::table('households as h')
             ->leftJoin('communities as c', 'c.id', '=', 'h.community_id')
             ->leftJoin('localities as l', 'l.id', '=', DB::raw('coalesce(h.locality_id, c.locality_id)'))
             ->leftJoin('administrative_posts as a', 'a.id', '=', DB::raw('coalesce(h.administrative_post_id, l.administrative_post_id)'))
             ->leftJoin('districts as d', 'd.id', '=', DB::raw('coalesce(h.district_id, c.district_id)'))
             ->leftJoin('provinces as p', 'p.id', '=', DB::raw('coalesce(h.province_id, d.province_id)'));
-
-        return $this->inScope($query, $viewer, 'p.id');
     }
 
     /**
-     * O agregado está dentro do que a pessoa pode ver.
+     * O agregado está dentro do que a pessoa pode ver: na sua província, ou
+     * (Oficial MEAL) comprou num agrodealer da sua província (antigo
+     * private.household_visible).
      */
     public function isVisible(User $viewer, string $householdId): bool
     {
-        return $this->baseQuery($viewer)->where('h.id', $householdId)->exists();
+        if ($this->baseQuery($viewer)->where('h.id', $householdId)->exists()) {
+            return true;
+        }
+
+        return $viewer->isProvinceScoped() && $viewer->province_id !== null && DB::table('transactions as t')
+            ->join('agrodealers as a', 'a.id', '=', 't.agrodealer_id')
+            ->leftJoin('districts as d', 'd.id', '=', 'a.district_id')
+            ->where('t.household_id', $householdId)
+            ->whereRaw('coalesce(a.province_id, d.province_id) = ?', [$viewer->province_id])
+            ->exists();
     }
 
     /**
@@ -68,11 +88,12 @@ class HouseholdSearchService
             throw new InvalidArgumentException('Ordenação inválida.');
         }
 
-        $query = $this->baseQuery($viewer);
+        $query = $this->baseQuery($viewer)
+            // O cartão vivo do agregado (há no máximo um).
+            ->leftJoin('vouchers as v', fn ($join) => $join->on('v.household_id', '=', 'h.id')->whereNotIn('v.status', ['REPLACED', 'CANCELLED', 'INVALIDATED']));
         $this->applyFilters($query, $filters, $status);
-        // Sem cartões ainda (nível 7): só "Sem cartão" tem agregados.
-        if ($card !== null && $card !== 'NONE') {
-            $query->whereRaw('1 = 0');
+        if ($card !== null) {
+            $query->whereRaw(self::CARD_STATUS.' = ?', [$card]);
         }
 
         $summary = (clone $query)->selectRaw("
@@ -80,7 +101,10 @@ class HouseholdSearchService
             coalesce(sum(h.status = 'ACTIVE'), 0) as active,
             coalesce(sum(h.status <> 'ACTIVE'), 0) as inactive,
             coalesce(sum(h.representative_sex = 'F'), 0) as women,
-            coalesce(sum(h.representative_sex = 'M'), 0) as men
+            coalesce(sum(h.representative_sex = 'M'), 0) as men,
+            coalesce(sum(".self::CARD_STATUS." in ('ACTIVE', 'EMPTY')), 0) as with_card,
+            coalesce(sum(".self::CARD_STATUS." = 'PENDING'), 0) as card_pending,
+            coalesce(sum(".self::CARD_STATUS." = 'NONE'), 0) as without_card
         ")->first();
 
         $sortKey = match ($sort) {
@@ -96,7 +120,7 @@ class HouseholdSearchService
             ->limit(min(max($limit, 1), self::MAX_ROWS))
             ->offset(max($offset, 0))
             ->get()
-            ->map(fn (object $row): array => [...(array) $row, 'voucher_code' => null, 'voucher_status' => null, 'current_balance' => null, 'card_status' => 'NONE'])
+            ->map(fn (object $row): array => [...(array) $row, 'current_balance' => $row->current_balance === null ? null : (float) $row->current_balance])
             ->all();
 
         $total = (int) $summary->total;
@@ -108,9 +132,9 @@ class HouseholdSearchService
                 'inactive' => (int) $summary->inactive,
                 'women' => (int) $summary->women,
                 'men' => (int) $summary->men,
-                'with_card' => 0,
-                'card_pending' => 0,
-                'without_card' => $total,
+                'with_card' => (int) $summary->with_card,
+                'card_pending' => (int) $summary->card_pending,
+                'without_card' => (int) $summary->without_card,
             ],
             'rows' => $rows,
         ];
@@ -214,7 +238,8 @@ class HouseholdSearchService
             $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $search).'%';
             $query->where(fn (Builder $query) => $query
                 ->where('h.household_code', 'like', $like)
-                ->orWhere('h.representative_name', 'like', $like));
+                ->orWhere('h.representative_name', 'like', $like)
+                ->orWhereIn('h.id', DB::table('vouchers')->where('voucher_code', 'like', $like)->select('household_id')));
         }
     }
 
@@ -241,6 +266,7 @@ class HouseholdSearchService
             'a.id as administrative_post_id', 'a.name as administrative_post',
             'd.id as district_id', 'd.name as district',
             'p.id as province_id', 'p.name as province',
+            'v.voucher_code', 'v.status as voucher_status', 'v.current_balance', DB::raw(self::CARD_STATUS.' as card_status'),
         ];
     }
 }

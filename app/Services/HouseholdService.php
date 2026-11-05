@@ -9,7 +9,6 @@ use App\Models\Household;
 use App\Models\User;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 
 /**
@@ -204,7 +203,8 @@ class HouseholdService
      */
     public function detail(Household $household, HouseholdSearchService $search, User $viewer): array
     {
-        $row = $search->baseQuery($viewer)
+        // A visibilidade foi verificada por quem chama (Policy / isVisible).
+        $row = $search->locationQuery()
             ->leftJoin('household_import_batches as b', 'b.id', '=', 'h.import_batch_id')
             ->where('h.id', $household->id)
             ->first([
@@ -231,9 +231,24 @@ class HouseholdService
             'district' => $row->district_name,
             'province' => $row->province_name,
             'import' => $row->batch_id === null ? null : ['file_name' => $row->file_name, 'imported_at' => $row->imported_at],
-            // Cartões e compras entram com os níveis 7 e 9.
-            'cards' => [],
-            'sales' => [],
+            'cards' => DB::table('vouchers as v')
+                ->leftJoin('card_batches as cb', 'cb.id', '=', 'v.card_batch_id')
+                ->leftJoin('vouchers as old', 'old.id', '=', 'v.replaced_voucher_id')
+                ->where('v.household_id', $row->id)
+                ->orderByRaw("v.status in ('ACTIVE', 'PENDING') desc")->orderByDesc('v.created_at')
+                ->get([
+                    'v.voucher_code', 'v.status', 'v.initial_value', 'v.current_balance', 'v.issued_at', 'v.distributed_at',
+                    'v.received_by_name', 'v.received_by_relationship', 'cb.batch_code', 'old.voucher_code as replaced_voucher_code', 'v.replacement_reason',
+                ])->all(),
+            'sales' => DB::table('transactions as t')
+                ->join('vouchers as v', 'v.id', '=', 't.voucher_id')
+                ->leftJoin('agrodealers as ag', 'ag.id', '=', 't.agrodealer_id')
+                ->where('v.household_id', $row->id)->whereIn('t.status', ['CONFIRMED', 'REVERSED'])
+                ->orderByDesc('t.confirmed_at')->limit(50)
+                ->get([
+                    't.transaction_code', 't.confirmed_at', 'ag.name as agrodealer', 'v.voucher_code', 't.total_amount',
+                    't.voucher_amount', 't.copayment_amount', 't.status',
+                ])->all(),
         ];
     }
 
@@ -314,18 +329,12 @@ class HouseholdService
     }
 
     /**
-     * Cartões (nível 7) e vendas (nível 9) impedem a eliminação. Enquanto
-     * essas tabelas não existem, nenhum agregado tem cartão.
+     * Um agregado que já teve cartão ou compras nunca se elimina.
      */
     private function hasCardsOrSales(string $householdId): bool
     {
-        foreach (['vouchers', 'transactions'] as $table) {
-            if (Schema::hasTable($table) && DB::table($table)->where('household_id', $householdId)->exists()) {
-                return true;
-            }
-        }
-
-        return false;
+        return DB::table('vouchers')->where('household_id', $householdId)->exists()
+            || DB::table('transactions')->where('household_id', $householdId)->exists();
     }
 
     /**

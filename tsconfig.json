@@ -8,8 +8,23 @@
         "skipLibCheck": true,
         "noEmit": true,
         "isolatedModules": true,
-        "types": ["vite/client"],
-        "paths": { "@/*": ["./resources/js/*"] }
+        "types": [
+            "vite/client"
+        ],
+        "paths": {
+            "@/*": [
+                "./resources/js/*"
+            ],
+            "next/link": [
+                "./resources/js/compat/next-link.tsx"
+            ],
+            "next/navigation": [
+                "./resources/js/compat/next-navigation.ts"
+            ]
+        }
     },
-    "include": ["resources/js/**/*.ts", "resources/js/**/*.tsx"]
+    "include": [
+        "resources/js/**/*.ts",
+        "resources/js/**/*.tsx"
+    ]
 }

@@ -78,6 +78,15 @@ enum UserRole: string
     }
 
     /**
+     * Área de Finanças: validação das reconciliações, transacções e
+     * relatórios financeiros (antigo FINANCE_ROLES).
+     */
+    public function isFinance(): bool
+    {
+        return in_array($this, [self::FinanceOfficer, self::SystemAdmin], true);
+    }
+
+    /**
      * Papéis que vendem no POS e por isso pertencem a um agrodealer.
      */
     public function isSeller(): bool

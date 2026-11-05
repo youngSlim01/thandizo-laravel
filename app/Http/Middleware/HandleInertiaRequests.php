@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\RecordStatus;
+use App\Models\AgrodealerPos;
 use App\Services\NavigationService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -26,6 +28,19 @@ class HandleInertiaRequests extends Middleware
                     'role' => $user->role->value,
                     'role_label' => $user->role->label(),
                     'province' => $user->province?->name,
+                    'province_id' => $user->province_id,
+                    'agrodealer_id' => $user->agrodealer_id,
+                    'agrodealer_name' => $user->agrodealer?->name,
+                    // POS activos do agrodealer, para quem vende (escolha do POS).
+                    'pos_list' => $user->role->isSeller() && $user->agrodealer_id
+                        ? AgrodealerPos::query()
+                            ->where('agrodealer_id', $user->agrodealer_id)
+                            ->where('status', RecordStatus::Active)
+                            ->orderBy('pos_code')
+                            ->get(['id', 'pos_code', 'device_label'])
+                            ->map(fn (AgrodealerPos $pos): array => ['id' => $pos->id, 'code' => $pos->pos_code, 'label' => $pos->device_label])
+                            ->all()
+                        : [],
                 ] : null,
             ],
             // Menu lateral do back office (vazio para quem não tem secções).

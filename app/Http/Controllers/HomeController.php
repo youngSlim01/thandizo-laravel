@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserRole;
 use App\Services\NavigationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,13 +12,23 @@ use Inertia\Response;
 class HomeController extends Controller
 {
     /**
-     * Back office: abre a primeira secção do menu da pessoa (como o antigo
-     * /admin). Quem ainda não tem secções migradas (POS, Finanças) vê a
-     * página inicial provisória.
+     * POS: início do operador. Finanças: a sua área. Back office: a primeira
+     * secção do menu (como o antigo /admin). Sem nenhuma área (por exemplo um
+     * operador sem agrodealer) vê a página "sem área".
      */
     public function __invoke(Request $request, NavigationService $navigation): Response|RedirectResponse
     {
-        $sections = $navigation->sectionsFor($request->user());
+        $user = $request->user();
+        // Quem vende abre o início do POS; as Finanças a sua área.
+        if ($user->can('pos')) {
+            return Inertia::render('legacy/app/page');
+        }
+        if ($user->role === UserRole::FinanceOfficer && $user->can('finance')) {
+            $request->session()->reflash();
+
+            return redirect('/finance');
+        }
+        $sections = $navigation->sectionsFor($user);
         if ($sections !== []) {
             $request->session()->reflash();
 

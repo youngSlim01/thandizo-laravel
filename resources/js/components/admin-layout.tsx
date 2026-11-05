@@ -28,6 +28,17 @@ export function UserMenu() {
 // (app/components/admin-header.tsx). As secções vêm do servidor
 // (NavigationService), já filtradas pelo papel da pessoa.
 export function AdminLayout({ children }: { children: ReactNode }) {
+    return (
+        <main className="admin-shell">
+            <AdminHeader />
+            {children}
+        </main>
+    );
+}
+
+// Menu lateral, cabeçalho no telemóvel e nome do utilizador no topo.
+// topbar=false: o ecrã põe o UserMenu no seu próprio cabeçalho (painel MEAL).
+export function AdminHeader({ topbar = true }: { topbar?: boolean }) {
     const { auth, navigation } = usePage<SharedProps>().props;
     const url = usePage().url;
     const pathname = url.split('?')[0];
@@ -43,7 +54,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     }, [open]);
 
     return (
-        <main className="admin-shell">
+        <>
             <aside id="admin-menu" className={open ? 'meal-sidebar admin-sidebar open' : 'meal-sidebar admin-sidebar'}>
                 <Link href={brandHref} className="meal-brand">
                     <BrandMark />
@@ -72,8 +83,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                 </button>
             </header>
             {open && <div className="mobile-menu-backdrop" onClick={() => setOpen(false)} />}
-            <div className="admin-topbar"><UserMenu /></div>
-            {children}
-        </main>
+            {topbar && <div className="admin-topbar"><UserMenu /></div>}
+        </>
     );
 }

@@ -21,10 +21,17 @@ class NavigationService
     public function sectionsFor(User $user): array
     {
         $sections = [
+            ['href' => '/admin/dashboard', 'label' => 'Painel MEAL', 'icon' => '▦', 'ability' => ['meal-back-office']],
             ['href' => '/admin/households', 'label' => 'Beneficiários', 'icon' => '♙', 'ability' => ['viewAny', Household::class]],
+            ['href' => '/admin/cards', 'label' => 'Cartões e distribuição', 'icon' => '▣', 'ability' => ['meal-back-office']],
+            ['href' => '/admin/cycles', 'label' => 'Ciclos', 'icon' => '◷', 'ability' => ['meal-back-office']],
+            ['href' => '/admin/transactions', 'label' => 'Transações', 'icon' => '⇄', 'ability' => ['meal-back-office']],
+            ['href' => '/admin/settlements', 'label' => 'Reconciliações', 'icon' => '☷', 'ability' => ['meal-back-office']],
+            ['href' => '/admin/reports', 'label' => 'Relatórios', 'icon' => '◫', 'ability' => ['meal-back-office']],
             ['href' => '/admin/agrodealers', 'label' => 'Agrodealers', 'icon' => '⌂', 'ability' => ['viewAny', Agrodealer::class]],
             ['href' => '/admin/products', 'label' => 'Produtos e preços', 'icon' => '◈', 'ability' => ['viewAny', Product::class]],
             ['href' => '/admin/users', 'label' => 'Utilizadores', 'icon' => '♧', 'ability' => ['viewAny', User::class]],
+            ['href' => '/finance/settlements', 'label' => 'Validação Finance', 'icon' => '▤', 'ability' => ['finance']],
         ];
 
         return array_values(array_map(

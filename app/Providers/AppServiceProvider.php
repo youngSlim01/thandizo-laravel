@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -22,6 +23,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Áreas do sistema, por grupo de papéis (antigos AdminGate,
+        // FinanceGate e OperatorGate do Next.js). Só contas activas.
+        Gate::define('meal-back-office', fn (User $user): bool => $user->isActive() && $user->role->isMealBackOffice());
+        Gate::define('finance', fn (User $user): bool => $user->isActive() && $user->role->isFinance());
+        Gate::define('pos', fn (User $user): bool => $user->isActive() && $user->role->isSeller() && $user->agrodealer_id !== null);
+
         ResetPassword::toMailUsing(function (User $user, string $token): MailMessage {
             $minutes = config('auth.passwords.users.expire');
 

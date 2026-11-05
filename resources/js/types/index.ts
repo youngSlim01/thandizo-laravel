@@ -15,6 +15,10 @@ export type AuthUser = {
     role: UserRole;
     role_label: string;
     province: string | null;
+    province_id: string | null;
+    agrodealer_id: string | null;
+    agrodealer_name: string | null;
+    pos_list: { id: string; code: string; label: string | null }[];
 };
 
 export type NavSection = { href: string; label: string; icon: string };

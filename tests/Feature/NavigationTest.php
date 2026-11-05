@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\Agrodealer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -18,11 +19,13 @@ class NavigationTest extends TestCase
      */
     public static function menus(): array
     {
+        $meal = ['/admin/dashboard', '/admin/households', '/admin/cards', '/admin/cycles', '/admin/transactions', '/admin/settlements', '/admin/reports', '/admin/agrodealers', '/admin/products'];
+
         return [
-            'administrador' => [UserRole::SystemAdmin, ['/admin/households', '/admin/agrodealers', '/admin/products', '/admin/users']],
-            'gestor MEAL' => [UserRole::MealManager, ['/admin/households', '/admin/agrodealers', '/admin/products', '/admin/users']],
-            'oficial MEAL' => [UserRole::MealOfficer, ['/admin/households', '/admin/agrodealers', '/admin/products']],
-            'finanças' => [UserRole::FinanceOfficer, []],
+            'administrador' => [UserRole::SystemAdmin, [...$meal, '/admin/users', '/finance/settlements']],
+            'gestor MEAL' => [UserRole::MealManager, [...$meal, '/admin/users']],
+            'oficial MEAL' => [UserRole::MealOfficer, $meal],
+            'finanças' => [UserRole::FinanceOfficer, ['/finance/settlements']],
             'operador de agrodealer' => [UserRole::AgrodealerOperator, []],
         ];
     }
@@ -39,14 +42,22 @@ class NavigationTest extends TestCase
     {
         $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create())
             ->get('/')
-            ->assertRedirect('/admin/households');
+            ->assertRedirect('/admin/dashboard');
     }
 
-    public function test_roles_without_sections_see_the_provisional_home(): void
+    public function test_finance_opens_its_area_and_sellers_the_pos(): void
     {
-        $this->actingAs(User::factory()->role(UserRole::FinanceOfficer)->create())
+        $this->actingAs(User::factory()->role(UserRole::FinanceOfficer)->create())->get('/')->assertRedirect('/finance');
+
+        $seller = User::factory()->role(UserRole::AgrodealerOperator)->create(['agrodealer_id' => Agrodealer::factory()->create()->id]);
+        $this->actingAs($seller)->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page->component('legacy/app/page'));
+    }
+
+    public function test_an_account_without_any_area_sees_the_provisional_home(): void
+    {
+        $this->actingAs(User::factory()->role(UserRole::AgrodealerOperator)->create(['agrodealer_id' => null]))
             ->get('/')
             ->assertOk()
-            ->assertInertia(fn (Assert $page) => $page->component('home')->where('auth.user.role_label', 'Oficial de Finanças'));
+            ->assertInertia(fn (Assert $page) => $page->component('home'));
     }
 }
