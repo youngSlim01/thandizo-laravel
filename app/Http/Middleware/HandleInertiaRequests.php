@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Agrodealer;
 use App\Models\District;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ class HandleInertiaRequests extends Middleware
                     'can' => [
                         'view_districts' => $user->can('viewAny', District::class),
                         'view_products' => $user->can('viewAny', Product::class),
+                        'view_agrodealers' => $user->can('viewAny', Agrodealer::class),
                     ],
                 ] : null,
             ],

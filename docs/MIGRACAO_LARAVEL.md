@@ -132,7 +132,7 @@ existe desde a fundação) e a primeira regra migrada escreve nela.
 | 0 | Geografia base ✅ | `provinces`, `districts` (+ `audit_logs`, antecipada) |
 | 1 | Geografia detalhada ✅ (sem ecrã: usada pela importação do nível 6) | `administrative_posts`, `localities`, `communities` |
 | 2 | Produtos ✅ (página sem preços; colunas de preço no nível 5) | `products` |
-| 3 | Agrodealers e POS | `agrodealers`, `agrodealer_pos` |
+| 3 | Agrodealers e POS ✅ (catálogo no nível 5) | `agrodealers`, `agrodealer_pos` |
 | 4 | Utilizadores e acessos | `users` (ex-`app_users` + `auth.users`) |
 | 5 | Preços e catálogos | `price_lists`, `agrodealer_products` |
 | 6 | Beneficiários | `household_import_batches`, `households` |

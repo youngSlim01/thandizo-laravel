@@ -14,7 +14,7 @@ export type AuthUser = {
     email: string;
     role: UserRole;
     role_label: string;
-    can: { view_districts: boolean; view_products: boolean };
+    can: { view_districts: boolean; view_products: boolean; view_agrodealers: boolean };
 };
 
 export type SharedProps = {

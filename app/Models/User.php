@@ -34,4 +34,13 @@ class User extends Authenticatable
     {
         return $this->status === RecordStatus::Active;
     }
+
+    /**
+     * Oficial MEAL activo: tudo o que vê fica limitado à sua província
+     * (antigo private.is_province_scoped).
+     */
+    public function isProvinceScoped(): bool
+    {
+        return $this->isActive() && $this->role === UserRole::MealOfficer;
+    }
 }
