@@ -23,3 +23,10 @@ export function formatTime(value: string | null | undefined): string {
   if (!value) return '';
   return new Date(value).toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit' });
 }
+
+// Data aaaa-mm-dd em dd/mm/aaaa (sem passar por fusos horários).
+export function formatDate(value: string | null | undefined): string {
+    if (!value) return '—';
+    const [y, m, d] = value.slice(0, 10).split('-');
+    return d && m && y ? `${d}/${m}/${y}` : value;
+}

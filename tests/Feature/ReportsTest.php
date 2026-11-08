@@ -60,12 +60,4 @@ class ReportsTest extends TestCase
         $this->actingAs($this->admin)->get('/admin/reports')->assertInertia(fn (Assert $page) => $page
             ->component('admin/reports')->where('prints.0.agrodealer', $this->agrodealer->name)->where('prints.0.printed_by_role', 'Administrador do sistema'));
     }
-
-    public function test_finance_dashboard_is_not_for_a_meal_officer(): void
-    {
-        $this->actingAs(User::factory()->role(UserRole::FinanceOfficer)->create())->get('/finance?month=2026-10')
-            ->assertInertia(fn (Assert $page) => $page->component('finance/dashboard')->where('dashboard.trend.5.transactions', 2)->where('dashboard.months.0', now('Africa/Maputo')->format('Y-m')));
-        $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $this->district->province_id]))->get('/finance')
-            ->assertForbidden();
-    }
 }

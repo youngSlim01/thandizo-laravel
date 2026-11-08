@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Exceptions\DomainRuleException;
 use App\Models\User;
 use Carbon\CarbonImmutable;
-use Carbon\CarbonPeriod;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -208,62 +207,6 @@ class ReportService
         return $this->scope->apply($query, $viewer, 'r.province_id')->get()->map(fn ($r) => (array) $r)->all();
     }
 
-    /**
-     * Painel das Finanças de um mês (AAAA-MM): tendência de 6 meses e as
-     * reconciliações do mês. Só para quem vê o programa inteiro.
-     *
-     * @return array<string, mixed>
-     */
-    public function financeDashboard(User $viewer, ?string $month): array
-    {
-        $this->requireCentral($viewer, 'DASHBOARD_NOT_ALLOWED');
-        if ($viewer->isProvinceScoped()) {
-            throw new DomainRuleException('DASHBOARD_NOT_ALLOWED');
-        }
-        $today = CarbonImmutable::now(self::TIMEZONE)->startOfDay();
-        $start = $this->monthStart($month, $today);
-        $sales = DB::table('transactions')->where('status', 'CONFIRMED')->whereNotNull('confirmed_at')
-            ->get(['agrodealer_id', 'voucher_amount', 'copayment_amount', 'confirmed_at'])
-            ->map(function ($s) {
-                $s->month = CarbonImmutable::parse($s->confirmed_at, 'UTC')->setTimezone(self::TIMEZONE)->format('Y-m');
-
-                return $s;
-            });
-        $firstSettlement = DB::table('settlement_batches')->min('period_start');
-        $first = collect([$today->format('Y-m'), $sales->min('month'), $firstSettlement ? substr($firstSettlement, 0, 7) : null])->filter()->min();
-        $dealers = DB::table('agrodealers as a')->leftJoin('districts as d', 'd.id', '=', 'a.district_id')
-            ->leftJoin('provinces as p', 'p.id', '=', DB::raw('coalesce(a.province_id, d.province_id)'))
-            ->get(['a.id', 'a.name', 'a.status', 'p.name as province'])->keyBy('id');
-        $byMonth = $sales->groupBy('month');
-
-        return [
-            'month' => $start->format('Y-m'),
-            'months' => collect(CarbonPeriod::create(CarbonImmutable::parse($first.'-01', $today->timezone), '1 month', $today->startOfMonth()))
-                ->map(fn ($m) => $m->format('Y-m'))->reverse()->values()->all(),
-            'trend' => collect(range(5, 0))->map(function (int $back) use ($start, $byMonth) {
-                $m = $start->subMonths($back)->format('Y-m');
-                $rows = $byMonth->get($m, collect());
-
-                return [
-                    'month' => $m, 'voucher_amount' => round($rows->sum(fn ($s) => (float) $s->voucher_amount), 2),
-                    'copayment_amount' => round($rows->sum(fn ($s) => (float) $s->copayment_amount), 2),
-                    'transactions' => $rows->count(), 'agrodealers' => $rows->pluck('agrodealer_id')->unique()->count(),
-                ];
-            })->all(),
-            'agrodealers_active' => $dealers->where('status', 'ACTIVE')->count(),
-            'provinces' => $dealers->pluck('province')->filter()->unique()->sort()->values()->all(),
-            'settlements' => DB::table('settlement_batches')->where('period_start', '>=', $start->toDateString())
-                ->where('period_start', '<', $start->addMonth()->toDateString())->orderByDesc('created_at')->get()
-                ->map(fn ($b) => [
-                    'id' => $b->id, 'settlement_code' => $b->settlement_code, 'agrodealer_id' => $b->agrodealer_id,
-                    'agrodealer' => $dealers->get($b->agrodealer_id)?->name, 'province' => $dealers->get($b->agrodealer_id)?->province,
-                    'period_start' => $b->period_start, 'period_end' => $b->period_end, 'transaction_count' => $b->transaction_count,
-                    'gross_amount' => $b->gross_amount, 'voucher_amount' => $b->voucher_amount, 'copayment_amount' => $b->copayment_amount,
-                    'payable_amount' => $b->payable_amount, 'status' => $b->status, 'submitted_at' => $b->submitted_at, 'created_at' => $b->created_at,
-                ])->all(),
-        ];
-    }
-
     private function agrodealersInScope(User $viewer): Builder
     {
         $query = DB::table('agrodealers as a')->leftJoin('districts as ad', 'ad.id', '=', 'a.district_id');
@@ -276,18 +219,6 @@ class ReportService
         if (! $viewer->isActive() || ! $viewer->role->canViewAllOperations()) {
             throw new DomainRuleException($code);
         }
-    }
-
-    private function monthStart(?string $month, CarbonImmutable $today): CarbonImmutable
-    {
-        if ($month === null || $month === '') {
-            return $today->startOfMonth();
-        }
-        if (preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) !== 1) {
-            throw new DomainRuleException('INVALID_PERIOD');
-        }
-
-        return CarbonImmutable::parse($month.'-01', self::TIMEZONE);
     }
 
     private function date(mixed $value): ?string

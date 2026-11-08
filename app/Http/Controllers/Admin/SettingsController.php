@@ -37,6 +37,7 @@ class SettingsController extends Controller
                 'url' => $logo->url(),
             ]),
             'maxLogos' => CardLogoService::MAX_LOGOS,
+            'settlementDeadlineDays' => $this->profile->settlementDeadlineDays(),
             'tiers' => $tiers->list()->map(fn (VoucherTier $tier): array => [
                 'id' => $tier->id,
                 'name' => $tier->name,
@@ -64,6 +65,17 @@ class SettingsController extends Controller
         $this->profile->update($request->user(), $data);
 
         return back()->with('success', 'Dados do cliente guardados.');
+    }
+
+    public function updateSettlementDeadline(Request $request): RedirectResponse
+    {
+        $data = $request->validate(
+            ['days' => ['required', 'integer']],
+            ['days.required' => 'Indique o número de dias.', 'days.integer' => 'Indique o número de dias.'],
+        );
+        $this->profile->updateSettlementDeadline($request->user(), (int) $data['days']);
+
+        return back()->with('success', 'Prazo de validação guardado.');
     }
 
     public function storeLogo(Request $request): RedirectResponse

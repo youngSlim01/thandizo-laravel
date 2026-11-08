@@ -8,7 +8,7 @@ import type { SharedProps } from '@/types';
 type Logo = { id: string; position: number; name: string; url: string };
 type Client = { client: string | null; programme: string | null; tagline: string | null };
 type Tier = { id: string; name: string; amount: number; description: string | null; is_default: boolean; requires_household_code: boolean; status: 'ACTIVE' | 'INACTIVE'; households: number };
-type Props = { client: Client; canEditOrganization: boolean; logos: Logo[]; maxLogos: number; tiers: Tier[] };
+type Props = { client: Client; canEditOrganization: boolean; logos: Logo[]; maxLogos: number; tiers: Tier[]; settlementDeadlineDays: number };
 
 function TierForm({ tier, onDone }: { tier: Tier | null; onDone: () => void }) {
     const form = useForm({
@@ -59,6 +59,35 @@ function TierForm({ tier, onDone }: { tier: Tier | null; onDone: () => void }) {
             <div className="admin-form-actions">
                 <button type="button" className="secondary-button" onClick={onDone} disabled={form.processing}>CANCELAR</button>
                 <button type="submit" className="primary-button" disabled={form.processing || !form.isDirty}>{form.processing ? 'A GUARDAR…' : 'GUARDAR ESCALÃO'}</button>
+            </div>
+        </form>
+    );
+}
+
+// Prazo das Finanças: dias para validar uma reconciliação depois de a
+// receberem; passado o prazo, o painel das Finanças avisa.
+function SettlementDeadline({ days }: { days: number }) {
+    const form = useForm({ days: String(days) });
+
+    function save(event: FormEvent) {
+        event.preventDefault();
+        form.put('/admin/settings/settlement-deadline', { preserveScroll: true });
+    }
+
+    const error = form.errors.days ?? (form.errors as Record<string, string>).rule;
+
+    return (
+        <form className="admin-card admin-form" onSubmit={save}>
+            <span className="section-label">Prazo de validação das reconciliações</span>
+            <p className="muted-text small-note">Dias que as Finanças têm para validar uma reconciliação depois de a receberem do MEAL. Passado o prazo, o painel das Finanças avisa.</p>
+            <div className="form-grid-2">
+                <div><label className="form-label" htmlFor="settlement-days">Prazo (dias)</label>
+                    <input id="settlement-days" className="input" type="number" min={1} max={90} value={form.data.days}
+                        onChange={(e) => form.setData('days', e.target.value)} /></div>
+            </div>
+            {error && <div className="error-box">{error}</div>}
+            <div className="admin-form-actions">
+                <button type="submit" className="primary-button" disabled={form.processing || !form.isDirty}>{form.processing ? 'A GUARDAR…' : 'GUARDAR PRAZO'}</button>
             </div>
         </form>
     );
@@ -150,7 +179,7 @@ function ClientForm({ client, canEditOrganization }: { client: Client; canEditOr
 // logótipos impressos nos cartões.
 // O gestor MEAL muda o programa, a frase e os logótipos; o nome da
 // organização só o administrador do sistema.
-export default function Settings({ client, canEditOrganization, logos, maxLogos, tiers }: Props) {
+export default function Settings({ client, canEditOrganization, logos, maxLogos, tiers, settlementDeadlineDays }: Props) {
     const { flash } = usePage<SharedProps>().props;
     const form = useForm<{ logo: File | null }>({ logo: null });
     const fileInput = useRef<HTMLInputElement>(null);
@@ -185,6 +214,8 @@ export default function Settings({ client, canEditOrganization, logos, maxLogos,
             <ClientForm client={client} canEditOrganization={canEditOrganization} />
 
             <Tiers tiers={tiers} onAction={change} />
+
+            <SettlementDeadline days={settlementDeadlineDays} />
 
             <h2>Logótipos do cartão</h2>
             <p className="muted-text">

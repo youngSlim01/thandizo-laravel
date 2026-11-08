@@ -60,6 +60,31 @@ class ClientProfileService
         });
     }
 
+    /** Prazo por omissão para validar uma reconciliação, em dias. */
+    public const DEFAULT_SETTLEMENT_DEADLINE_DAYS = 15;
+
+    /**
+     * Dias que as Finanças têm para validar uma reconciliação depois de a
+     * receberem; passado o prazo, o painel das Finanças avisa.
+     */
+    public function settlementDeadlineDays(): int
+    {
+        return (int) (ClientProfile::query()->value('settlement_deadline_days') ?? self::DEFAULT_SETTLEMENT_DEADLINE_DAYS);
+    }
+
+    public function updateSettlementDeadline(User $actor, int $days): void
+    {
+        if ($days < 1 || $days > 90) {
+            throw new DomainRuleException('SETTLEMENT_DEADLINE_INVALID');
+        }
+        DB::transaction(function () use ($actor, $days): void {
+            $profile = ClientProfile::query()->lockForUpdate()->first() ?? new ClientProfile;
+            $before = $profile->settlement_deadline_days ?? self::DEFAULT_SETTLEMENT_DEADLINE_DAYS;
+            $profile->fill(['settlement_deadline_days' => $days, 'updated_by' => $actor->id])->save();
+            Audit::log($actor->id, 'SETTLEMENT_DEADLINE_UPDATED', 'CLIENT_PROFILE', $profile->id, ['before' => $before, 'after' => $days]);
+        });
+    }
+
     private function clean(?string $value): ?string
     {
         $value = trim(preg_replace('/\s+/', ' ', (string) $value));

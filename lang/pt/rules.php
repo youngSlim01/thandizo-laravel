@@ -85,6 +85,7 @@ return [
     'VOUCHER_HAS_RECENT_SALE' => 'Este cartão fez uma venda há menos de 15 minutos, que ainda pode ser anulada. Tente de novo daqui a pouco.',
     'VOUCHER_NOT_ACTIVE' => 'Este voucher não está ativo.',
     'VOUCHER_NOT_FOUND' => 'Voucher não encontrado. Verifique o código no cartão.',
+    'SETTLEMENT_DEADLINE_INVALID' => 'O prazo de validação tem de ser entre 1 e 90 dias.',
     'TIER_AMOUNT_INVALID' => 'Indique o valor do escalão em meticais, maior que zero.',
     'TIER_AMOUNT_TAKEN' => 'O escalão ":details" já tem este valor. Dois escalões ativos não podem ter o mesmo valor.',
     'TIER_INACTIVE' => 'Este escalão está desativado.',

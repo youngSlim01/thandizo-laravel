@@ -26,11 +26,10 @@ use App\Http\Controllers\BrandLogoController;
 use App\Http\Controllers\Finance\DashboardController as FinanceDashboardController;
 use App\Http\Controllers\Finance\ReportController as FinanceReportController;
 use App\Http\Controllers\Finance\SettlementController as FinanceSettlementController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\SystemAdminDashboardController;
-use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -58,6 +57,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:configure-programme')->prefix('admin/settings')->name('admin.settings.')->group(function () {
         Route::get('/', [SettingsController::class, 'index'])->name('index');
         Route::put('/client', [SettingsController::class, 'updateClient'])->name('client.update');
+        Route::put('/settlement-deadline', [SettingsController::class, 'updateSettlementDeadline'])->name('settlement-deadline.update');
         Route::post('/logos', [SettingsController::class, 'storeLogo'])->name('logos.store');
         Route::put('/logos/{logo}/move-left', [SettingsController::class, 'moveLogo'])->name('logos.move');
         Route::delete('/logos/{logo}', [SettingsController::class, 'destroyLogo'])->name('logos.destroy');

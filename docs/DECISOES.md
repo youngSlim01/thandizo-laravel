@@ -125,6 +125,16 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 | O **Oficial MEAL** vê o mesmo painel só com a sua província. | Âmbito igual ao resto do back office. |
 | Desenho a partir das referências dadas (cartões de indicadores com ícone, painéis de alerta, tabelas com barra e estado, demografia). | Pedido do projecto. |
 
+**Painel das Finanças** (decidido a 8/11/2026)
+
+| Decisão | Razão |
+|---|---|
+| O painel mostra o **estado actual**, sem comparações com meses: caixa de entrada (à espera de validação, a mais antiga, fora do prazo), validado, e o que vem a caminho (no MEAL e por reconciliar). | O trabalho das Finanças é a fila de validação e a previsão do que se vai pagar. |
+| O **pagamento** ao comerciante faz-se no sistema da organização; no Thandizo o último passo é a **validação**. | Decisão do projecto. |
+| **Prazo de validação**: 15 dias por omissão, contados desde que a reconciliação chega às Finanças; alterável na Configuração (gestor MEAL e administrador, entre 1 e 90 dias, com auditoria). Passado o prazo, o painel avisa. | Os comerciantes não podem ficar à espera sem que ninguém dê conta. |
+| Tabelas **por comerciante** (por reconciliar, no MEAL, nas Finanças, validado) e **por ciclo** (atribuído, usado, expirado, validado, por validar). | Para os relatórios à organização e ao doador. |
+| Usa os mesmos componentes do painel MEAL (`components/dashboard-ui.tsx`). | Identidade única. |
+
 ## 5. Papéis e permissões
 
 Dois perfis de administração, com papéis distintos:
