@@ -12,9 +12,9 @@ class LoginTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_is_sent_to_login(): void
+    public function test_guest_is_sent_to_login_from_a_protected_page(): void
     {
-        $this->get('/')->assertRedirect('/login');
+        $this->get('/account')->assertRedirect('/login');
     }
 
     public function test_login_page_renders(): void

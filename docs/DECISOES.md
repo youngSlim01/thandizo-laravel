@@ -173,6 +173,11 @@ Dois perfis de administração, com papéis distintos:
 - Contas novas recebem uma **palavra-passe temporária** e têm de escolher outra no primeiro acesso.
 - O **e-mail continua obrigatório** em todas as contas (a recuperação depende dele).
 
+**Página pública** (8/11/2026)
+- Em `/`, quem não tem sessão vê a apresentação do Thandizo (o que faz, módulos, perfis, configuração, entrada); quem tem sessão vai directo para a sua área. Razão: quem quer conhecer a solução tem onde a ver sem conta.
+- Os textos descrevem só o que o sistema faz hoje: não prometem funcionamento sem rede nem medição da produção agrícola. Os números do painel na ilustração são de exemplo.
+- O cliente aparece discretamente no rodapé ("Em uso: …"), como no ecrã de entrada.
+
 ## 10. Pendentes antes da produção
 
 | Pendente | Notas |
