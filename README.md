@@ -7,6 +7,8 @@ React + MySQL**. Substitui o sistema Next.js + Supabase
 O plano completo da migração (decisões, ordem dos módulos, dia do corte) está
 em [`docs/MIGRACAO_LARAVEL.md`](docs/MIGRACAO_LARAVEL.md).
 
+Decisões sobre o funcionamento do sistema e o caminho até aos novos clientes: [`docs/DECISOES.md`](docs/DECISOES.md).
+
 ## Estado
 
 Fase 1 — fundação:
