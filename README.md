@@ -41,6 +41,34 @@ bash .devcontainer/start-server.sh
 
 Requisitos: PHP 8.3+, Composer, Node 22+, MySQL 8.
 
+### No Mac (Homebrew), passo a passo
+
+Uma só vez: ferramentas, MySQL com a opção dos triggers, bases e utilizador.
+
+```bash
+brew install php composer node mysql@8.4 gh
+echo 'export PATH="$(brew --prefix mysql@8.4)/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
+printf '[mysqld]\nlog_bin_trust_function_creators=1\n' >> "$(brew --prefix)/etc/my.cnf"
+brew services start mysql@8.4
+mysql -uroot -e "CREATE DATABASE thandizo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE thandizo_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER 'thandizo'@'localhost' IDENTIFIED BY 'secret'; GRANT ALL ON thandizo.* TO 'thandizo'@'localhost'; GRANT ALL ON thandizo_test.* TO 'thandizo'@'localhost';"
+```
+
+Trazer o projecto e instalar (o branch de trabalho é `claude/ecstatic-hopper-9mpu3l`):
+
+```bash
+gh auth login
+gh repo clone youngslim01/thandizo-laravel ~/thandizo-laravel -- -b claude/ecstatic-hopper-9mpu3l
+cd ~/thandizo-laravel
+composer setup
+php artisan db:seed --class=DemoSeeder
+php artisan serve
+```
+
+Abrir http://localhost:8000. Para parar o servidor: Ctrl + C.
+
+Manter sincronizado (traz as últimas alterações e actualiza tudo, sem apagar
+os dados): `composer actualizar`, depois `php artisan serve`.
+
 ```bash
 composer install
 npm install
