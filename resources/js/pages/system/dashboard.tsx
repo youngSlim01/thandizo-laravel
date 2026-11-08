@@ -33,7 +33,7 @@ export default function SystemDashboard({ dashboard: data }: { dashboard: Dashbo
     <AdminHeader topbar={false}/>
     <div className="sys-topbar"><button className="sys-menu" aria-label="Menu">☰</button><div className="sys-search">⌕ <span>Pesquisar no sistema (utilizador, programa, transacção…)</span></div><div className="sys-topbar-spacer"/><span className="sys-date">▦ {data.period}</span><button className="sys-bell" aria-label="Notificações">♧<i>3</i></button><UserMenu className="sys-user-menu"/></div>
     <main className="sys-main">
-      <header className="sys-heading"><div><h1>Bom dia, {user?.full_name ?? 'Administrador'}! 👋</h1><div className="sys-heading-sub"><span>Painel de administração do THANDIZO</span><b/> <em>System Admin</em></div></div><p>Administração, segurança e gestão global da plataforma.</p></header>
+      <header className="sys-heading"><div><h1>Bom dia, {user?.full_name ?? 'Administrador'}!</h1><div className="sys-heading-sub"><span>Painel de administração do THANDIZO</span><b/> <em>System Admin</em></div></div><p>Administração, segurança e gestão global da plataforma.</p></header>
       <section className="sys-metrics">
         <Metric icon="♧" value={number(data.users_active)} label="Utilizadores activos" tone="green"/>
         <Metric icon="+" value={number(data.users_pending)} label="Utilizadores pendentes" tone="blue"/>

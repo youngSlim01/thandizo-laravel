@@ -1,6 +1,5 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
-import '@fontsource-variable/montserrat';
 import { ThandizoMark } from '@/components/thandizo-mark';
 import type { SharedProps } from '@/types';
 

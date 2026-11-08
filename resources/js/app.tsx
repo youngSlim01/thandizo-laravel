@@ -1,3 +1,4 @@
+import '@fontsource-variable/montserrat';
 import { createInertiaApp } from '@inertiajs/react';
 import { createRoot } from 'react-dom/client';
 import type { ComponentType, ReactNode } from 'react';
@@ -22,5 +23,5 @@ createInertiaApp({
     setup({ el, App, props }) {
         createRoot(el).render(<App {...props} />);
     },
-    progress: { color: '#176b4d' },
+    progress: { color: '#007716' },
 });

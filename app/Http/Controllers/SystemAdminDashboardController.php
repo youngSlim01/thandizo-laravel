@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\RecordStatus;
 use App\Enums\UserRole;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -37,7 +38,7 @@ class SystemAdminDashboardController extends Controller
             'detail' => $u->role->label(), 'date' => $u->created_at?->toISOString(),
         ])->concat($recentTransactions->map(fn ($t) => [
             'type' => 'transaction', 'title' => 'Transacção '.$t->transaction_code,
-            'detail' => $t->status, 'date' => $t->created_at?->toISOString(),
+            'detail' => $t->status, 'date' => $t->created_at ? CarbonImmutable::parse($t->created_at)->toISOString() : null,
         ]))->sortByDesc('date')->take(6)->values();
 
         return Inertia::render('system/dashboard', ['dashboard' => [

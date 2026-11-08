@@ -12,8 +12,9 @@ export type ProvinceFigure = { province: string; households: number; with_card: 
 
 // Ordinal green ramp, validated (dataviz validate_palette --ordinal): the
 // lightest step still stands out from the surface and from the grey.
-const RAMP = ['#6fbf98', '#4aa77d', '#2e8b62', '#1c6e4b', '#0f5238'];
-const EMPTY = '#eceff1';
+// Do mais claro ao mais escuro, na família do verde da marca.
+const RAMP = ['#a8d9b4', '#6fbf83', '#3a9d55', '#0f7f2a', '#005a12'];
+const EMPTY = '#e8eeea';
 
 function niceStep(max: number) {
   const raw = Math.max(1, Math.ceil(max / RAMP.length));

@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import { ThandizoMark } from '@/components/thandizo-mark';
 import { MOZ_MAP_HEIGHT, MOZ_MAP_WIDTH, MOZ_PROVINCES } from '@/lib/mozambique-map';
 import type { SharedProps } from '@/types';
-import '@fontsource-variable/montserrat';
 import '@/../css/landing.css';
 
 // Página pública do Thandizo: para quem quer saber o que a solução faz.
@@ -63,13 +62,13 @@ function LaptopPreview() {
                         <div className="lp-chart">
                             <small>Ritmo de utilização</small>
                             <svg viewBox="0 0 200 80" preserveAspectRatio="none">
-                                <path d="M4 74 L36 64 L68 55 L100 44 L132 36 L164 24 L196 14 L196 78 L4 78Z" fill="#e3f3e8" />
-                                <path d="M4 74 L36 64 L68 55 L100 44 L132 36 L164 24 L196 14" fill="none" stroke="#1d8a4a" strokeWidth="2" />
+                                <path d="M4 74 L36 64 L68 55 L100 44 L132 36 L164 24 L196 14 L196 78 L4 78Z" fill="#ebf6ee" />
+                                <path d="M4 74 L36 64 L68 55 L100 44 L132 36 L164 24 L196 14" fill="none" stroke="#007716" strokeWidth="2" />
                             </svg>
                         </div>
                         <div className="lp-map">
                             <svg viewBox={`0 0 ${MOZ_MAP_WIDTH} ${MOZ_MAP_HEIGHT}`}>
-                                {MOZ_PROVINCES.map((p) => <path key={p.name} d={p.d} fill={shaded.has(p.name) ? '#3f9b62' : '#cfe7d6'} stroke="#fff" strokeWidth="2" />)}
+                                {MOZ_PROVINCES.map((p) => <path key={p.name} d={p.d} fill={shaded.has(p.name) ? '#3a9d55' : '#c6e4cf'} stroke="#fff" strokeWidth="2" />)}
                             </svg>
                             <ul><li /><li /><li /><li /></ul>
                         </div>

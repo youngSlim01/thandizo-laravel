@@ -158,6 +158,16 @@ Dois perfis de administração, com papéis distintos:
 - Sem cliente configurado, só aparece Thandizo com a frase do produto.
 - Logótipo do produto em vector (`ThandizoMark`), igual em todo o sistema; favicon e ícone de telemóvel gerados do mesmo desenho.
 
+**Identidade visual única** (8/11/2026)
+
+| Decisão | Razão |
+|---|---|
+| Um só conjunto de cores, letra e medidas para todo o sistema (website, entrada, back office, Finanças, painel técnico e POS), definido nas variáveis de `resources/css/app.css` (`:root`). Os ecrãs não escrevem cores à mão. | O Thandizo passa a ter identidade própria; mudar a marca é mudar um sítio. |
+| Verde da marca = o do logótipo (`#007716`), com uma versão escura, uma clara e o verde-folha (`#7EDB33`) só como acento. Estados: verde (feito), âmbar (atenção), vermelho (erro), azul (informação). | Seis verdes diferentes passaram a um. |
+| Letra **Montserrat** em todo o sistema, carregada uma vez. | Já era a do website e da entrada; agora é de todos os ecrãs. |
+| Sem emojis; símbolos sóbrios de uma cor. | Aspecto profissional e igual em todos os aparelhos. |
+| Três experiências: website (apresentação), entrada (acesso) e área de cada perfil. O website pode sair para `thandizo.org` quando houver mais clientes; cada cliente terá a sua instalação. | Separação decidida; a separação física fica para o segundo cliente. |
+
 ## 8. Termos e linguagem
 
 - Interface em **português (PT/Moçambique)**.
