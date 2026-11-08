@@ -60,7 +60,8 @@ async function loadLogo(name: string): Promise<Logo | null> {
   return null;
 }
 
-export async function buildCardsPdf(cards: VoucherCard[], label: string) {
+// subtitle: linha por baixo de THANDIZO no cartão (programa ou organização cliente).
+export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitle: string) {
   const [{ jsPDF }, QRCode] = await Promise.all([import('jspdf'), import('qrcode')]);
   const logos = (await Promise.all(CARD_LOGOS.map(loadLogo))).filter((l): l is Logo => l !== null);
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
@@ -101,7 +102,7 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string) {
     doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(255);
     doc.text('THANDIZO', x + CARD_W - 3, y + 5.2, { align: 'right' });
     doc.setFont('Lato', 'normal').setFontSize(6.5);
-    doc.text('PROJECTO LINK GCF', x + CARD_W - 3, y + 9, { align: 'right' });
+    if (subtitle) doc.text(subtitle.toUpperCase(), x + CARD_W - 3, y + 9, { align: 'right' });
 
     // Representative and household
     const left = x + 4;
@@ -139,7 +140,7 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string) {
   return doc;
 }
 
-export async function downloadCardsPdf(cards: VoucherCard[], label: string) {
-  const doc = await buildCardsPdf(cards, label);
+export async function downloadCardsPdf(cards: VoucherCard[], label: string, subtitle: string) {
+  const doc = await buildCardsPdf(cards, label, subtitle);
   doc.save(`${label}.pdf`);
 }

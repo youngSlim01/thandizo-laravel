@@ -4,6 +4,7 @@ import { AdminLayout } from '@/components/admin-layout';
 import { useAction } from '@/lib/action';
 import { formatDateTime, formatMT } from '@/lib/format';
 import { errorText, requestJson } from '@/lib/http';
+import { useBrand } from '@/lib/brand';
 import { downloadSettlementPdf, type Settlement, type SettlementSale } from '@/lib/settlement-pdf';
 import type { SharedProps } from '@/types';
 
@@ -26,6 +27,7 @@ function closedPeriod() {
 }
 
 function SettlementDetail({ settlement, canApprove, onClose }: { settlement: Settlement; canApprove: boolean; onClose: () => void }) {
+    const brand = useBrand();
     const [sales, setSales] = useState<SettlementSale[]>([]);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [reason, setReason] = useState('');
@@ -61,7 +63,7 @@ function SettlementDetail({ settlement, canApprove, onClose }: { settlement: Set
                 {s.status === 'RETURNED' && s.notes && <li>Motivo do Finance: {s.notes}</li>}
             </ul>
             <div className="settlement-actions">
-                <button className="secondary-button" onClick={() => void downloadSettlementPdf(s, sales, 'meal', statusLabel(s.status))}>Gerar PDF</button>
+                <button className="secondary-button" onClick={() => void downloadSettlementPdf(s, sales, 'meal', statusLabel(s.status), brand)}>Gerar PDF</button>
                 {s.status === 'RECONCILED' && (
                     <button className="primary-button" disabled={action.busy} onClick={() => action.run('post', `/admin/settlements/${s.id}/submission`)}>
                         {action.busy ? 'A enviar...' : canApprove ? 'Enviar para Finance' : 'Enviar ao gestor MEAL'}

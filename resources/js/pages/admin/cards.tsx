@@ -6,6 +6,7 @@ import { useAction } from '@/lib/action';
 import { formatDateTime, formatMT } from '@/lib/format';
 import { errorText, requestJson } from '@/lib/http';
 import { RELATIONSHIPS, relationshipLabel } from '@/lib/substitute';
+import { cardSubtitle, useBrand } from '@/lib/brand';
 import { downloadCardsPdf, type VoucherCard } from '@/lib/voucher-cards';
 import type { SharedProps } from '@/types';
 
@@ -208,6 +209,7 @@ function DistributePanel({ batch, onClose }: { batch: Batch; onClose: () => void
 }
 
 function CardPreview({ card, busy, onPrint, onClose }: { card: VoucherCard; busy: boolean; onPrint: () => void; onClose: () => void }) {
+    const brand = useBrand();
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
         window.addEventListener('keydown', onKey);
@@ -223,7 +225,7 @@ function CardPreview({ card, busy, onPrint, onClose }: { card: VoucherCard; busy
                 </div>
                 <div className="voucher-card-preview">
                     <div className="voucher-card-preview-head">
-                        <div><strong>THANDIZO</strong><small>PROJECTO LINK GCF</small></div>
+                        <div><strong>THANDIZO</strong><small>{cardSubtitle(brand).toUpperCase()}</small></div>
                         <span>e-VOUCHER</span>
                     </div>
                     <div className="voucher-card-preview-body">
@@ -249,6 +251,7 @@ function CardPreview({ card, busy, onPrint, onClose }: { card: VoucherCard; busy
 }
 
 function BatchRow({ batch, canManage }: { batch: Batch; canManage: boolean }) {
+    const brand = useBrand();
     const [confirming, setConfirming] = useState<'distribute' | 'cancel' | null>(null);
     const [reason, setReason] = useState('');
     const [expanded, setExpanded] = useState(false);
@@ -273,7 +276,7 @@ function BatchRow({ batch, canManage }: { batch: Batch; canManage: boolean }) {
 
     const pdf = () => work(async () => {
         const data = await batchCards(batch.batch_id);
-        await downloadCardsPdf(data.cards, data.batch_code);
+        await downloadCardsPdf(data.cards, data.batch_code, cardSubtitle(brand));
     });
 
     function cancel(event: FormEvent) {
@@ -339,7 +342,7 @@ function BatchRow({ batch, canManage }: { batch: Batch; canManage: boolean }) {
                     ))}
                     {selectedCard && (
                         <CardPreview card={selectedCard} busy={busy} onClose={() => setSelectedCard(null)}
-                            onPrint={() => work(() => downloadCardsPdf([selectedCard], selectedCard.voucher_code))} />
+                            onPrint={() => work(() => downloadCardsPdf([selectedCard], selectedCard.voucher_code, cardSubtitle(brand)))} />
                     )}
                 </div>
             )}
@@ -371,6 +374,7 @@ function BatchRow({ batch, canManage }: { batch: Batch; canManage: boolean }) {
 type Replaced = { old_voucher_code: string; new_voucher_code: string; transferred: number; card: VoucherCard };
 
 function ReplaceCard({ canManage }: { canManage: boolean }) {
+    const brand = useBrand();
     const [query, setQuery] = useState('');
     const [cards, setCards] = useState<HouseholdCard[] | null>(null);
     const [reason, setReason] = useState('');
@@ -408,7 +412,7 @@ function ReplaceCard({ canManage }: { canManage: boolean }) {
             {replaced && (
                 <div className="success-box">
                     Cartão {replaced.old_voucher_code} substituído por <strong>{replaced.new_voucher_code}</strong> com {formatMT(replaced.transferred)}.
-                    <button className="secondary-button link-button" onClick={() => downloadCardsPdf([replaced.card], replaced.new_voucher_code)}>
+                    <button className="secondary-button link-button" onClick={() => downloadCardsPdf([replaced.card], replaced.new_voucher_code, cardSubtitle(brand))}>
                         DESCARREGAR CARTÃO NOVO (PDF)
                     </button>
                 </div>

@@ -1,4 +1,5 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { brandSubtitle } from '@/lib/brand';
 import type { SharedProps } from '@/types';
 import type { FormEvent } from 'react';
 import { ThandizoMark } from '@/components/thandizo-mark';
@@ -7,7 +8,7 @@ import { ThandizoMark } from '@/components/thandizo-mark';
 // A diferença: o formulário é enviado ao Laravel (POST /login), que valida a
 // palavra-passe e abre a sessão. Os erros voltam em form.errors.
 export default function Login() {
-    const { flash } = usePage<SharedProps>().props;
+    const { flash, brand } = usePage<SharedProps>().props;
     const form = useForm({ email: '', password: '', remember: true });
 
     function submit(event: FormEvent) {
@@ -37,7 +38,7 @@ export default function Login() {
                     <span className="thandizo-brand-icon"><ThandizoMark /></span>
                     <span>
                         <strong>THANDIZO</strong>
-                        <small>E-VOUCHER ASSISTANCE PLATFORM</small>
+                        <small>{brandSubtitle(brand).toUpperCase()}</small>
                     </span>
                 </div>
 
@@ -68,7 +69,7 @@ export default function Login() {
                         <span className="thandizo-brand-icon"><ThandizoMark /></span>
                         <span>
                             <strong>THANDIZO</strong>
-                            <small>E-VOUCHER ASSISTANCE PLATFORM</small>
+                            <small>{brandSubtitle(brand).toUpperCase()}</small>
                         </span>
                     </div>
 
@@ -130,8 +131,8 @@ export default function Login() {
 
                     <div className="thandizo-card-footer">
                         <div>
-                            <strong>◉ Save the Children</strong>
-                            <p>Em apoio a comunidades mais seguras,<br />resilientes e inclusivas.</p>
+                            {brand.client && <strong>◉ {brand.client}</strong>}
+                            {brand.tagline && <p>{brand.tagline}</p>}
                         </div>
                         <div className="thandizo-version">
                             <strong>THANDIZO v2.0</strong>

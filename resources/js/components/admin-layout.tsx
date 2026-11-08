@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { brandSubtitle } from '@/lib/brand';
 import type { SharedProps } from '@/types';
 
 export const initials = (name: string | null | undefined) =>
@@ -39,7 +40,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 // Menu lateral, cabeçalho no telemóvel e nome do utilizador no topo.
 // topbar=false: o ecrã põe o UserMenu no seu próprio cabeçalho (painel MEAL).
 export function AdminHeader({ topbar = true }: { topbar?: boolean }) {
-    const { auth, navigation } = usePage<SharedProps>().props;
+    const { auth, navigation, brand } = usePage<SharedProps>().props;
     const url = usePage().url;
     const pathname = url.split('?')[0];
     const brandHref = navigation[0]?.href ?? '/';
@@ -58,7 +59,7 @@ export function AdminHeader({ topbar = true }: { topbar?: boolean }) {
             <aside id="admin-menu" className={open ? 'meal-sidebar admin-sidebar open' : 'meal-sidebar admin-sidebar'}>
                 <Link href={brandHref} className="meal-brand">
                     <BrandMark />
-                    <div><strong>THANDIZO</strong><span>E-VOUCHER ASSISTANCE<br />PLATFORM</span></div>
+                    <div><strong>THANDIZO</strong><span>{brandSubtitle(brand).toUpperCase()}</span></div>
                 </Link>
                 <nav className="meal-nav" aria-label="Navegação principal">
                     {navigation.map((s) => {
@@ -72,7 +73,7 @@ export function AdminHeader({ topbar = true }: { topbar?: boolean }) {
                 </nav>
                 <div className="meal-sidebar-bottom">
                     <Link href="/logout" method="post" as="button" className="meal-nav-item"><span className="admin-nav-icon">↪</span><span>Sair</span></Link>
-                    <div className="meal-footer"><strong>◉ Save the Children</strong><span>v2.0.0</span></div>
+                    <div className="meal-footer"><strong>{brand.programme ?? 'THANDIZO'}</strong><span>v2.0.0</span></div>
                 </div>
             </aside>
             <header className="meal-mobile-header admin-mobile-header">

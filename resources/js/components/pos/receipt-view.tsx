@@ -1,13 +1,17 @@
 
 import type { Receipt } from './transaction';
+import { useBrand } from '@/lib/brand';
 import { formatDateTime, formatMT } from '@/lib/format';
 
 // Recibo para imprimir, feito só com os dados devolvidos pelo servidor.
 export function ReceiptView({ receipt }: { receipt: Receipt }) {
+  const brand = useBrand();
+  const client = [brand.client, brand.programme].filter(Boolean).join(' · ');
   return (
     <div className="receipt">
       <div className="receipt-head">
-        <strong>VOUCHER LINK GCF</strong>
+        <strong>THANDIZO</strong>
+        {client && <div>{client}</div>}
         <div>{receipt.agrodealer_name}</div>
         <div>POS {receipt.pos_code} · {receipt.operator_name}</div>
         <div>{formatDateTime(receipt.confirmed_at)}</div>

@@ -4,6 +4,7 @@ import { FinanceLayout } from '@/components/finance-layout';
 import { useAction } from '@/lib/action';
 import { formatDateTime, formatMT } from '@/lib/format';
 import { errorText, requestJson } from '@/lib/http';
+import { useBrand } from '@/lib/brand';
 import { downloadSettlementPdf, type Settlement, type SettlementSale } from '@/lib/settlement-pdf';
 import type { SharedProps } from '@/types';
 
@@ -15,6 +16,7 @@ const label = (status: string) => STATUS_LABEL[status] ?? status;
 const money = (n: number) => formatMT(Number(n || 0));
 
 function Detail({ settlement, onClose }: { settlement: Settlement; onClose: () => void }) {
+    const brand = useBrand();
     const [sales, setSales] = useState<SettlementSale[]>([]);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [reason, setReason] = useState('');
@@ -35,7 +37,7 @@ function Detail({ settlement, onClose }: { settlement: Settlement; onClose: () =
                     <div className="detail-title-row"><h2>{s.settlement_code}</h2><span className={`settlement-status ${s.status.toLowerCase()}`}>{label(s.status)}</span></div>
                     <p>Revisar o mapa de vendas reconciliado pelo MEAL</p>
                 </div>
-                <button className="secondary-button" onClick={() => void downloadSettlementPdf(s, sales, 'finance', label(s.status))}>Baixar mapa PDF</button>
+                <button className="secondary-button" onClick={() => void downloadSettlementPdf(s, sales, 'finance', label(s.status), brand)}>Baixar mapa PDF</button>
             </div>
             {error && <div className="error-box">{error}</div>}
 

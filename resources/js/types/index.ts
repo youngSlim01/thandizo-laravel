@@ -34,8 +34,12 @@ export type Credentials = {
     kind: 'created' | 'reset';
 };
 
+// Cliente desta instalação, mostrado junto do nome THANDIZO (config/thandizo.php).
+export type Brand = { client: string | null; programme: string | null; tagline: string | null };
+
 export type SharedProps = {
     auth: { user: AuthUser | null };
+    brand: Brand;
     navigation: NavSection[];
     flash: { success: string | null; error: string | null; credentials: Credentials | null };
 };

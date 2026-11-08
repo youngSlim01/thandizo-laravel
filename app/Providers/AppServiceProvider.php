@@ -35,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
 
         ResetPassword::toMailUsing(function (User $user, string $token): MailMessage {
             $minutes = config('auth.passwords.users.expire');
+            $client = config('thandizo.client.name');
+            $signature = $client ? "THANDIZO · {$client}" : 'THANDIZO';
 
             return (new MailMessage)
                 ->subject('THANDIZO — recuperar a palavra-passe')
@@ -43,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
                 ->action('Escolher nova palavra-passe', route('password.reset', ['token' => $token, 'email' => $user->email]))
                 ->line("Este link é válido durante {$minutes} minutos.")
                 ->line('Se não fez este pedido, ignore este email: a sua palavra-passe não muda.')
-                ->salutation('THANDIZO');
+                ->salutation($signature);
         });
     }
 }

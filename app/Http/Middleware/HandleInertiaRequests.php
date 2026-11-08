@@ -41,6 +41,12 @@ class HandleInertiaRequests extends Middleware
                         : null,
                 ] : null,
             ],
+            // Cliente desta instalação (config/thandizo.php), mostrado junto de THANDIZO.
+            'brand' => [
+                'client' => $this->filled(config('thandizo.client.name')),
+                'programme' => $this->filled(config('thandizo.client.programme')),
+                'tagline' => $this->filled(config('thandizo.client.tagline')),
+            ],
             // Menu lateral do back office (vazio para quem não tem secções).
             'navigation' => fn () => $user ? app(NavigationService::class)->sectionsFor($user) : [],
             'flash' => [
@@ -50,5 +56,12 @@ class HandleInertiaRequests extends Middleware
                 'credentials' => fn () => $request->session()->get('credentials'),
             ],
         ];
+    }
+
+    private function filled(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value === '' ? null : $value;
     }
 }
