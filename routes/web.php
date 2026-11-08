@@ -27,6 +27,7 @@ use App\Http\Controllers\Finance\DashboardController as FinanceDashboardControll
 use App\Http\Controllers\Finance\ReportController as FinanceReportController;
 use App\Http\Controllers\Finance\SettlementController as FinanceSettlementController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\SystemAdminDashboardController;
 use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
