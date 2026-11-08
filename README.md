@@ -69,6 +69,23 @@ Abrir http://localhost:8000. Para parar o servidor: Ctrl + C.
 Manter sincronizado (traz as últimas alterações e actualiza tudo, sem apagar
 os dados): `composer actualizar`, depois `php artisan serve`.
 
+### No Mac com Intel (Herd + DBngin)
+
+O Homebrew actual já não instala em Macs com Intel. Em alternativa (macOS 12+):
+
+1. **Laravel Herd** (herd.laravel.com): em Settings, instalar PHP 8.4 e Node 22.
+   Se `php -v` não responder, o atalho do Herd pode apontar para uma versão não
+   instalada; corrigir com
+   `ln -sf "$HOME/Library/Application Support/Herd/bin/php84" "$HOME/Library/Application Support/Herd/bin/php"`
+   e escolher o 8.4 como versão global no Herd.
+2. **DBngin** (dbngin.com): criar e ligar um MySQL 8.x; pôr o `mysql` no Terminal com
+   `echo 'export PATH="$(ls -d /Users/Shared/DBngin/mysql/8*/bin | head -1):$PATH"' >> ~/.zshrc`.
+3. Bases, utilizador e a opção dos triggers:
+   `mysql -uroot -h127.0.0.1 -e "SET PERSIST log_bin_trust_function_creators=1; CREATE DATABASE thandizo …"`
+   (o mesmo comando da secção anterior, com `SET PERSIST` no início).
+4. **GitHub Desktop**: clonar o repositório e escolher o branch de trabalho; depois
+   `composer setup`, `php artisan db:seed --class=DemoSeeder` e `php artisan serve`.
+
 ```bash
 composer install
 npm install
