@@ -18,7 +18,7 @@ export function CatalogueEditor({ agrodealerId, canManage }: { agrodealerId: str
     const [error, setError] = useState<string | null>(null);
 
     const load = useCallback(() => {
-        requestJson<Catalogue>('GET', `/admin/agrodealers/${agrodealerId}/catalogue`)
+        requestJson<Catalogue>('GET', `/admin/comerciantes/${agrodealerId}/catalogue`)
             .then(setCatalogue)
             .catch((err: Error) => setError(err.message));
     }, [agrodealerId]);
@@ -28,7 +28,7 @@ export function CatalogueEditor({ agrodealerId, canManage }: { agrodealerId: str
     async function toggle(product: CatalogueProduct) {
         setBusy(product.product_id); setError(null);
         try {
-            await requestJson('PUT', `/admin/agrodealers/${agrodealerId}/catalogue/${product.product_id}`, { in_catalogue: !product.in_catalogue });
+            await requestJson('PUT', `/admin/comerciantes/${agrodealerId}/catalogue/${product.product_id}`, { in_catalogue: !product.in_catalogue });
             load();
             // Actualiza o número de produtos no cartão do agrodealer.
             router.reload({ only: ['agrodealers'] });

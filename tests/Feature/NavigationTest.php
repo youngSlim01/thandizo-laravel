@@ -19,7 +19,7 @@ class NavigationTest extends TestCase
      */
     public static function menus(): array
     {
-        $meal = ['/admin/dashboard', '/admin/households', '/admin/cards', '/admin/cycles', '/admin/transactions', '/admin/settlements', '/admin/reports', '/admin/agrodealers', '/admin/products'];
+        $meal = ['/admin/dashboard', '/admin/households', '/admin/cards', '/admin/cycles', '/admin/transactions', '/admin/settlements', '/admin/reports', '/admin/comerciantes', '/admin/products'];
 
         return [
             'administrador' => [UserRole::SystemAdmin, [...$meal, '/admin/users', '/finance/settlements', '/admin/settings']],

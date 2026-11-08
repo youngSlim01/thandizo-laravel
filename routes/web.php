@@ -127,15 +127,15 @@ Route::middleware('auth')->group(function () {
         Route::put('/products/{product}/prices/{district}', [ProductPriceController::class, 'update'])->name('products.prices.update');
         Route::post('/products/import', [PriceImportController::class, 'store'])->name('products.import');
 
-        Route::get('/agrodealers', [AgrodealerController::class, 'index'])->name('agrodealers.index');
-        Route::post('/agrodealers', [AgrodealerController::class, 'store'])->name('agrodealers.store');
-        Route::put('/agrodealers/{agrodealer}', [AgrodealerController::class, 'update'])->name('agrodealers.update');
-        Route::post('/agrodealers/{agrodealer}/pos', [AgrodealerPosController::class, 'store'])->name('agrodealers.pos.store');
-        Route::put('/agrodealers/{agrodealer}/pos/{pos}', [AgrodealerPosController::class, 'update'])
+        Route::get('/comerciantes', [AgrodealerController::class, 'index'])->name('agrodealers.index');
+        Route::post('/comerciantes', [AgrodealerController::class, 'store'])->name('agrodealers.store');
+        Route::put('/comerciantes/{agrodealer}', [AgrodealerController::class, 'update'])->name('agrodealers.update');
+        Route::post('/comerciantes/{agrodealer}/pos', [AgrodealerPosController::class, 'store'])->name('agrodealers.pos.store');
+        Route::put('/comerciantes/{agrodealer}/pos/{pos}', [AgrodealerPosController::class, 'update'])
             ->scopeBindings()
             ->name('agrodealers.pos.update');
-        Route::get('/agrodealers/{agrodealer}/catalogue', [AgrodealerCatalogueController::class, 'show'])->name('agrodealers.catalogue');
-        Route::put('/agrodealers/{agrodealer}/catalogue/{product}', [AgrodealerCatalogueController::class, 'update'])->name('agrodealers.catalogue.update');
+        Route::get('/comerciantes/{agrodealer}/catalogue', [AgrodealerCatalogueController::class, 'show'])->name('agrodealers.catalogue');
+        Route::put('/comerciantes/{agrodealer}/catalogue/{product}', [AgrodealerCatalogueController::class, 'update'])->name('agrodealers.catalogue.update');
 
         Route::get('/households', [HouseholdController::class, 'index'])->name('households.index');
         Route::post('/households/search', [HouseholdController::class, 'search'])->name('households.search');

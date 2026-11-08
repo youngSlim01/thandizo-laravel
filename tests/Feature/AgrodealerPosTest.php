@@ -30,12 +30,12 @@ class AgrodealerPosTest extends TestCase
         $manager = $this->manager();
 
         $this->actingAs($manager)
-            ->post("/admin/agrodealers/{$agrodealer->id}/pos", ['device_label' => ' Tablet 1 ', 'pos_code' => 'T-POS-A'])
-            ->assertRedirect('/admin/agrodealers')
+            ->post("/admin/comerciantes/{$agrodealer->id}/pos", ['device_label' => ' Tablet 1 ', 'pos_code' => 'T-POS-A'])
+            ->assertRedirect('/admin/comerciantes')
             ->assertSessionHas('success', 'POS POS-MUT-001-01 criado.');
 
         $this->actingAs($manager)
-            ->post("/admin/agrodealers/{$agrodealer->id}/pos", ['device_label' => '']);
+            ->post("/admin/comerciantes/{$agrodealer->id}/pos", ['device_label' => '']);
 
         $this->assertSame(['POS-MUT-001-01', 'POS-MUT-001-02'], $agrodealer->pos()->orderBy('pos_code')->pluck('pos_code')->all());
         $this->assertSame('Tablet 1', $agrodealer->pos()->where('pos_code', 'POS-MUT-001-01')->value('device_label'));
@@ -51,7 +51,7 @@ class AgrodealerPosTest extends TestCase
         $pos = AgrodealerPos::factory()->create(['pos_code' => 'POS-MUT-001-01']);
 
         $this->actingAs($this->manager())
-            ->put("/admin/agrodealers/{$pos->agrodealer_id}/pos/{$pos->id}", ['device_label' => 'Tablet novo', 'status' => 'INACTIVE', 'pos_code' => 'X'])
+            ->put("/admin/comerciantes/{$pos->agrodealer_id}/pos/{$pos->id}", ['device_label' => 'Tablet novo', 'status' => 'INACTIVE', 'pos_code' => 'X'])
             ->assertSessionHas('success', 'POS POS-MUT-001-01 atualizado.');
 
         $pos->refresh();
@@ -67,7 +67,7 @@ class AgrodealerPosTest extends TestCase
         $other = Agrodealer::factory()->create();
 
         $this->actingAs($this->manager())
-            ->put("/admin/agrodealers/{$other->id}/pos/{$pos->id}", ['device_label' => 'X', 'status' => 'ACTIVE'])
+            ->put("/admin/comerciantes/{$other->id}/pos/{$pos->id}", ['device_label' => 'X', 'status' => 'ACTIVE'])
             ->assertNotFound();
 
         $this->assertSame($pos->agrodealer_id, $pos->fresh()->agrodealer_id);
@@ -78,7 +78,7 @@ class AgrodealerPosTest extends TestCase
         $agrodealer = Agrodealer::factory()->create();
 
         $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $agrodealer->province_id]))
-            ->post("/admin/agrodealers/{$agrodealer->id}/pos", ['device_label' => 'Tablet'])
+            ->post("/admin/comerciantes/{$agrodealer->id}/pos", ['device_label' => 'Tablet'])
             ->assertForbidden();
 
         $this->assertDatabaseCount('agrodealer_pos', 0);
@@ -89,7 +89,7 @@ class AgrodealerPosTest extends TestCase
         $pos = AgrodealerPos::factory()->create();
 
         $this->actingAs($this->manager())
-            ->put("/admin/agrodealers/{$pos->agrodealer_id}/pos/{$pos->id}", ['device_label' => 'X', 'status' => 'LOST'])
+            ->put("/admin/comerciantes/{$pos->agrodealer_id}/pos/{$pos->id}", ['device_label' => 'X', 'status' => 'LOST'])
             ->assertSessionHasErrors(['status' => 'Situação inválida.']);
     }
 }

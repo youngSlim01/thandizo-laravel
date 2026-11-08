@@ -38,13 +38,13 @@ class AgrodealerTest extends TestCase
 
     public function test_guest_is_sent_to_login(): void
     {
-        $this->get('/admin/agrodealers')->assertRedirect('/login');
+        $this->get('/admin/comerciantes')->assertRedirect('/login');
     }
 
     public function test_finance_cannot_open_the_page(): void
     {
         $this->actingAs(User::factory()->role(UserRole::FinanceOfficer)->create())
-            ->get('/admin/agrodealers')
+            ->get('/admin/comerciantes')
             ->assertForbidden();
     }
 
@@ -59,7 +59,7 @@ class AgrodealerTest extends TestCase
         User::factory()->role(UserRole::AgrodealerOperator)->inactive()->create(['agrodealer_id' => $agro->id]);
 
         $this->actingAs($this->manager())
-            ->get('/admin/agrodealers')
+            ->get('/admin/comerciantes')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('admin/agrodealers')
@@ -83,7 +83,7 @@ class AgrodealerTest extends TestCase
         $officer = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $mutarara->province_id]);
 
         $this->actingAs($officer)
-            ->get('/admin/agrodealers')
+            ->get('/admin/comerciantes')
             ->assertInertia(fn (Assert $page) => $page
                 ->has('agrodealers', 2)
                 ->where('agrodealers.0.name', 'Agro Tete')
@@ -96,7 +96,7 @@ class AgrodealerTest extends TestCase
         Agrodealer::factory()->create();
 
         $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create(['province_id' => null]))
-            ->get('/admin/agrodealers')
+            ->get('/admin/comerciantes')
             ->assertInertia(fn (Assert $page) => $page->has('agrodealers', 0));
     }
 
@@ -106,10 +106,10 @@ class AgrodealerTest extends TestCase
         $manager = $this->manager();
 
         $this->actingAs($manager)
-            ->post('/admin/agrodealers', [
+            ->post('/admin/comerciantes', [
                 'name' => ' Agro Mutarara ', 'district_id' => $mutarara->id, 'address' => 'Mercado', 'contact_phone' => '', 'code' => 'T-MER-X',
             ])
-            ->assertRedirect('/admin/agrodealers')
+            ->assertRedirect('/admin/comerciantes')
             ->assertSessionHas('success', 'Comerciante Agro Mutarara (MER-MUT-001) criado. O catálogo começa vazio.');
 
         $agrodealer = Agrodealer::query()->sole();
@@ -131,7 +131,7 @@ class AgrodealerTest extends TestCase
         Agrodealer::factory()->for($mutarara)->create(['code' => 'MER-MUT-OLD']);
 
         $this->actingAs($this->manager())
-            ->post('/admin/agrodealers', ['name' => 'Agro 2', 'district_id' => $mutarara->id]);
+            ->post('/admin/comerciantes', ['name' => 'Agro 2', 'district_id' => $mutarara->id]);
 
         $this->assertSame('MER-MUT-005', Agrodealer::query()->where('name', 'Agro 2')->value('code'));
     }
@@ -150,7 +150,7 @@ class AgrodealerTest extends TestCase
         $outside = District::factory()->create(['programme_active' => false]);
 
         $this->actingAs($this->manager())
-            ->post('/admin/agrodealers', ['name' => 'Fora', 'district_id' => $outside->id])
+            ->post('/admin/comerciantes', ['name' => 'Fora', 'district_id' => $outside->id])
             ->assertSessionHasErrors(['district_id' => 'Escolha um distrito do programa.']);
 
         $this->assertDatabaseCount('agrodealers', 0);
@@ -159,7 +159,7 @@ class AgrodealerTest extends TestCase
     public function test_name_and_district_are_required(): void
     {
         $this->actingAs($this->manager())
-            ->post('/admin/agrodealers', ['name' => ' ', 'district_id' => ''])
+            ->post('/admin/comerciantes', ['name' => ' ', 'district_id' => ''])
             ->assertSessionHasErrors([
                 'name' => 'Indique o nome do comerciante.',
                 'district_id' => 'Escolha um distrito do programa.',
@@ -171,7 +171,7 @@ class AgrodealerTest extends TestCase
         $mutarara = $this->programmeDistrict('Mutarara');
 
         $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $mutarara->province_id]))
-            ->post('/admin/agrodealers', ['name' => 'Agro', 'district_id' => $mutarara->id])
+            ->post('/admin/comerciantes', ['name' => 'Agro', 'district_id' => $mutarara->id])
             ->assertForbidden();
     }
 
@@ -182,7 +182,7 @@ class AgrodealerTest extends TestCase
         $agrodealer = Agrodealer::factory()->for($mutarara)->create(['code' => 'MER-MUT-001', 'province_id' => $mutarara->province_id]);
 
         $this->actingAs($this->manager())
-            ->put("/admin/agrodealers/{$agrodealer->id}", [
+            ->put("/admin/comerciantes/{$agrodealer->id}", [
                 'name' => 'Agro Guro', 'district_id' => $guro->id, 'address' => '', 'contact_phone' => '840000000', 'status' => 'INACTIVE',
             ])
             ->assertSessionHas('success', 'Comerciante Agro Guro atualizado.');
@@ -201,7 +201,7 @@ class AgrodealerTest extends TestCase
         $agrodealer = Agrodealer::factory()->create();
 
         $this->actingAs($this->manager())
-            ->put("/admin/agrodealers/{$agrodealer->id}", ['name' => 'Agro', 'district_id' => $agrodealer->district_id, 'status' => 'CLOSED'])
+            ->put("/admin/comerciantes/{$agrodealer->id}", ['name' => 'Agro', 'district_id' => $agrodealer->district_id, 'status' => 'CLOSED'])
             ->assertSessionHasErrors(['status' => 'Situação inválida.']);
     }
 }

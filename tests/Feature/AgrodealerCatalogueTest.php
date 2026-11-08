@@ -37,7 +37,7 @@ class AgrodealerCatalogueTest extends TestCase
 
     private function url(?Product $product = null): string
     {
-        return "/admin/agrodealers/{$this->agrodealer->id}/catalogue".($product ? "/{$product->id}" : '');
+        return "/admin/comerciantes/{$this->agrodealer->id}/catalogue".($product ? "/{$product->id}" : '');
     }
 
     public function test_catalogue_lists_active_products_with_the_district_price(): void
@@ -104,7 +104,7 @@ class AgrodealerCatalogueTest extends TestCase
     {
         $this->agrodealer->catalogue()->attach($this->seed->id);
 
-        $this->actingAs($this->manager)->get('/admin/agrodealers')
+        $this->actingAs($this->manager)->get('/admin/comerciantes')
             ->assertInertia(fn (Assert $page) => $page->where('agrodealers.0.catalogue_count', 1));
     }
 }

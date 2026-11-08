@@ -33,10 +33,10 @@ function AgrodealerForm({ agrodealer, districts, onDone }: { agrodealer: Agrodea
         event.preventDefault();
         const options = { onSuccess: onDone, preserveScroll: true };
         if (agrodealer) {
-            form.put(`/admin/agrodealers/${agrodealer.id}`, options);
+            form.put(`/admin/comerciantes/${agrodealer.id}`, options);
         } else {
             form.transform(({ status: _status, ...data }) => data);
-            form.post('/admin/agrodealers', options);
+            form.post('/admin/comerciantes', options);
         }
     }
 
@@ -86,10 +86,10 @@ function PosForm({ agrodealerId, pos, onDone }: { agrodealerId: string; pos: Pos
         event.preventDefault();
         const options = { onSuccess: onDone, preserveScroll: true };
         if (pos) {
-            form.put(`/admin/agrodealers/${agrodealerId}/pos/${pos.id}`, options);
+            form.put(`/admin/comerciantes/${agrodealerId}/pos/${pos.id}`, options);
         } else {
             form.transform(({ device_label }) => ({ device_label }));
-            form.post(`/admin/agrodealers/${agrodealerId}/pos`, options);
+            form.post(`/admin/comerciantes/${agrodealerId}/pos`, options);
         }
     }
 
@@ -176,9 +176,9 @@ export default function Agrodealers({ agrodealers, districts, canManage }: Props
             <Head title="Comerciantes" />
             <div className="admin-page-heading">
                 <div>
-                    <div className="eyebrow">MEAL · REDE DE FORNECEDORES</div>
+                    <div className="eyebrow">MEAL · REDE DE COMERCIANTES</div>
                     <h1>Comerciantes</h1>
-                    <p>Gerir fornecedores, pontos de venda e os catálogos associados a cada distrito.</p>
+                    <p>Gerir comerciantes, pontos de venda e os catálogos associados a cada distrito.</p>
                 </div>
             </div>
             <div className="info-box">

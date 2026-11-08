@@ -100,7 +100,7 @@ export function TransactionsList({ eyebrow }: { eyebrow: string }) {
   return <>
     <div className="admin-page-heading">
       <div><div className="eyebrow">{eyebrow}</div><h1>Transações</h1>
-        <p>Consulte cada compra, o beneficiário, o fornecedor e a utilização do voucher.</p>
+        <p>Consulte cada compra, o beneficiário, o comerciante e a utilização do voucher.</p>
       </div>
     </div>
     {error && <div className="error-box">{error}</div>}
@@ -155,7 +155,7 @@ export function TransactionsList({ eyebrow }: { eyebrow: string }) {
                 {household?.status && <span>Estado: {household.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}</span>}
               </div>
               <div className="admin-transaction-detail-block">
-                <h3>Compra e fornecedor</h3>
+                <h3>Compra e comerciante</h3>
                 <strong>{r.agrodealer}</strong><span>{r.agrodealer_code}{r.pos_code ? ` · ${r.pos_code}` : ''}</span>
                 <span>Voucher: {r.voucher_code}</span>
                 <span>Referência: {r.transaction_code}</span><span>Data: {formatDateTime(r.sold_at)}</span>
