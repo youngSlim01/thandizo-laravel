@@ -1,16 +1,34 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { PRODUCT_TAGLINE } from '@/lib/brand';
-import type { SharedProps } from '@/types';
-import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { ThandizoMark } from '@/components/thandizo-mark';
+import type { SharedProps } from '@/types';
 
-// Mesmo ecrã e mesmas classes CSS do login Next.js (app/login/page.tsx).
-// A diferença: o formulário é enviado ao Laravel (POST /login), que valida a
-// palavra-passe e abre a sessão. Os erros voltam em form.errors.
+function UserIcon() {
+    return (
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5" /></svg>
+    );
+}
+
+function LockIcon() {
+    return (
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" /><path d="M12 14.5v2.5" /></svg>
+    );
+}
+
+function EyeIcon({ open }: { open: boolean }) {
+    return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="3" />
+            {!open && <path d="M4 20 20 4" />}
+        </svg>
+    );
+}
+
+// Entrada no Thandizo. O formulário é enviado ao Laravel (POST /login), que
+// valida a palavra-passe e abre a sessão; os erros voltam em form.errors.
+// A sessão fica sempre lembrada neste aparelho (remember).
 export default function Login() {
     const { flash, brand } = usePage<SharedProps>().props;
-    const client = [brand.client, brand.programme].filter(Boolean).join(' · ');
     const form = useForm({ email: '', password: '', remember: true });
     const [showPassword, setShowPassword] = useState(false);
 
@@ -29,84 +47,59 @@ export default function Login() {
     }
 
     const error = form.errors.email ?? form.errors.password;
+    const client = [brand.client, brand.programme].filter(Boolean).join(' · ');
 
     return (
-        <main className="thandizo-login-minimal">
+        <main className="tl-page">
             <Head title="Entrar" />
-            <section className="thandizo-login-shell">
-                <div className="thandizo-login-photo" aria-label="Comunidade em contexto de desenvolvimento">
-                    <div className="thandizo-login-photo-overlay" aria-hidden="true" />
-                    <div className="thandizo-photo-brand">
-                        <span className="thandizo-brand-icon"><ThandizoMark /></span>
-                        <strong>Thandizo</strong>
-                    </div>
-                    <div className="thandizo-photo-message">
-                        <span className="thandizo-photo-accent" />
+            <section className="tl-card">
+                <div className="tl-photo">
+                    <div className="tl-photo-shade" aria-hidden="true" />
+                    <div className="tl-logo"><ThandizoMark /><span>Thandizo</span></div>
+                    <div className="tl-message">
+                        <span className="tl-accent" aria-hidden="true" />
                         <h1>Empowering programmes.<br />Improving lives.</h1>
-                        <p>Uma plataforma integrada para fortalecer programas e melhorar vidas.</p>
                     </div>
-                    <div className="thandizo-photo-wave" />
                 </div>
-                <section className="thandizo-login-form-panel">
-                    <div className="thandizo-login-form-inner">
-                        <div className="thandizo-form-brand">
-                            <span className="thandizo-brand-icon"><ThandizoMark /></span>
-                            <strong>Thandizo</strong>
-                            <p>{PRODUCT_TAGLINE}</p>
-                        </div>
-                        {client && (
-                            <div className="thandizo-login-client">
-                                <span>{client}</span>
-                                {brand.tagline && <small>{brand.tagline}</small>}
-                            </div>
-                        )}
-                        <header className="thandizo-login-heading">
-                            <h2>Entrar na plataforma</h2>
-                            <p>Aceda à sua conta para continuar.</p>
-                        </header>
-                        <form onSubmit={submit} className="thandizo-login-minimal-form">
-                            <label className="thandizo-minimal-field" htmlFor="email">
-                                <span className="thandizo-field-icon" aria-hidden="true">♙</span>
-                                <input id="email" type="text" autoComplete="username"
-                                    placeholder="E-mail"
-                                    value={form.data.email}
-                                    onChange={(e) => form.setData('email', e.target.value)}
+
+                <div className="tl-panel">
+                    <div className="tl-panel-inner">
+                        <h2>Entrar na plataforma</h2>
+                        <form onSubmit={submit} className="tl-form">
+                            <label className="tl-field">
+                                <span className="tl-field-icon"><UserIcon /></span>
+                                <input id="email" type="text" inputMode="email" autoComplete="username" placeholder="E-mail"
+                                    aria-label="E-mail" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)}
                                     aria-invalid={Boolean(form.errors.email)} required />
                             </label>
-                            <label className="thandizo-minimal-field" htmlFor="password">
-                                <span className="thandizo-field-icon" aria-hidden="true">♙</span>
-                                <input id="password" type={showPassword ? 'text' : 'password'}
-                                    autoComplete="current-password" placeholder="Palavra-passe"
-                                    value={form.data.password}
-                                    onChange={(e) => form.setData('password', e.target.value)}
+                            <label className="tl-field">
+                                <span className="tl-field-icon"><LockIcon /></span>
+                                <input id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Palavra-passe"
+                                    aria-label="Palavra-passe" value={form.data.password} onChange={(e) => form.setData('password', e.target.value)}
                                     aria-invalid={Boolean(form.errors.password)} required />
-                                <button type="button" className="thandizo-password-toggle"
-                                    onClick={() => setShowPassword((visible) => !visible)}
-                                    aria-label={showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'}
-                                    aria-pressed={showPassword}>{showPassword ? '◎' : '◉'}</button>
-                            </label>
-                            <div className="thandizo-minimal-options">
-                                <label className="thandizo-remember">
-                                    <input type="checkbox" checked={form.data.remember}
-                                        onChange={(e) => form.setData('remember', e.target.checked)} />
-                                    <span>Manter sessão iniciada</span>
-                                </label>
-                                <button type="button" className="thandizo-recovery-link" onClick={recoverPassword}>
-                                    Esqueceu a sua palavra-passe?
+                                <button type="button" className="tl-eye" onClick={() => setShowPassword((visible) => !visible)}
+                                    aria-label={showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'} aria-pressed={showPassword}>
+                                    <EyeIcon open={!showPassword} />
                                 </button>
-                            </div>
-                            {error && <div className="thandizo-auth-error" role="alert">{error}</div>}
-                            {!error && flash.success && <div className="thandizo-auth-success" role="status">{flash.success}</div>}
-                            <button className="thandizo-minimal-submit" type="submit" disabled={form.processing}>
+                            </label>
+                            <button type="button" className="tl-recover" onClick={recoverPassword}>Esqueceu a sua palavra-passe?</button>
+
+                            {error && <div className="tl-alert tl-alert-error" role="alert">{error}</div>}
+                            {!error && flash.success && <div className="tl-alert tl-alert-success" role="status">{flash.success}</div>}
+
+                            <button className="tl-submit" type="submit" disabled={form.processing}>
                                 {form.processing ? 'A entrar…' : <>Entrar <span aria-hidden="true">→</span></>}
                             </button>
                         </form>
-                        <footer className="thandizo-login-legal">
-                            <span>Thandizo v2.0</span><span aria-hidden="true">|</span>
+
+                        <footer className="tl-footer">
+                            <span>Thandizo v1.0</span>
+                            <span aria-hidden="true">|</span>
                             <span>© {new Date().getFullYear()}. Todos os direitos reservados.</span>
+                            {client && <small className="tl-footer-client">{client}</small>}
                         </footer>
                     </div>
-                </section>
+                </div>
             </section>
         </main>
     );

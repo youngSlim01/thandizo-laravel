@@ -750,7 +750,6 @@ select.input { background: var(--surface); }
 .profile-signout{display:block;width:100%;margin-top:8px;color:var(--danger);border-color:#f4c7c3}
 @media(max-width:600px){.profile-hero{align-items:flex-start}.profile-avatar{width:58px;height:58px;border-radius:17px;font-size:24px}.profile-hero h1{font-size:23px}.profile-detail{display:block}.profile-detail strong{display:block;text-align:left;margin-top:4px}}
 
-
 /* Operator-first POS controls */
 .operator-primary {
   min-height: 56px;
@@ -808,7 +807,6 @@ select.input { background: var(--surface); }
   }
 }
 
-
 /* MEAL back-office dashboard */
 .admin-page-heading,.admin-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:22px 0}
 .admin-page-heading h1{margin:4px 0 6px}
@@ -843,7 +841,6 @@ select.input { background: var(--surface); }
 @media(max-width:900px){.meal-metrics{grid-template-columns:repeat(2,1fr)}.meal-quick-grid{grid-template-columns:1fr}.admin-shell{padding-bottom:40px}}
 @media(max-width:600px){.admin-page-heading{flex-direction:column}.meal-metrics,.meal-secondary-grid{grid-template-columns:1fr}.admin-filters{grid-template-columns:1fr}.admin-transaction-row,.admin-transactions-list .admin-transaction-row{grid-template-columns:1fr;gap:8px}.transaction-money{text-align:left}.meal-inline-stats{flex-direction:column;gap:7px}}
 
-
 /* MEAL dashboard analytics */
 .meal-period-toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 16px;margin:0 0 16px;border:1px solid var(--border);border-radius:16px;background:var(--surface)}
 .meal-period-toolbar>div:first-child{display:flex;flex-direction:column;gap:3px}
@@ -867,7 +864,6 @@ select.input { background: var(--surface); }
 .meal-progress i{display:block;height:100%;background:var(--brand);border-radius:inherit}
 @media(max-width:900px){.meal-analytics-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.meal-period-toolbar{align-items:stretch;flex-direction:column}.meal-period-buttons{width:100%}.meal-period-buttons button{flex:1}.meal-chart{height:180px;gap:3px}.meal-bar{width:65%}.meal-bar-wrap small{font-size:8px}.meal-analytics-grid{gap:12px}}
-
 
 /* MEAL settlements */
 .settlement-builder{margin:18px 0 28px}
@@ -962,67 +958,9 @@ select.input { background: var(--surface); }
   .finance-tx-row{grid-template-columns:1fr}
 }
 
-
 /* THANDIZO login */
-.thandizo-login{min-height:100dvh;display:grid;grid-template-columns:minmax(0,1.03fr) minmax(520px,.97fr);background:#f7f8f6;color:#102c25}
-.thandizo-login-visual{position:relative;min-height:100dvh;overflow:hidden;padding:58px 7vw 46px;display:flex;flex-direction:column;justify-content:space-between;color:#fff}
-.thandizo-login-visual-bg{position:absolute;inset:0;background:linear-gradient(135deg,#edf6f0 0%,#dbeee4 48%,#b9d8c5 100%);background-size:cover;background-position:center;z-index:0}
-.thandizo-login-visual-bg:after{content:"";position:absolute;inset:0;background-image:url('/thandizo-login-bg.jpg');background-size:cover;background-position:center;opacity:.92}
-.thandizo-login-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,51,36,.72),rgba(5,51,36,.15) 72%,rgba(5,51,36,.05));z-index:1}
-.thandizo-brand,.thandizo-login-message,.thandizo-login-footer-message{position:relative;z-index:2}
-.thandizo-brand{display:flex;align-items:center;gap:13px}
-.thandizo-brand-icon{width:54px;height:54px;display:grid;place-items:center}
+
 .thandizo-mark{width:100%;height:100%;display:block}
-.thandizo-brand-light .thandizo-brand-icon{color:#f5a623}
-.thandizo-brand-light .thandizo-brand-icon svg{filter:drop-shadow(0 2px 3px rgba(0,0,0,.12))}
-.thandizo-brand strong{display:block;font-size:2.55rem;line-height:.92;letter-spacing:.035em;font-weight:900}
-.thandizo-brand small{display:block;margin-top:8px;font-size:.72rem;letter-spacing:.16em;font-weight:700;opacity:.92}
-.thandizo-login-message{max-width:540px;margin-top:auto;margin-bottom:auto;padding:90px 0 40px}
-.thandizo-accent{display:block;width:56px;height:6px;border-radius:99px;background:#f5a623;margin-bottom:25px}
-.thandizo-login-message h1{font-size:clamp(2.7rem,4.2vw,4.55rem);line-height:1.02;letter-spacing:-.045em;margin:0 0 24px;font-weight:850}
-.thandizo-login-message>p{max-width:410px;font-size:1.02rem;line-height:1.55;margin:0;color:rgba(255,255,255,.82)}
-.thandizo-features{display:grid;gap:11px;margin-top:38px}
-.thandizo-features>div{display:grid;grid-template-columns:42px 1fr;column-gap:12px;align-items:center}
-.thandizo-features span{grid-row:1/3;width:42px;height:42px;border-radius:12px;background:rgba(240,255,247,.88);color:#176b4d;display:grid;place-items:center;font-size:1.2rem}
-.thandizo-features strong{font-size:.88rem}
-.thandizo-features small{font-size:.72rem;color:rgba(255,255,255,.68);margin-top:2px}
-.thandizo-login-footer-message .thandizo-accent{width:40px;height:4px;margin-bottom:14px}
-.thandizo-login-footer-message p{font-size:.72rem;line-height:1.55;letter-spacing:.17em;font-weight:800;margin:0}
-.thandizo-login-panel{position:relative;min-height:100dvh;display:flex;justify-content:center;align-items:center;padding:60px 6vw 40px;background:linear-gradient(135deg,#f5f8f6,#eef3f0)}
-.thandizo-language{position:absolute;top:30px;right:42px;display:flex;align-items:center;gap:8px;font-size:.78rem;font-weight:700;color:#18352d}
-.thandizo-login-card{width:min(100%,632px);background:#fff;border:1px solid #e7ece9;border-radius:20px;box-shadow:0 22px 65px rgba(24,58,45,.09);padding:64px 58px 38px}
-.thandizo-card-brand{display:flex;align-items:center;gap:9px;margin-bottom:54px}
-.thandizo-card-brand .thandizo-brand-icon{width:48px;height:48px;color:#f5a623}
-.thandizo-card-brand strong{display:block;color:#0f5139;font-size:1.75rem;line-height:.92;font-weight:900;letter-spacing:.025em}
-.thandizo-card-brand small{display:block;color:#193b32;font-size:.48rem;letter-spacing:.12em;font-weight:800;margin-top:5px}
-.thandizo-welcome h2{font-size:2rem;line-height:1.1;margin:0;color:#102c3e;letter-spacing:-.03em}
-.thandizo-welcome p{margin:8px 0 32px;color:#7b8790;font-size:.92rem}
-.thandizo-login-form{display:flex;flex-direction:column;gap:9px}
-.thandizo-login-form>label{font-size:.8rem;font-weight:800;color:#132d40;margin-top:8px}
-.thandizo-input-wrap{height:52px;border:1px solid #dce2e5;border-radius:10px;display:flex;align-items:center;padding:0 15px;gap:10px;transition:border-color .15s,box-shadow .15s}
-.thandizo-input-wrap:focus-within{border-color:#176b4d;box-shadow:0 0 0 3px rgba(23,107,77,.08)}
-.thandizo-input-wrap>span{font-size:1.05rem;color:#64727b;width:20px;text-align:center}
-.thandizo-input-wrap input{border:0;outline:0;background:transparent;min-width:0;width:100%;font:inherit;color:#17322a;font-size:.84rem}
-.thandizo-input-wrap input::placeholder{color:#a6afb5}
-.thandizo-login-options{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 18px}
-.thandizo-check{display:flex!important;align-items:center;gap:8px;font-size:.75rem!important;font-weight:600!important;color:#334c58!important;margin:0!important}
-.thandizo-check input{accent-color:#176b4d;width:18px;height:18px}
-.thandizo-link{border:0;background:none;padding:0;color:#176b4d;font:inherit;font-size:.75rem;font-weight:800;cursor:pointer}
-.thandizo-link:disabled{opacity:.55}
-.thandizo-login-button{height:53px;border:0;border-radius:9px;background:#075a3d;color:#fff;font-size:.88rem;font-weight:850;cursor:pointer;box-shadow:0 8px 18px rgba(7,90,61,.16);display:flex;align-items:center;justify-content:center;gap:14px}
-.thandizo-login-button:hover{background:#064d35}
-.thandizo-login-button:disabled{opacity:.65;cursor:not-allowed}
-.thandizo-login-button span{font-size:1.2rem}
-.thandizo-divider{display:flex;align-items:center;gap:12px;color:#9aa4aa;font-size:.75rem;margin:30px 0 25px}
-.thandizo-divider:before,.thandizo-divider:after{content:"";height:1px;background:#e7ebed;flex:1}
-.thandizo-card-footer{display:flex;justify-content:space-between;gap:20px;align-items:flex-end}
-.thandizo-card-footer strong{display:block;color:#273a40;font-size:.75rem}
-.thandizo-card-footer p{margin:7px 0 0;color:#89949a;font-size:.67rem;line-height:1.45}
-.thandizo-version{text-align:right}
-.thandizo-version strong{font-size:.68rem;color:#53626a}
-.thandizo-version span{display:block;margin-top:7px;color:#a0a8ad;font-size:.62rem}
-@media(max-width:1050px){.thandizo-login{grid-template-columns:1fr}.thandizo-login-visual{min-height:470px;padding:42px 7vw}.thandizo-login-message{padding:45px 0 30px}.thandizo-login-message h1{font-size:3.1rem}.thandizo-features{grid-template-columns:1fr 1fr}.thandizo-login-footer-message{display:none}.thandizo-login-panel{min-height:auto;padding:50px 7vw 60px}.thandizo-language{top:22px}}
-@media(max-width:620px){.thandizo-login-visual{min-height:390px;padding:28px 24px}.thandizo-brand strong{font-size:1.8rem}.thandizo-brand small{font-size:.52rem}.thandizo-brand-icon{width:43px;height:43px}.thandizo-login-message{padding:35px 0 15px}.thandizo-login-message h1{font-size:2.55rem}.thandizo-login-message>p{font-size:.86rem}.thandizo-features{display:none}.thandizo-login-panel{padding:48px 16px 30px}.thandizo-language{right:18px}.thandizo-login-card{padding:40px 24px 28px;border-radius:16px}.thandizo-card-brand{margin-bottom:42px}.thandizo-card-footer{flex-direction:column;align-items:flex-start}.thandizo-version{text-align:left}.thandizo-login-options{align-items:flex-start;flex-direction:column}.thandizo-link{align-self:flex-end}}
 
 /* Agrodealers, products and prices (back office) and catalogue */
 .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -1208,7 +1146,6 @@ select.input { background: var(--surface); }
   .finance-table-tools { grid-template-columns:1fr; }
   .finance-table-foot { align-items:flex-start; flex-direction:column; }
 }
-
 
 /* THANDIZO MEAL dashboard */
 .meal-dashboard-app{min-height:100vh;background:#fff;color:#10213a}
@@ -1417,7 +1354,6 @@ select.input { background: var(--surface); }
  .admin-shell>.admin-page-heading{margin-bottom:18px}
  .admin-shell>h1{font-size:24px}
 }
-
 
 /* THANDIZO compact UI pass: preserve dashboard content, tighten navigation and controls */
 .meal-sidebar:not(.admin-sidebar) .meal-nav{gap:2px}
@@ -1717,53 +1653,66 @@ select.input { background: var(--surface); }
 .card-logo-image{height:90px;display:flex;align-items:center;justify-content:center;background:#166546;border-radius:10px;padding:12px;margin-bottom:8px}
 .card-logo-image img{max-height:100%;max-width:100%;object-fit:contain;background:#fff;border-radius:4px;padding:4px}
 
-
 /* THANDIZO minimalist split login */
-.thandizo-login-minimal{min-height:100vh;display:grid;place-items:center;padding:30px;background:radial-gradient(ellipse at 50% 38%,#0b5147 0%,#052f2d 62%,#032623 100%)}
-.thandizo-login-shell{width:min(1240px,100%);min-height:620px;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;border:1px solid rgba(255,255,255,.25);border-radius:18px;background:#fff;box-shadow:0 28px 80px rgba(0,20,17,.28)}
-.thandizo-login-photo{position:relative;isolation:isolate;min-height:620px;padding:30px 36px;color:#fff;background:#07543b url('/thandizo-login-bg.jpg') 18% 42%/cover no-repeat;display:flex;flex-direction:column}
-.thandizo-login-photo-overlay{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,42,30,.42) 0%,rgba(0,42,30,.04) 38%,rgba(0,42,30,.28) 60%,rgba(0,42,30,.82) 100%)}
-.thandizo-photo-brand{display:flex;align-items:center;gap:10px;font-size:25px;font-weight:850;letter-spacing:-.7px;text-shadow:0 2px 10px rgba(0,0,0,.2)}
-.thandizo-photo-brand .thandizo-brand-icon,.thandizo-form-brand .thandizo-brand-icon{width:43px;height:43px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,#12b75c,#05723d);color:#fff;box-shadow:0 6px 18px rgba(0,44,40,.2)}
-.thandizo-photo-message{margin-top:auto;max-width:420px;padding:0 0 46px}.thandizo-photo-accent{display:block;width:54px;height:6px;border-radius:99px;background:#8be329;margin-bottom:18px}
-.thandizo-photo-message h1{margin:0 0 13px;color:#fff;font-size:clamp(28px,3vw,39px);line-height:1.09;letter-spacing:-1.2px;font-weight:800}
-.thandizo-photo-message p{margin:0;max-width:350px;color:#eaf5ef;font-size:15px;line-height:1.6}
-.thandizo-photo-wave{position:absolute;left:0;right:0;bottom:0;height:88px;z-index:-1;background:linear-gradient(105deg,#087b42,#10a34e);clip-path:polygon(0 48%,22% 86%,56% 76%,100% 0,100% 100%,0 100%)}
-.thandizo-login-form-panel{display:flex;align-items:center;justify-content:center;padding:58px clamp(34px,6vw,82px);background:#fff}
-.thandizo-login-form-inner{width:100%;max-width:430px;margin:auto}
-.thandizo-form-brand{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:58px;color:#073d35}
-.thandizo-form-brand strong{font-size:24px;letter-spacing:-.6px}.thandizo-form-brand p{flex-basis:100%;margin:0 0 0 53px;color:#66756f;font-size:13px}
-.thandizo-login-heading h2{margin:0 0 9px;color:#073d35;font-size:34px;line-height:1.15;letter-spacing:-1.1px}
-.thandizo-login-heading p{margin:0 0 42px;color:#7a8582;font-size:14px}
-.thandizo-login-minimal-form{display:grid;gap:24px}
-.thandizo-minimal-field{position:relative;display:flex;align-items:center;min-height:52px;border-bottom:1.5px solid #aebbb6;transition:border-color .15s,box-shadow .15s}
-.thandizo-minimal-field:focus-within{border-color:#07964e;box-shadow:0 1px 0 #07964e}
-.thandizo-field-icon{width:34px;flex:0 0 34px;color:#344b43;font-size:19px}
-.thandizo-minimal-field input{width:100%;min-width:0;border:0;outline:0;background:transparent;padding:15px 8px 13px 3px;color:#183c32;font:inherit;font-size:15px}
-.thandizo-minimal-field input::placeholder{color:#89938f;opacity:1}.thandizo-minimal-field input[aria-invalid=true]{color:#a12626}
-.thandizo-password-toggle{flex:0 0 34px;border:0;background:transparent;color:#46574f;font-size:19px;padding:6px;cursor:pointer}
-.thandizo-minimal-options{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:-3px;font-size:12px}
-.thandizo-remember{display:flex;align-items:center;gap:8px;color:#53615c;white-space:nowrap}.thandizo-remember input{accent-color:#087b45;width:15px;height:15px}
-.thandizo-recovery-link{padding:0;border:0;background:transparent;color:#087b45;font-weight:650;text-decoration:none;cursor:pointer;text-align:right}.thandizo-recovery-link:hover{text-decoration:underline}
-.thandizo-minimal-submit{width:100%;min-height:54px;margin-top:7px;border:0;border-radius:10px;background:linear-gradient(90deg,#006638,#078a49);color:#fff;font-weight:750;font-size:15px;cursor:pointer;box-shadow:0 8px 18px rgba(0,107,60,.14);transition:filter .15s,transform .15s}
-.thandizo-minimal-submit:hover{filter:brightness(1.06);transform:translateY(-1px)}.thandizo-minimal-submit:disabled{opacity:.65;cursor:wait;transform:none}.thandizo-minimal-submit span{margin-left:12px;font-size:19px}
-.thandizo-auth-error,.thandizo-auth-success{padding:11px 13px;border-radius:8px;font-size:13px}.thandizo-auth-error{background:#fff0f0;color:#a12626;border:1px solid #f4c7c3}.thandizo-auth-success{background:#effaf2;color:#087b45;border:1px solid #c7ebd2}
-.thandizo-login-legal{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:64px;padding-top:18px;border-top:1px solid #edf1ef;color:#7c8985;font-size:11px;text-align:center}
-@media(max-width:850px){.thandizo-login-minimal{padding:16px}.thandizo-login-shell{max-width:580px;grid-template-columns:1fr}.thandizo-login-photo{min-height:300px;padding:23px 26px}.thandizo-photo-brand{font-size:22px}.thandizo-login-photo .thandizo-brand-icon{width:39px;height:39px}.thandizo-photo-message{padding-bottom:20px;margin-top:65px}.thandizo-photo-message h1{font-size:28px}.thandizo-photo-message p{font-size:13px}.thandizo-photo-wave{height:55px}.thandizo-login-form-panel{padding:38px 30px}.thandizo-form-brand{margin-bottom:35px}.thandizo-login-heading h2{font-size:29px}.thandizo-login-heading p{margin-bottom:30px}.thandizo-login-legal{margin-top:40px}}
-@media(max-width:460px){.thandizo-login-minimal{padding:0;background:#fff}.thandizo-login-shell{min-height:100vh;border:0;border-radius:0;box-shadow:none}.thandizo-login-photo{min-height:255px;padding:20px 22px}.thandizo-photo-message{margin-top:42px}.thandizo-login-form-panel{padding:32px 23px}.thandizo-minimal-options{align-items:flex-start;flex-direction:column}.thandizo-recovery-link{text-align:left}.thandizo-login-legal{margin-top:34px}}
-@media(prefers-reduced-motion:reduce){.thandizo-minimal-submit,.thandizo-minimal-field{transition:none}}
 
 /* Cliente da instalação no login (Configuração): discreto, alinhado com a frase do produto */
-.thandizo-login-client{margin:-40px 0 36px 53px;display:grid;gap:3px}
-.thandizo-login-client span{color:#087b45;font-size:12px;font-weight:700;letter-spacing:.02em}
-.thandizo-login-client small{color:#7a8582;font-size:12px;font-style:italic}
-@media(max-width:850px){.thandizo-login-client{margin:-22px 0 26px 53px}}
 
 /* Símbolo do THANDIZO (ThandizoMark): o quadrado verde vem no próprio desenho */
 .meal-brand-mark,.finance-brand-mark,.app-logo-mark{width:38px;height:38px;flex:0 0 auto;display:block;background:none;border-radius:0;position:static}
 .meal-brand-mark .thandizo-mark,.finance-brand-mark .thandizo-mark,.app-logo-mark .thandizo-mark{width:100%;height:100%}
 .finance-mobile-brand .finance-brand-mark{transform:none;width:28px;height:28px;margin-right:0}
 .meal-mobile-brand .meal-brand-mark{width:28px;height:28px}
-.thandizo-photo-brand .thandizo-brand-icon,.thandizo-form-brand .thandizo-brand-icon{background:none;box-shadow:none;border-radius:0}
-.thandizo-photo-brand .thandizo-mark{filter:drop-shadow(0 4px 12px rgba(0,0,0,.25))}
-.meal-brand strong,.finance-brand strong,.app-logo strong,.header-brand,.thandizo-form-brand strong,.meal-mobile-brand strong,.finance-mobile-brand strong{color:#00581a}
+
+.meal-brand strong,.finance-brand strong,.app-logo strong,.header-brand,.meal-mobile-brand strong,.finance-mobile-brand strong{color:#00581a}
+
+/* ===== Login (pages/auth/login.tsx) ===== */
+.tl-page{min-height:100vh;display:grid;place-items:center;padding:40px 24px;background:#003938}
+.tl-card{width:min(1344px,100%);min-height:620px;display:grid;grid-template-columns:51% 49%;overflow:hidden;border-radius:14px;background:#fff;box-shadow:0 30px 80px rgba(0,20,18,.35)}
+.tl-photo{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:space-between;padding:26px 40px 46px;color:#fff;background:#0b4d2c url('/thandizo-login-bg.jpg') 18% 40%/cover no-repeat}
+.tl-photo-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,30,20,.30) 0%,rgba(0,30,20,0) 30%,rgba(0,30,20,0) 52%,rgba(0,30,20,.62) 100%)}
+.tl-logo{display:flex;align-items:center;gap:14px}
+.tl-logo .thandizo-mark{width:54px;height:54px;flex:0 0 auto;filter:drop-shadow(0 4px 12px rgba(0,0,0,.25))}
+.tl-logo span{font-size:38px;font-weight:600;letter-spacing:-.02em;text-shadow:0 2px 12px rgba(0,0,0,.25)}
+.tl-accent{display:block;width:60px;height:6px;border-radius:99px;background:#96f52a;margin-bottom:22px}
+.tl-message{max-width:320px}
+.tl-message h1{margin:0;color:#fff;font-size:clamp(28px,2.7vw,36px);line-height:1.12;font-weight:700;letter-spacing:-.02em;text-shadow:0 2px 14px rgba(0,0,0,.35)}
+.tl-panel{display:flex;padding:0 clamp(32px,5.5vw,74px)}
+.tl-panel-inner{width:100%;max-width:514px;display:flex;flex-direction:column;padding:130px 0 34px}
+.tl-panel h2{margin:0 0 44px;color:#002221;font-size:clamp(32px,3.2vw,44px);line-height:1.1;font-weight:700;letter-spacing:-.03em}
+.tl-form{display:grid;gap:22px}
+.tl-field{display:flex;align-items:center;gap:14px;min-height:58px;border-bottom:1.5px solid #c4ccca;transition:border-color .15s}
+.tl-field:focus-within{border-color:#014d2a}
+.tl-field-icon svg,.tl-eye svg{width:24px;height:24px;fill:none;stroke:#1f2b2a;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;display:block}
+.tl-field-icon{flex:0 0 auto;padding-left:8px}
+.tl-field input{flex:1;min-width:0;border:0;outline:0;background:transparent;padding:14px 0;color:#0f2b25;font:inherit;font-size:16px}
+.tl-field input::placeholder{color:#7d8784;opacity:1}
+.tl-field input[aria-invalid=true]{color:#a12626}
+.tl-eye{flex:0 0 auto;border:0;background:transparent;padding:6px;cursor:pointer;border-radius:6px}
+.tl-eye:focus-visible,.tl-recover:focus-visible,.tl-submit:focus-visible{outline:2px solid #2bb35a;outline-offset:2px}
+.tl-recover{justify-self:end;margin-top:-4px;border:0;background:transparent;padding:0;color:#0b6b36;font:inherit;font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.tl-alert{padding:11px 13px;border-radius:8px;font-size:14px}
+.tl-alert-error{background:#fff0f0;color:#a12626;border:1px solid #f4c7c3}
+.tl-alert-success{background:#effaf2;color:#0b6b36;border:1px solid #c7ebd2}
+.tl-submit{min-height:56px;margin-top:18px;border:0;border-radius:10px;background:#014d2a;color:#fff;font:inherit;font-size:17px;font-weight:600;cursor:pointer;transition:background .15s}
+.tl-submit:hover{background:#016234}
+.tl-submit:disabled{opacity:.7;cursor:wait}
+.tl-submit span{margin-left:14px;font-size:20px}
+.tl-footer{margin-top:auto;padding-top:48px;display:flex;justify-content:center;flex-wrap:wrap;gap:6px 14px;color:#1b2523;font-size:14px;text-align:center}
+.tl-footer-client{flex-basis:100%;color:#7d8784;font-size:12px}
+@media(max-width:900px){
+  .tl-page{padding:16px}
+  .tl-card{grid-template-columns:1fr;max-width:600px;min-height:0}
+  .tl-photo{min-height:300px;padding:22px 26px 28px}
+  .tl-logo .thandizo-mark{width:44px;height:44px}.tl-logo span{font-size:30px}
+  .tl-panel{padding:0 28px}
+  .tl-panel-inner{padding:40px 0 28px;max-width:none}
+  .tl-panel h2{margin-bottom:28px}
+  .tl-footer{padding-top:36px;font-size:12px}
+}
+@media(max-width:460px){
+  .tl-page{padding:0;background:#fff}
+  .tl-card{border-radius:0;box-shadow:none;min-height:100vh}
+  .tl-photo{min-height:250px}
+  .tl-panel{padding:0 22px}
+}
+@media(prefers-reduced-motion:reduce){.tl-field,.tl-submit{transition:none}}

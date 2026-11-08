@@ -44,7 +44,7 @@ export function FinanceLayout({ children }: { children: ReactNode }) {
                 </nav>
                 <div className="finance-sidebar-bottom">
                     <Link href="/logout" method="post" as="button" className="finance-nav-link finance-logout"><span className="finance-nav-icon">↪</span><span>Sair</span></Link>
-                    <div className="finance-sci-footer"><strong>{brand.programme ?? 'Thandizo'}</strong><span>v2.0.0</span></div>
+                    <div className="finance-sci-footer"><strong>{brand.programme ?? 'Thandizo'}</strong><span>v1.0</span></div>
                 </div>
             </aside>
 
