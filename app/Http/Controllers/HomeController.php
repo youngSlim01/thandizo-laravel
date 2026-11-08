@@ -20,7 +20,7 @@ class HomeController extends Controller
     public function __invoke(Request $request, NavigationService $navigation): Response|RedirectResponse
     {
         $user = $request->user();
-        // Quem vende abre o início do POS; as Finanças a sua área.
+        // O administrador do sistema entra no painel global.\n        if ($user->role === UserRole::SystemAdmin) {\n            return redirect('/system/dashboard');\n        }\n\n        // Quem vende abre o início do POS; as Finanças a sua área.
         if ($user->can('pos')) {
             return app(PosController::class)->home($request);
         }
