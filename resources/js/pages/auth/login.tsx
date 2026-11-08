@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { brandSubtitle, PRODUCT_TAGLINE } from '@/lib/brand';
+import { PRODUCT_TAGLINE } from '@/lib/brand';
 import type { SharedProps } from '@/types';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
@@ -9,7 +9,7 @@ import { ThandizoMark } from '@/components/thandizo-mark';
 // A diferença: o formulário é enviado ao Laravel (POST /login), que valida a
 // palavra-passe e abre a sessão. Os erros voltam em form.errors.
 export default function Login() {
-    const { flash, brand } = usePage<SharedProps>().props;
+    const { flash } = usePage<SharedProps>().props;
     const form = useForm({ email: '', password: '', remember: true });
     const [showPassword, setShowPassword] = useState(false);
 
@@ -61,7 +61,7 @@ export default function Login() {
                             <label className="thandizo-minimal-field" htmlFor="email">
                                 <span className="thandizo-field-icon" aria-hidden="true">♙</span>
                                 <input id="email" type="text" autoComplete="username"
-                                    placeholder="Nome de utilizador ou e-mail"
+                                    placeholder="E-mail"
                                     value={form.data.email}
                                     onChange={(e) => form.setData('email', e.target.value)}
                                     aria-invalid={Boolean(form.errors.email)} required />
