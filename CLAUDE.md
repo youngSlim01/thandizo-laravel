@@ -7,6 +7,7 @@
 - Ids em UUID (`HasUuids`). Os dados do sistema antigo não são migrados: só a estrutura.
 - Nomes (províncias, distritos, comunidades…) comparam-se sem diferenciar maiúsculas nem acentos: usar a collation `utf8mb4_unicode_ci` e não normalizar em PHP.
 - Testes correm em MySQL (`thandizo_test`), não em SQLite.
+- Decisões sobre o funcionamento do sistema ficam em `docs/DECISOES.md`: sempre que se decide algo novo (regra, permissão, termo, configuração, produto), actualizar o documento no mesmo commit, com a razão ao lado e a data de actualização.
 
 <laravel-boost-guidelines>
 === foundation rules ===
