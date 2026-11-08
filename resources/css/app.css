@@ -1659,3 +1659,6 @@ select.input { background: var(--surface); }
 .cd-status-ok{color:#067647}.cd-status-late{color:#b54708}
 @media(max-width:1100px){.cd-grid-wide,.cd-grid-3{grid-template-columns:1fr}}
 @media(max-width:600px){.cd-pace-row{grid-template-columns:1fr 44px}.cd-pace-row span:first-child{grid-column:1/-1}.cd-heading h1{font-size:23px}}
+
+/* Shared typography: light, restrained and consistent across THANDIZO modules */
+h1,h2,h3{font-weight:450;letter-spacing:-.025em}
