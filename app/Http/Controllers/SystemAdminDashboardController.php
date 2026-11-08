@@ -41,7 +41,7 @@ class SystemAdminDashboardController extends Controller
         ]))->sortByDesc('date')->take(6)->values();
 
         return Inertia::render('system/dashboard', ['dashboard' => [
-            'users_active' => $activeUsers, 'users_pending' => $pendingUsers,
+            'period' => now()->locale('pt')->translatedFormat('F Y'),\n            'users_active' => $activeUsers, 'users_pending' => $pendingUsers,
             'cycles_total' => $cycles, 'transactions_total' => $transactionCount,
             'transactions_value' => $transactionValue, 'agrodealers_total' => $agrodealers,
             'transactions_rejected_24h' => $rejected, 'transactions_pending' => $pendingTransactions,
