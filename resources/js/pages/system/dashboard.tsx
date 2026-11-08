@@ -5,7 +5,7 @@ import '@/../css/system-dashboard.css';
 
 type Activity = { type: string; title: string; detail: string; date: string | null };
 type DashboardData = {
-  users_active: number; users_pending: number; cycles_total: number;
+  period: string; users_active: number; users_pending: number; cycles_total: number;
   transactions_total: number; transactions_value: number; agrodealers_total: number;
   transactions_rejected_24h: number; transactions_pending: number;
   roles: { label: string; count: number }[];
@@ -31,7 +31,7 @@ export default function SystemDashboard({ dashboard: data }: { dashboard: Dashbo
   return <div className="system-dashboard">
     <Head title="Dashboard System Admin · THANDIZO" />
     <AdminHeader topbar={false}/>
-    <div className="sys-topbar"><button className="sys-menu" aria-label="Menu">☰</button><div className="sys-search">⌕ <span>Pesquisar no sistema (utilizador, programa, transacção, ...)</span></div><div className="sys-topbar-spacer"/><span className="sys-date">▦ Outubro 2026</span><button className="sys-bell" aria-label="Notificações">♧<i>3</i></button><UserMenu className="sys-user-menu"/></div>
+    <div className="sys-topbar"><button className="sys-menu" aria-label="Menu">☰</button><div className="sys-search">⌕ <span>Pesquisar no sistema (utilizador, programa, transacção, ...)</span></div><div className="sys-topbar-spacer"/><span className="sys-date">▦ {data.period}</span><button className="sys-bell" aria-label="Notificações">♧<i>3</i></button><UserMenu className="sys-user-menu"/></div>
     <main className="sys-main">
       <header className="sys-heading"><div><h1>Bom dia, {user?.full_name ?? 'Administrador'}! 👋</h1><div className="sys-heading-sub"><span>Painel de Administração do THANDIZO</span><b/> <em>System Admin</em></div></div><p>Administração, segurança e controlo global da plataforma.</p></header>
       <section className="sys-metrics">
