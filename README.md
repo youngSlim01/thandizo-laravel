@@ -69,6 +69,9 @@ Abrir http://localhost:8000. Para parar o servidor: Ctrl + C.
 Manter sincronizado (traz as últimas alterações e actualiza tudo, sem apagar
 os dados): `composer actualizar`, depois `php artisan serve`.
 
+Recomeçar os testes do zero guardando só os utilizadores (e as províncias e
+distritos do programa): `php artisan thandizo:clear-data`. Não corre em produção.
+
 ### No Mac com Intel (Herd + DBngin)
 
 O Homebrew actual já não instala em Macs com Intel. Em alternativa (macOS 12+):
