@@ -50,7 +50,7 @@ brew install php composer node mysql@8.4 gh
 echo 'export PATH="$(brew --prefix mysql@8.4)/bin:$PATH"' >> ~/.zshrc && source ~/.zshrc
 printf '[mysqld]\nlog_bin_trust_function_creators=1\n' >> "$(brew --prefix)/etc/my.cnf"
 brew services start mysql@8.4
-mysql -uroot -e "CREATE DATABASE thandizo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE thandizo_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER 'thandizo'@'localhost' IDENTIFIED BY 'secret'; GRANT ALL ON thandizo.* TO 'thandizo'@'localhost'; GRANT ALL ON thandizo_test.* TO 'thandizo'@'localhost';"
+mysql -uroot -e "CREATE DATABASE thandizo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE DATABASE thandizo_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER 'thandizo'@'%' IDENTIFIED BY 'secret'; GRANT ALL ON thandizo.* TO 'thandizo'@'%'; GRANT ALL ON thandizo_test.* TO 'thandizo'@'%';"
 ```
 
 Trazer o projecto e instalar (o branch de trabalho é `claude/ecstatic-hopper-9mpu3l`):
