@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\ClientProfileService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Gate;
@@ -38,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
 
         ResetPassword::toMailUsing(function (User $user, string $token): MailMessage {
             $minutes = config('auth.passwords.users.expire');
-            $client = config('thandizo.client.name');
+            $client = app(ClientProfileService::class)->current()['client'];
             $signature = $client ? "THANDIZO · {$client}" : 'THANDIZO';
 
             return (new MailMessage)

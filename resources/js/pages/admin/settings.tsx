@@ -2,16 +2,52 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState, type FormEvent } from 'react';
 import { AdminLayout } from '@/components/admin-layout';
 import { firstError } from '@/lib/action';
-import { PRODUCT_TAGLINE } from '@/lib/brand';
 import type { SharedProps } from '@/types';
 
 type Logo = { id: string; position: number; name: string; url: string };
-type Props = { logos: Logo[]; maxLogos: number };
+type Client = { client: string | null; programme: string | null; tagline: string | null };
+type Props = { client: Client; logos: Logo[]; maxLogos: number };
+
+function ClientForm({ client }: { client: Client }) {
+    const form = useForm({ name: client.client ?? '', programme: client.programme ?? '', tagline: client.tagline ?? '' });
+
+    function save(event: FormEvent) {
+        event.preventDefault();
+        form.put('/admin/settings/client', { preserveScroll: true });
+    }
+
+    const error = form.errors.name ?? form.errors.programme ?? form.errors.tagline;
+
+    return (
+        <form className="admin-card admin-form" onSubmit={save}>
+            <span className="section-label">Cliente</span>
+            <p className="muted-text small-note">
+                Aparece junto do nome THANDIZO: o nome da organização nos cabeçalhos, no recibo e nos PDFs;
+                o programa no cartão e no rodapé do menu; a frase na página de entrada. Deixe vazio o que não se aplica.
+            </p>
+            <div className="form-grid-2">
+                <div><label className="form-label" htmlFor="client-name">Organização</label>
+                    <input id="client-name" className="input" maxLength={120} placeholder="Ex.: Save the Children"
+                        value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} /></div>
+                <div><label className="form-label" htmlFor="client-programme">Programa</label>
+                    <input id="client-programme" className="input" maxLength={120} placeholder="Ex.: Projecto LINK GCF"
+                        value={form.data.programme} onChange={(e) => form.setData('programme', e.target.value)} /></div>
+            </div>
+            <label className="form-label" htmlFor="client-tagline">Frase do cliente (opcional)</label>
+            <input id="client-tagline" className="input" maxLength={160} placeholder="Mostrada na página de entrada, por baixo do nome da organização"
+                value={form.data.tagline} onChange={(e) => form.setData('tagline', e.target.value)} />
+            {error && <div className="error-box">{error}</div>}
+            <div className="admin-form-actions">
+                <button type="submit" className="primary-button" disabled={form.processing || !form.isDirty}>{form.processing ? 'A GUARDAR…' : 'GUARDAR CLIENTE'}</button>
+            </div>
+        </form>
+    );
+}
 
 // Configuração da instalação: o cliente (definido no .env) e os logótipos
 // impressos nos cartões, carregados aqui pelo administrador.
-export default function Settings({ logos, maxLogos }: Props) {
-    const { brand, flash } = usePage<SharedProps>().props;
+export default function Settings({ client, logos, maxLogos }: Props) {
+    const { flash } = usePage<SharedProps>().props;
     const form = useForm<{ logo: File | null }>({ logo: null });
     const fileInput = useRef<HTMLInputElement>(null);
     const [error, setError] = useState<string | null>(null);
@@ -42,16 +78,7 @@ export default function Settings({ logos, maxLogos }: Props) {
             {flash.success && <div className="success-box">{flash.success}</div>}
             {error && <div className="error-box">{error}</div>}
 
-            <section className="admin-card">
-                <span className="section-label">Cliente</span>
-                <div className="finance-info-list">
-                    <div><span>Produto</span><strong>THANDIZO · {PRODUCT_TAGLINE}</strong></div>
-                    <div><span>Organização</span><strong>{brand.client ?? '—'}</strong></div>
-                    <div><span>Programa</span><strong>{brand.programme ?? '—'}</strong></div>
-                    <div><span>Frase do cliente</span><strong>{brand.tagline ?? '—'}</strong></div>
-                </div>
-                <p className="muted-text small-note">Estes dados vêm da configuração da instalação (THANDIZO_CLIENT_NAME, THANDIZO_PROGRAMME_NAME e THANDIZO_CLIENT_TAGLINE no .env).</p>
-            </section>
+            <ClientForm client={client} />
 
             <h2>Logótipos do cartão</h2>
             <p className="muted-text">

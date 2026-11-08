@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\AgrodealerPos;
 use App\Models\CardLogo;
 use App\Services\CardLogoService;
+use App\Services\ClientProfileService;
 use App\Services\NavigationService;
 use App\Services\PosTerminal;
 use Illuminate\Http\Request;
@@ -43,11 +44,9 @@ class HandleInertiaRequests extends Middleware
                         : null,
                 ] : null,
             ],
-            // Cliente desta instalação (config/thandizo.php), mostrado junto de THANDIZO.
+            // Cliente desta instalação (Configuração), mostrado junto de THANDIZO.
             'brand' => [
-                'client' => $this->filled(config('thandizo.client.name')),
-                'programme' => $this->filled(config('thandizo.client.programme')),
-                'tagline' => $this->filled(config('thandizo.client.tagline')),
+                ...app(ClientProfileService::class)->current(),
                 // Logótipos dos cartões (endereços), da esquerda para a direita.
                 'logos' => fn () => $user ? app(CardLogoService::class)->list()->map(fn (CardLogo $logo): string => $logo->url())->all() : [],
             ],
@@ -60,12 +59,5 @@ class HandleInertiaRequests extends Middleware
                 'credentials' => fn () => $request->session()->get('credentials'),
             ],
         ];
-    }
-
-    private function filled(mixed $value): ?string
-    {
-        $value = trim((string) $value);
-
-        return $value === '' ? null : $value;
     }
 }

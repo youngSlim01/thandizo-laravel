@@ -59,13 +59,11 @@ aberto e 20 agregados com cartão entregue (`VCH-MUT-000001-8`, …). Utilizador
 todos com a palavra-passe `password`: `admin`, `operador`, `gestor-agro`,
 `meal`, `gestor-meal` e `financas` `@thandizo.test`.
 
-O cliente de cada instalação aparece junto do nome THANDIZO (cabeçalhos,
-recibo, cartão e PDFs) e define-se no `.env` (`config/thandizo.php`):
-`THANDIZO_CLIENT_NAME` (organização), `THANDIZO_PROGRAMME_NAME` (programa) e
-`THANDIZO_CLIENT_TAGLINE` (frase do cliente na página de entrada, opcional).
-Vazios, só aparece THANDIZO com a frase do produto. Os logótipos impressos nos
-cartões carregam-se no próprio sistema, em Configuração (administrador do
-sistema), e ficam na base de dados.
+O cliente de cada instalação (organização, programa e frase do cliente) e os
+logótipos impressos nos cartões definem-se no próprio sistema, em Configuração
+(administrador do sistema), e aparecem junto do nome THANDIZO nos ecrãs, no
+recibo, no cartão e nos PDFs. Sem cliente, só aparece THANDIZO com a frase do
+produto.
 
 O MySQL precisa de `log_bin_trust_function_creators=1` para criar os triggers
 (`SET GLOBAL log_bin_trust_function_creators=1;`).

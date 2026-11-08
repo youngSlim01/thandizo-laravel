@@ -12,6 +12,7 @@ use App\Models\Locality;
 use App\Models\User;
 use App\Services\CardLogoService;
 use App\Services\CardService;
+use App\Services\ClientProfileService;
 use App\Services\CycleService;
 use App\Services\PosService;
 use App\Services\PriceService;
@@ -91,7 +92,8 @@ class DemoSeeder extends Seeder
         }
         Carbon::setTestNow();
 
-        // Logótipos do cliente de demonstração, como se fossem carregados na Configuração.
+        // Cliente e logótipos de demonstração, como se fossem definidos na Configuração.
+        app(ClientProfileService::class)->update($admin, ['name' => 'Save the Children', 'programme' => 'Projecto LINK GCF']);
         $logos = app(CardLogoService::class);
         foreach (glob(__DIR__.'/demo-logos/*') as $file) {
             $logos->add($admin, new UploadedFile($file, basename($file), null, null, true));

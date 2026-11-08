@@ -52,6 +52,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('can:configure-installation')->prefix('admin/settings')->name('admin.settings.')->group(function () {
         Route::get('/', [SettingsController::class, 'index'])->name('index');
+        Route::put('/client', [SettingsController::class, 'updateClient'])->name('client.update');
         Route::post('/logos', [SettingsController::class, 'storeLogo'])->name('logos.store');
         Route::put('/logos/{logo}/move-left', [SettingsController::class, 'moveLogo'])->name('logos.move');
         Route::delete('/logos/{logo}', [SettingsController::class, 'destroyLogo'])->name('logos.destroy');
