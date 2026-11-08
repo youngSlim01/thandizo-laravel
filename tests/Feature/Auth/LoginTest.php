@@ -28,7 +28,7 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->role(UserRole::MealManager)->create();
 
-        $this->post('/login', ['email' => $user->email, 'password' => 'password'])
+        $this->post('/login', ['login' => $user->email, 'password' => 'password'])
             ->assertRedirect('/');
 
         $this->assertAuthenticatedAs($user);
@@ -39,8 +39,8 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->post('/login', ['email' => $user->email, 'password' => 'errada'])
-            ->assertSessionHasErrors(['email' => 'Email ou palavra-passe incorretos.']);
+        $this->post('/login', ['login' => $user->email, 'password' => 'errada'])
+            ->assertSessionHasErrors(['login' => 'Utilizador ou palavra-passe incorretos.']);
         $this->assertGuest();
     }
 
@@ -48,8 +48,8 @@ class LoginTest extends TestCase
     {
         $user = User::factory()->inactive()->create();
 
-        $this->post('/login', ['email' => $user->email, 'password' => 'password'])
-            ->assertSessionHasErrors(['email' => 'O seu utilizador não está ativo no programa.']);
+        $this->post('/login', ['login' => $user->email, 'password' => 'password'])
+            ->assertSessionHasErrors(['login' => 'O seu utilizador não está ativo no programa.']);
         $this->assertGuest();
     }
 
@@ -58,11 +58,28 @@ class LoginTest extends TestCase
         $user = User::factory()->create();
 
         foreach (range(1, 5) as $_) {
-            $this->post('/login', ['email' => $user->email, 'password' => 'errada']);
+            $this->post('/login', ['login' => $user->email, 'password' => 'errada']);
         }
 
-        $this->post('/login', ['email' => $user->email, 'password' => 'password'])
-            ->assertSessionHasErrors('email');
+        $this->post('/login', ['login' => $user->email, 'password' => 'password'])
+            ->assertSessionHasErrors('login');
+        $this->assertGuest();
+    }
+
+    public function test_the_username_also_logs_in_ignoring_case_and_spaces(): void
+    {
+        $user = User::factory()->create(['username' => 'joao.operador']);
+
+        $this->post('/login', ['login' => ' Joao.Operador ', 'password' => 'password'])->assertRedirect('/');
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_an_unknown_username_is_refused_like_a_wrong_password(): void
+    {
+        User::factory()->create(['username' => 'joao.operador']);
+
+        $this->post('/login', ['login' => 'maria', 'password' => 'password'])
+            ->assertSessionHasErrors(['login' => 'Utilizador ou palavra-passe incorretos.']);
         $this->assertGuest();
     }
 

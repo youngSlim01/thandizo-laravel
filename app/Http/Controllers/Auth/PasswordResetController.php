@@ -17,19 +17,24 @@ use Inertia\Response;
 class PasswordResetController extends Controller
 {
     /**
-     * Envia o link. A resposta é sempre a mesma, exista ou não a conta, para
-     * não revelar que emails estão registados.
+     * Envia o link para o email da conta, indicada pelo email ou pelo nome de
+     * utilizador. A resposta é sempre a mesma, exista ou não a conta, para
+     * não revelar quem está registado.
      */
     public function sendLink(Request $request): RedirectResponse
     {
-        $request->validate(
-            ['email' => ['required', 'email']],
-            ['email.required' => 'Introduza o seu email para recuperar a palavra-passe.', 'email.email' => 'Email inválido.'],
+        $data = $request->validate(
+            ['login' => ['required', 'string', 'max:255']],
+            ['login.required' => 'Escreva o seu nome de utilizador ou e-mail para recuperar a palavra-passe.'],
         );
 
-        Password::sendResetLink($request->only('email'));
+        $login = mb_strtolower(trim($data['login']));
+        $email = str_contains($login, '@') ? $login : User::query()->where('username', $login)->value('email');
+        if ($email !== null) {
+            Password::sendResetLink(['email' => $email]);
+        }
 
-        return back()->with('success', 'Se o email estiver registado, enviámos um link de recuperação.');
+        return back()->with('success', 'Se a conta existir, enviámos um link de recuperação para o seu e-mail.');
     }
 
     public function edit(Request $request, string $token): Response

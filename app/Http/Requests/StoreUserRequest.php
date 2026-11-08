@@ -18,6 +18,18 @@ class StoreUserRequest extends FormRequest
     }
 
     /**
+     * O nome de utilizador guarda-se em minúsculas, sem espaços nas pontas;
+     * vazio fica sem nome de utilizador.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('username')) {
+            $username = mb_strtolower(trim((string) $this->input('username')));
+            $this->merge(['username' => $username === '' ? null : $username]);
+        }
+    }
+
+    /**
      * @return array<string, array<int, mixed>>
      */
     public function rules(): array
@@ -40,6 +52,9 @@ class StoreUserRequest extends FormRequest
 
         return [
             'full_name' => ['required', 'string', 'max:255'],
+            // Nome de utilizador opcional para entrar sem o email; nunca tem "@".
+            'username' => ['nullable', 'string', 'min:3', 'max:30', 'regex:/^[a-z0-9][a-z0-9._-]*$/',
+                Rule::unique('users', 'username')->ignore($this->route('user'))],
             'role' => ['required', Rule::enum(UserRole::class)],
             'agrodealer_id' => $role?->isSeller()
                 ? ['required', 'uuid', Rule::exists('agrodealers', 'id')]
@@ -84,6 +99,10 @@ class StoreUserRequest extends FormRequest
             'email.required' => 'Email inválido.',
             'email.email' => 'Email inválido.',
             'email.unique' => 'Já existe uma conta com este email.',
+            'username.min' => 'O nome de utilizador tem de ter entre 3 e 30 caracteres.',
+            'username.max' => 'O nome de utilizador tem de ter entre 3 e 30 caracteres.',
+            'username.regex' => 'O nome de utilizador só pode ter letras minúsculas sem acentos, números, ponto, hífen e sublinhado, e começa por letra ou número.',
+            'username.unique' => 'Já existe uma conta com este nome de utilizador.',
             'password.required' => 'A palavra-passe tem de ter pelo menos 8 caracteres.',
             'password.min' => 'A palavra-passe tem de ter pelo menos 8 caracteres.',
             'full_name.required' => 'Indique o nome completo.',

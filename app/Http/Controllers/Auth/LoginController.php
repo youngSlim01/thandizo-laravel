@@ -21,24 +21,28 @@ class LoginController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'string', 'email'],
+        $data = $request->validate([
+            'login' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
-        ]);
+        ], ['login.required' => 'Indique o nome de utilizador ou o e-mail.']);
 
-        // No máximo 5 tentativas por minuto para o mesmo email e IP.
-        $throttleKey = Str::lower($credentials['email']).'|'.$request->ip();
+        // Com "@" é o email; sem "@", o nome de utilizador (que nunca o tem).
+        $login = Str::lower(trim($data['login']));
+        $field = str_contains($login, '@') ? 'email' : 'username';
+
+        // No máximo 5 tentativas por minuto para o mesmo utilizador e IP.
+        $throttleKey = $login.'|'.$request->ip();
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
             throw ValidationException::withMessages([
-                'email' => "Demasiadas tentativas. Tente novamente dentro de {$seconds} segundos.",
+                'login' => "Demasiadas tentativas. Tente novamente dentro de {$seconds} segundos.",
             ]);
         }
 
-        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::attempt([$field => $login, 'password' => $data['password']], $request->boolean('remember'))) {
             RateLimiter::hit($throttleKey);
             throw ValidationException::withMessages([
-                'email' => 'Email ou palavra-passe incorretos.',
+                'login' => 'Utilizador ou palavra-passe incorretos.',
             ]);
         }
 
@@ -46,7 +50,7 @@ class LoginController extends Controller
         if (! $request->user()->isActive()) {
             Auth::guard('web')->logout();
             throw ValidationException::withMessages([
-                'email' => 'O seu utilizador não está ativo no programa.',
+                'login' => 'O seu utilizador não está ativo no programa.',
             ]);
         }
 

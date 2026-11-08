@@ -21,6 +21,7 @@ class UserPasswordController extends Controller
             'full_name' => $user->full_name,
             'role_label' => $user->role->label(),
             'email' => $user->email,
+            'username' => $user->username,
             'password' => $request->validated('password'),
             'kind' => 'reset',
         ]);

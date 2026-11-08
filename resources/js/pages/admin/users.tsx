@@ -6,7 +6,7 @@ import type { SharedProps } from '@/types';
 
 type Status = 'ACTIVE' | 'INACTIVE';
 type AppUser = {
-    id: string; email: string; full_name: string; role: string; role_label: string;
+    id: string; email: string; username: string | null; full_name: string; role: string; role_label: string;
     agrodealer_id: string | null; agrodealer_name: string | null;
     province_id: string | null; province_name: string | null;
     status: Status; is_me: boolean; last_login_at: string | null;
@@ -81,7 +81,7 @@ function accessPayload<T extends { role: string; agrodealer_id: string; province
 
 function EditUser({ user, onDone, ...lists }: { user: AppUser; onDone: () => void } & Omit<Props, 'users'>) {
     const form = useForm({
-        full_name: user.full_name, role: user.role,
+        full_name: user.full_name, username: user.username ?? '', role: user.role,
         agrodealer_id: user.agrodealer_id ?? '', province_id: user.province_id ?? '', status: user.status,
     });
 
@@ -95,6 +95,10 @@ function EditUser({ user, onDone, ...lists }: { user: AppUser; onDone: () => voi
         <form className="admin-form" onSubmit={save}>
             <label className="form-label" htmlFor={`name-${user.id}`}>Nome completo</label>
             <input id={`name-${user.id}`} className="input" value={form.data.full_name} onChange={(e) => form.setData('full_name', e.target.value)} required />
+            <label className="form-label" htmlFor={`username-${user.id}`}>Nome de utilizador (opcional)</label>
+            <input id={`username-${user.id}`} className="input" value={form.data.username} onChange={(e) => form.setData('username', e.target.value.toLowerCase())}
+                placeholder="Ex.: joao.operador" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={30} />
+            <div className="muted-text small-note">Para entrar sem escrever o e-mail. Letras minúsculas, números, ponto, hífen e sublinhado.</div>
             <AccessFields idPrefix={`edit-${user.id}`} data={form.data} setData={(k, v) => form.setData(k, v)} {...lists} />
             <label className="form-label" htmlFor={`status-${user.id}`}>Estado</label>
             <select id={`status-${user.id}`} className="input" value={form.data.status} onChange={(e) => form.setData('status', e.target.value as Status)}>
@@ -137,7 +141,7 @@ function ResetPassword({ user, onDone }: { user: AppUser; onDone: () => void }) 
 
 function CreateUser({ onDone, ...lists }: { onDone: () => void } & Omit<Props, 'users'>) {
     const form = useForm({
-        email: '', full_name: '', role: '', agrodealer_id: '', province_id: '',
+        email: '', username: '', full_name: '', role: '', agrodealer_id: '', province_id: '',
         status: 'ACTIVE' as Status, password: generatePassword(),
     });
 
@@ -154,6 +158,10 @@ function CreateUser({ onDone, ...lists }: { onDone: () => void } & Omit<Props, '
             <input id="new-email" className="input" type="email" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} required autoComplete="off" />
             <label className="form-label" htmlFor="new-name">Nome completo</label>
             <input id="new-name" className="input" value={form.data.full_name} onChange={(e) => form.setData('full_name', e.target.value)} required />
+            <label className="form-label" htmlFor="new-username">Nome de utilizador (opcional)</label>
+            <input id="new-username" className="input" value={form.data.username} onChange={(e) => form.setData('username', e.target.value.toLowerCase())}
+                placeholder="Ex.: joao.operador" autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={30} />
+            <div className="muted-text small-note">Para entrar sem escrever o e-mail. Letras minúsculas, números, ponto, hífen e sublinhado.</div>
             <AccessFields idPrefix="new" data={form.data} setData={(k, v) => form.setData(k, v)} {...lists} />
             <label className="form-label" htmlFor="new-password">Palavra-passe temporária</label>
             <div className="password-row">
@@ -179,7 +187,7 @@ function UserCard({ user, ...lists }: { user: AppUser } & Omit<Props, 'users'>) 
             <div className="row-between">
                 <div>
                     <strong>{user.full_name}</strong>{user.is_me && <span className="muted-text"> (você)</span>}
-                    <div className="muted-text">{user.email}</div>
+                    <div className="muted-text">{user.email}{user.username && <> · utilizador <strong>{user.username}</strong></>}</div>
                 </div>
                 <span className={`badge badge-${badge.toLowerCase()}`}>{badge}</span>
             </div>
@@ -214,6 +222,7 @@ export default function Users({ users, ...lists }: Props) {
     const visible = users.filter((u) => !term
         || u.full_name.toLowerCase().includes(term)
         || u.email.toLowerCase().includes(term)
+        || (u.username ?? '').includes(term)
         || (u.agrodealer_name ?? '').toLowerCase().includes(term));
 
     return (
@@ -226,7 +235,7 @@ export default function Users({ users, ...lists }: Props) {
                     {credentials.kind === 'created'
                         ? <>Conta criada para <strong>{credentials.full_name}</strong> ({credentials.role_label}). Entregue estes dados à pessoa; a palavra-passe não volta a ser mostrada.</>
                         : <>Palavra-passe de <strong>{credentials.full_name}</strong> reposta. Entregue-a à pessoa; no próximo acesso terá de escolher uma nova.</>}
-                    <div className="credentials"><span>Email</span><strong>{credentials.email}</strong><span>Palavra-passe</span><strong>{credentials.password}</strong></div>
+                    <div className="credentials"><span>Email</span><strong>{credentials.email}</strong>{credentials.username && <><span>Utilizador</span><strong>{credentials.username}</strong></>}<span>Palavra-passe</span><strong>{credentials.password}</strong></div>
                     <button className="quick-link" onClick={() => setClosedPassword(credentials.password)}>Fechar</button>
                 </div>
             )}
@@ -236,7 +245,7 @@ export default function Users({ users, ...lists }: Props) {
                 ? <CreateUser onDone={() => setCreating(false)} {...lists} />
                 : <button className="primary-button create-user-button" onClick={() => setCreating(true)}>+ CRIAR CONTA</button>}
 
-            <input className="input admin-search" placeholder="Procurar por nome, email ou agrodealer" value={filter} onChange={(e) => setFilter(e.target.value)} />
+            <input className="input admin-search" placeholder="Procurar por nome, email, utilizador ou agrodealer" value={filter} onChange={(e) => setFilter(e.target.value)} />
 
             <h2>Contas ({visible.length})</h2>
             {visible.length === 0 && <p>Nenhuma conta encontrada.</p>}

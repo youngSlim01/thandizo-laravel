@@ -57,7 +57,7 @@ composer run dev
 O `DemoSeeder` cria dados para experimentar: 3 produtos com preço, um ciclo
 aberto e 20 agregados com cartão entregue (`VCH-MUT-000001-8`, …). Utilizadores,
 todos com a palavra-passe `password`: `admin`, `operador`, `gestor-agro`,
-`meal`, `gestor-meal` e `financas` `@thandizo.test`.
+`meal`, `gestor-meal` e `financas` `@thandizo.test` (ou só o nome, por exemplo `operador`, como nome de utilizador).
 
 O cliente de cada instalação (organização, programa e frase do cliente) e os
 logótipos impressos nos cartões definem-se no próprio sistema, em Configuração

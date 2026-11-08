@@ -1666,7 +1666,7 @@ select.input { background: var(--surface); }
 .meal-brand strong,.finance-brand strong,.app-logo strong,.header-brand,.meal-mobile-brand strong,.finance-mobile-brand strong{color:#00581a}
 
 /* ===== Login (pages/auth/login.tsx) ===== */
-.tl-page{min-height:100vh;display:grid;place-items:center;padding:40px 24px;background:#003938}
+.tl-page{min-height:100vh;display:grid;place-items:center;padding:40px 24px;background:#003938;font-family:'Montserrat Variable',Montserrat,Inter,ui-sans-serif,system-ui,sans-serif}
 .tl-card{width:min(1344px,100%);min-height:620px;display:grid;grid-template-columns:51% 49%;overflow:hidden;border-radius:14px;background:#fff;box-shadow:0 30px 80px rgba(0,20,18,.35)}
 .tl-photo{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:space-between;padding:26px 40px 46px;color:#fff;background:#0b4d2c url('/thandizo-login-bg.jpg') 18% 40%/cover no-repeat}
 .tl-photo-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,30,20,.30) 0%,rgba(0,30,20,0) 30%,rgba(0,30,20,0) 52%,rgba(0,30,20,.62) 100%)}

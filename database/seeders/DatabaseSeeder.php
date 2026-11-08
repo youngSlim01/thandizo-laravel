@@ -36,6 +36,7 @@ class DatabaseSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'admin@thandizo.test'],
             [
+                'username' => 'admin',
                 'full_name' => 'Administrador Local',
                 'password' => 'password',
                 'role' => UserRole::SystemAdmin,

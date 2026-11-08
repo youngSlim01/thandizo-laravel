@@ -1,5 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
+import '@fontsource-variable/montserrat';
 import { ThandizoMark } from '@/components/thandizo-mark';
 import type { SharedProps } from '@/types';
 
@@ -29,7 +30,7 @@ function EyeIcon({ open }: { open: boolean }) {
 // A sessão fica sempre lembrada neste aparelho (remember).
 export default function Login() {
     const { flash, brand } = usePage<SharedProps>().props;
-    const form = useForm({ email: '', password: '', remember: true });
+    const form = useForm({ login: '', password: '', remember: true });
     const [showPassword, setShowPassword] = useState(false);
 
     function submit(event: FormEvent) {
@@ -37,16 +38,17 @@ export default function Login() {
         form.post('/login', { onFinish: () => form.reset('password') });
     }
 
-    // Envia o link de recuperação para o email escrito no campo.
+    // Envia o link de recuperação para o email da conta escrita no campo
+    // (nome de utilizador ou e-mail).
     function recoverPassword() {
         form.clearErrors();
-        router.post('/forgot-password', { email: form.data.email.trim() }, {
+        router.post('/forgot-password', { login: form.data.login.trim() }, {
             preserveState: true,
-            onError: (errors) => form.setError('email', errors.email),
+            onError: (errors) => form.setError('login', errors.login),
         });
     }
 
-    const error = form.errors.email ?? form.errors.password;
+    const error = form.errors.login ?? form.errors.password;
     const client = [brand.client, brand.programme].filter(Boolean).join(' · ');
 
     return (
@@ -68,9 +70,10 @@ export default function Login() {
                         <form onSubmit={submit} className="tl-form">
                             <label className="tl-field">
                                 <span className="tl-field-icon"><UserIcon /></span>
-                                <input id="email" type="text" inputMode="email" autoComplete="username" placeholder="E-mail"
-                                    aria-label="E-mail" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)}
-                                    aria-invalid={Boolean(form.errors.email)} required />
+                                <input id="login" type="text" autoComplete="username" autoCapitalize="none" spellCheck={false}
+                                    placeholder="Nome de utilizador ou e-mail" aria-label="Nome de utilizador ou e-mail"
+                                    value={form.data.login} onChange={(e) => form.setData('login', e.target.value)}
+                                    aria-invalid={Boolean(form.errors.login)} required />
                             </label>
                             <label className="tl-field">
                                 <span className="tl-field-icon"><LockIcon /></span>

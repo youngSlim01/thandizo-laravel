@@ -27,6 +27,7 @@ class UserController extends Controller
             'users' => $users->list()->map(fn (User $user): array => [
                 'id' => $user->id,
                 'email' => $user->email,
+                'username' => $user->username,
                 'full_name' => $user->full_name,
                 'role' => $user->role->value,
                 'role_label' => $user->role->label(),
@@ -63,6 +64,7 @@ class UserController extends Controller
             'full_name' => $user->full_name,
             'role_label' => $user->role->label(),
             'email' => $user->email,
+            'username' => $user->username,
             'password' => $request->validated('password'),
             'kind' => 'created',
         ]);

@@ -37,7 +37,7 @@ class UserAdminService
      * Cria uma conta activa com uma palavra-passe temporária: no primeiro
      * acesso a pessoa tem de escolher outra.
      *
-     * @param  array{email: string, full_name: string, role: string, agrodealer_id?: string|null, province_id?: string|null, password: string}  $data
+     * @param  array{email: string, full_name: string, username?: string|null, role: string, agrodealer_id?: string|null, province_id?: string|null, password: string}  $data
      */
     public function create(User $actor, array $data): User
     {
@@ -60,7 +60,7 @@ class UserAdminService
     /**
      * Muda nome, papel, agrodealer, província e estado de outra pessoa.
      *
-     * @param  array{full_name: string, role: string, agrodealer_id?: string|null, province_id?: string|null, status: string}  $data
+     * @param  array{full_name: string, username?: string|null, role: string, agrodealer_id?: string|null, province_id?: string|null, status: string}  $data
      */
     public function updateAccess(User $actor, User $user, array $data): User
     {
@@ -113,6 +113,7 @@ class UserAdminService
 
         return [
             'full_name' => trim($data['full_name']),
+            'username' => $data['username'] ?? null,
             'role' => $role,
             'agrodealer_id' => $role->isSeller() ? $data['agrodealer_id'] : null,
             'province_id' => $role->needsProvince() ? $data['province_id'] : null,
@@ -120,12 +121,13 @@ class UserAdminService
     }
 
     /**
-     * @return array{full_name: string, role: string, agrodealer_id: string|null, province_id: string|null, status: string}
+     * @return array{full_name: string, username: string|null, role: string, agrodealer_id: string|null, province_id: string|null, status: string}
      */
     private function accessSnapshot(User $user): array
     {
         return [
             'full_name' => $user->full_name,
+            'username' => $user->username,
             'role' => $user->role->value,
             'agrodealer_id' => $user->agrodealer_id,
             'province_id' => $user->province_id,

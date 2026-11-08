@@ -30,6 +30,7 @@ export type Credentials = {
     full_name: string;
     role_label: string;
     email: string;
+    username?: string | null;
     password: string;
     kind: 'created' | 'reset';
 };

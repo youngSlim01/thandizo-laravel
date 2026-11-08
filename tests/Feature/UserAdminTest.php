@@ -73,7 +73,7 @@ class UserAdminTest extends TestCase
             ->post('/admin/users', $this->newAccount())
             ->assertRedirect('/admin/users')
             ->assertSessionHas('credentials', [
-                'full_name' => 'Nova Pessoa', 'role_label' => 'Gestor MEAL', 'email' => 'nova.pessoa@org.org',
+                'full_name' => 'Nova Pessoa', 'role_label' => 'Gestor MEAL', 'email' => 'nova.pessoa@org.org', 'username' => null,
                 'password' => 'Temp2345ab', 'kind' => 'created',
             ]);
 
@@ -96,6 +96,33 @@ class UserAdminTest extends TestCase
         $this->actingAs($this->admin())
             ->post('/admin/users', $this->newAccount())
             ->assertSessionHasErrors(['email' => 'Já existe uma conta com este email.']);
+    }
+
+    public function test_the_username_is_optional_saved_in_lowercase_and_unique(): void
+    {
+        $admin = $this->admin();
+        User::factory()->create(['username' => 'ocupado']);
+
+        $this->actingAs($admin)->post('/admin/users', $this->newAccount(['username' => ' Joao.Operador ']))
+            ->assertSessionHasNoErrors()->assertSessionHas('credentials.username', 'joao.operador');
+        $this->assertSame('joao.operador', User::query()->where('email', 'nova.pessoa@org.org')->value('username'));
+
+        $this->actingAs($admin)->post('/admin/users', $this->newAccount(['email' => 'outra@org.org', 'username' => 'OCUPADO']))
+            ->assertSessionHasErrors(['username' => 'Já existe uma conta com este nome de utilizador.']);
+        $this->actingAs($admin)->post('/admin/users', $this->newAccount(['email' => 'outra@org.org', 'username' => 'joão@x']))
+            ->assertSessionHasErrors('username');
+    }
+
+    public function test_editing_keeps_or_clears_the_username(): void
+    {
+        $admin = $this->admin();
+        $user = User::factory()->role(UserRole::MealManager)->create(['full_name' => 'Rui', 'username' => 'rui']);
+        $access = ['full_name' => 'Rui', 'role' => 'MEAL_MANAGER', 'status' => 'ACTIVE'];
+
+        $this->actingAs($admin)->put("/admin/users/{$user->id}", [...$access, 'username' => 'rui'])->assertSessionHasNoErrors();
+        $this->assertSame('rui', $user->fresh()->username);
+        $this->actingAs($admin)->put("/admin/users/{$user->id}", [...$access, 'username' => ''])->assertSessionHasNoErrors();
+        $this->assertNull($user->fresh()->username);
     }
 
     public function test_temporary_password_has_at_least_8_characters(): void

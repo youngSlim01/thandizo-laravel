@@ -83,17 +83,28 @@ class PasswordTest extends TestCase
         $this->assertTrue(Hash::check('Minha2345', $user->fresh()->password));
     }
 
-    public function test_forgot_password_sends_the_link_and_answers_the_same_for_unknown_emails(): void
+    public function test_forgot_password_sends_the_link_and_answers_the_same_for_unknown_accounts(): void
     {
         Notification::fake();
         $user = User::factory()->create();
-        $answer = 'Se o email estiver registado, enviámos um link de recuperação.';
+        $answer = 'Se a conta existir, enviámos um link de recuperação para o seu e-mail.';
 
-        $this->post('/forgot-password', ['email' => $user->email])->assertSessionHas('success', $answer);
-        $this->post('/forgot-password', ['email' => 'ninguem@org.org'])->assertSessionHas('success', $answer);
+        $this->post('/forgot-password', ['login' => $user->email])->assertSessionHas('success', $answer);
+        $this->post('/forgot-password', ['login' => 'ninguem@org.org'])->assertSessionHas('success', $answer);
+        $this->post('/forgot-password', ['login' => 'ninguem'])->assertSessionHas('success', $answer);
 
         Notification::assertSentTo($user, ResetPassword::class);
         Notification::assertCount(1);
+    }
+
+    public function test_forgot_password_with_the_username_sends_the_link_to_the_account_email(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create(['username' => 'joao.operador']);
+
+        $this->post('/forgot-password', ['login' => 'JOAO.operador'])->assertSessionHas('success');
+
+        Notification::assertSentTo($user, ResetPassword::class);
     }
 
     public function test_reset_link_sets_the_new_password_and_clears_the_temporary_flag(): void

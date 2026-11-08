@@ -54,7 +54,7 @@ class DemoSeeder extends Seeder
             ['financas@thandizo.test', 'Oficial de Finanças', UserRole::FinanceOfficer, []],
         ];
         foreach ($users as [$email, $name, $role, $extra]) {
-            User::query()->create(['email' => $email, 'full_name' => $name, 'password' => 'password', 'role' => $role, ...$extra]);
+            User::query()->create(['email' => $email, 'username' => strstr($email, '@', true), 'full_name' => $name, 'password' => 'password', 'role' => $role, ...$extra]);
         }
 
         // Tudo começa no início do mês passado, para haver vendas já fechadas.
