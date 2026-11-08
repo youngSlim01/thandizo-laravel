@@ -227,7 +227,7 @@ function CardPreview({ card, busy, onPrint, onClose }: { card: VoucherCard; busy
                     <div className="voucher-card-preview-head">
                         <div className="voucher-card-preview-logos">
                             {brand.logos.map((src) => <img key={src} src={src} alt="" />)}
-                            <div><strong>THANDIZO</strong><small>{cardSubtitle(brand).toUpperCase()}</small></div>
+                            <div><strong>Thandizo</strong><small>{cardSubtitle(brand).toUpperCase()}</small></div>
                         </div>
                         <span>e-VOUCHER</span>
                     </div>

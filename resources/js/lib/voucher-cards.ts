@@ -94,7 +94,7 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
       }
     }
     doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(255);
-    doc.text('THANDIZO', x + CARD_W - 3, y + 5.2, { align: 'right' });
+    doc.text('Thandizo', x + CARD_W - 3, y + 5.2, { align: 'right' });
     doc.setFont('Lato', 'normal').setFontSize(6.5);
     if (subtitle) doc.text(subtitle.toUpperCase(), x + CARD_W - 3, y + 9, { align: 'right' });
 

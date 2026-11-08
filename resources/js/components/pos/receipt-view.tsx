@@ -10,7 +10,7 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
   return (
     <div className="receipt">
       <div className="receipt-head">
-        <strong>THANDIZO</strong>
+        <strong>Thandizo</strong>
         {client && <div>{client}</div>}
         <div>{receipt.agrodealer_name}</div>
         <div>POS {receipt.pos_code} · {receipt.operator_name}</div>

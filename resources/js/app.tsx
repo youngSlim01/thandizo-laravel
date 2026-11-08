@@ -10,7 +10,7 @@ type PageModule = { default: ComponentType & { layout?: (page: ReactNode) => Rea
 const pages = import.meta.glob<PageModule>('./pages/**/*.tsx');
 
 createInertiaApp({
-    title: (title) => (title ? `${title} · THANDIZO` : 'THANDIZO'),
+    title: (title) => (title ? `${title} · Thandizo` : 'Thandizo'),
     resolve: async (name) => {
         const loader = pages[`./pages/${name}.tsx`];
         if (!loader) throw new Error(`Página Inertia não encontrada: ${name}`);

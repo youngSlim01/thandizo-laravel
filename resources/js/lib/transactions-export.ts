@@ -43,7 +43,7 @@ export async function exportTransactions(r: TxResult, f: TxFilters, dealerName: 
   ];
   await writeExcelFile([
     { sheet: 'Resumo', columns: [{ width: 40 }, { width: 22 }], data: [
-      bold(['THANDIZO · Transações', '']),
+      bold(['Thandizo · Transações', '']),
       ...filters,
       [],
       bold(['Valores (só vendas confirmadas)', 'MT']),

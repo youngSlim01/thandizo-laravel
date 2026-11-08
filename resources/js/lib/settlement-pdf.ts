@@ -29,7 +29,7 @@ export async function downloadSettlementPdf(s: Settlement, sales: SettlementSale
     const meal = kind === 'meal';
 
     doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.setTextColor(...GREEN);
-    doc.text(brand.client ? `THANDIZO · ${brand.client}` : 'THANDIZO', 18, 18);
+    doc.text(brand.client ? `Thandizo · ${brand.client}` : 'Thandizo', 18, 18);
     doc.setFontSize(13); doc.setTextColor(30, 40, 50);
     doc.text(meal ? 'MAPA DE VENDAS E LIQUIDAÇÃO' : 'MAPA DE RECONCILIAÇÃO', 18, 27);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 100, 110);
@@ -79,7 +79,7 @@ export async function downloadSettlementPdf(s: Settlement, sales: SettlementSale
     if (meal) {
         y += 8; doc.setDrawColor(210, 220, 215); doc.line(18, y, W - 18, y); y += 8;
         doc.setFontSize(8); doc.setTextColor(90, 100, 110);
-        doc.text(`Este documento apresenta as transações confirmadas no THANDIZO${brand.programme ? ` (${brand.programme})` : ''} no período indicado.`, 18, y);
+        doc.text(`Este documento apresenta as transações confirmadas no Thandizo${brand.programme ? ` (${brand.programme})` : ''} no período indicado.`, 18, y);
         doc.text('A factura deve ser emitida pelo agrodealer de acordo com os procedimentos financeiros aplicáveis.', 18, y + 5);
         doc.setFont('helvetica', 'bold'); doc.setTextColor(35, 45, 55);
         doc.text(`Preparado por: ${s.created_by ?? 'MEAL'}`, 18, y + 18);

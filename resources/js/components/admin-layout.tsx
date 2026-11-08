@@ -74,7 +74,7 @@ export function AdminHeader({ topbar = true }: { topbar?: boolean }) {
                 </nav>
                 <div className="meal-sidebar-bottom">
                     <Link href="/logout" method="post" as="button" className="meal-nav-item"><span className="admin-nav-icon">↪</span><span>Sair</span></Link>
-                    <div className="meal-footer"><strong>{brand.programme ?? 'THANDIZO'}</strong><span>v2.0.0</span></div>
+                    <div className="meal-footer"><strong>{brand.programme ?? 'Thandizo'}</strong><span>v2.0.0</span></div>
                 </div>
             </aside>
             <header className="meal-mobile-header admin-mobile-header">

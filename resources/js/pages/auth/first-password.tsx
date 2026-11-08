@@ -20,7 +20,7 @@ export default function FirstPassword() {
     return (
         <main className="admin-shell first-password">
             <Head title="Defina a sua palavra-passe" />
-            <div className="brand">THANDIZO</div>
+            <div className="brand">Thandizo</div>
             <h1>Defina a sua palavra-passe</h1>
             <p className="muted-text">
                 Olá, {auth.user?.full_name}. A palavra-passe que recebeu é temporária. Escolha uma nova para continuar.

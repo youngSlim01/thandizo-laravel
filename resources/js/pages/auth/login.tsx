@@ -102,7 +102,7 @@ export default function Login() {
                             </button>
                         </form>
                         <footer className="thandizo-login-legal">
-                            <span>THANDIZO v2.0</span><span aria-hidden="true">|</span>
+                            <span>Thandizo v2.0</span><span aria-hidden="true">|</span>
                             <span>© {new Date().getFullYear()}. Todos os direitos reservados.</span>
                         </footer>
                     </div>

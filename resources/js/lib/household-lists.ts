@@ -82,7 +82,7 @@ export async function printHouseholdList(rows: ListRow[], o: ListOptions) {
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(first ? 13 : 10);
-    doc.text('THANDIZO · LISTA DE BENEFICIÁRIOS', M + 5, y + 6);
+    doc.text('Thandizo · Lista de beneficiários', M + 5, y + 6);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.text(o.title, M + 5, y + 11);
@@ -188,7 +188,7 @@ export async function printHouseholdList(rows: ListRow[], o: ListOptions) {
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 112, 105);
-    doc.text('THANDIZO · ' + uniqueRows.length.toLocaleString('pt-PT') + ' agregados', M, H - 4);
+    doc.text('Thandizo · ' + uniqueRows.length.toLocaleString('pt-PT') + ' agregados', M, H - 4);
     doc.text('Página ' + p + ' de ' + pages, W - M, H - 4, { align: 'right' });
   }
   doc.save(o.title.toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') + '.pdf');

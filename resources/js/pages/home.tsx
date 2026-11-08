@@ -22,7 +22,7 @@ export default function Home() {
                     <div>
                         <div className="eyebrow">{user.role_label}</div>
                         <h1>{greeting()}, {user.full_name.split(' ')[0]}</h1>
-                        <p>A sua área (POS ou Finanças) ainda está a ser migrada para a nova versão do THANDIZO.</p>
+                        <p>A sua área (POS ou Finanças) ainda está a ser migrada para a nova versão do Thandizo.</p>
                     </div>
                 </div>
 

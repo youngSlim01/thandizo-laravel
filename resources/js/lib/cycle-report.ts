@@ -107,7 +107,7 @@ export async function printCycleReport(s: CycleSummary) {
   const generated = new Date().toLocaleString('pt-PT');
   for (let p = 1; p <= pages; p += 1) {
     doc.setPage(p); doc.setFontSize(8); doc.setTextColor(110);
-    doc.text(`THANDIZO · ${s.cycle.code} · gerado em ${generated}`, M, H - 7);
+    doc.text(`Thandizo · ${s.cycle.code} · gerado em ${generated}`, M, H - 7);
     doc.text(`Página ${p} de ${pages}`, W - M, H - 7, { align: 'right' });
     doc.setTextColor(0);
   }

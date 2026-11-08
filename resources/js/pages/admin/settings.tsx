@@ -22,7 +22,7 @@ function ClientForm({ client }: { client: Client }) {
         <form className="admin-card admin-form" onSubmit={save}>
             <span className="section-label">Cliente</span>
             <p className="muted-text small-note">
-                Aparece junto do nome THANDIZO: o nome da organização nos cabeçalhos, no recibo e nos PDFs;
+                Aparece junto do nome Thandizo: o nome da organização nos cabeçalhos, no recibo e nos PDFs;
                 o programa no cartão e no rodapé do menu; a frase na página de entrada. Deixe vazio o que não se aplica.
             </p>
             <div className="form-grid-2">

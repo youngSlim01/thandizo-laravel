@@ -16,7 +16,7 @@ export default function ResetPassword({ token, email }: { token: string; email: 
     return (
         <main className="admin-shell first-password">
             <Head title="Escolher nova palavra-passe" />
-            <div className="brand">THANDIZO</div>
+            <div className="brand">Thandizo</div>
             <h1>Escolher nova palavra-passe</h1>
             <p className="muted-text">Conta: {email}</p>
             <form className="admin-form change-password" onSubmit={save}>

@@ -21,7 +21,7 @@ export function PosHeader({ title, back, right }: { title: string; back?: string
     return (
         <>
             <aside className="app-sidebar no-print">
-                <Link href="/" className="app-logo" aria-label="THANDIZO">
+                <Link href="/" className="app-logo" aria-label="Thandizo">
                     <span className="app-logo-mark"><ThandizoMark /></span>
                     <span><strong>Thandizo</strong><small>{(brand.client ?? 'E-voucher').toUpperCase()} · POS</small></span>
                 </Link>

@@ -50,7 +50,7 @@ export async function printAgrodealerReport(r: AgrodealerReport) {
   doc.roundedRect(M, y, avail, 20, 2, 2, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-  doc.text('THANDIZO · TRANSAÇÕES DO AGRODEALER', M + 5, y + 8);
+  doc.text('Thandizo · Transações do agrodealer', M + 5, y + 8);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
   doc.text(fit(`${r.agrodealer.name} (${r.agrodealer.code})`, avail - 10), M + 5, y + 14.5);
   y += 26;
@@ -149,7 +149,7 @@ export async function printAgrodealerReport(r: AgrodealerReport) {
     doc.setPage(p);
     doc.setDrawColor(220, 228, 223); doc.line(M, H - 10, W - M, H - 10);
     doc.setFontSize(7); doc.setTextColor(100, 112, 105);
-    doc.text(`THANDIZO · ${r.agrodealer.code} · ${day(r.period_start)} a ${day(r.period_end)} · só vendas confirmadas nos totais`, M, H - 6);
+    doc.text(`Thandizo · ${r.agrodealer.code} · ${day(r.period_start)} a ${day(r.period_end)} · só vendas confirmadas nos totais`, M, H - 6);
     doc.text(`Página ${p} de ${pages}`, W - M, H - 6, { align: 'right' });
   }
   doc.save(reportFileName(r));
