@@ -1,17 +1,26 @@
 <?php
 
-namespace App\\Services;
+namespace App\Services;
 
-use App\\Enums\\UserRole;
-use App\\Models\\Agrodealer;
-use App\\Models\\Household;
-use App\\Models\\Product;
-use App\\Models\\User;
+use App\Enums\UserRole;
+use App\Models\Agrodealer;
+use App\Models\Household;
+use App\Models\Product;
+use App\Models\User;
 
+/**
+ * Secções do back office que cada pessoa vê no menu lateral (antigo
+ * ADMIN_SECTIONS do Next.js). Cada secção aparece só se a Policy da página
+ * deixar entrar, por isso o menu e as permissões nunca divergem.
+ */
 class NavigationService
 {
+    /**
+     * @return list<array{href: string, label: string, icon: string}>
+     */
     public function sectionsFor(User $user): array
     {
+        // Finanças tem a sua área; os produtos e preços só para consulta.
         if ($user->role === UserRole::FinanceOfficer) {
             return $this->allowed($user, [
                 ['href' => '/finance', 'label' => 'Painel', 'icon' => '▣', 'ability' => ['finance']],
@@ -50,6 +59,10 @@ class NavigationService
         ]);
     }
 
+    /**
+     * @param  list<array{href: string, label: string, icon: string, ability: array<int, string>}>  $sections
+     * @return list<array{href: string, label: string, icon: string}>
+     */
     private function allowed(User $user, array $sections): array
     {
         return array_values(array_map(

@@ -23,7 +23,7 @@ class SystemAdminDashboardController extends Controller
             'count' => User::where('role', $role->value)->count(),
         ])->values();
 
-        $cycles = DB::table('cycles')->count();
+        $cycles = DB::table('programme_cycles')->count();
         $transactionCount = DB::table('transactions')->count();
         $transactionValue = (float) DB::table('transactions')->where('status', 'CONFIRMED')->sum('total_amount');
         $rejected = DB::table('transactions')->where('status', 'REJECTED')->where('created_at', '>=', now()->subDay())->count();
