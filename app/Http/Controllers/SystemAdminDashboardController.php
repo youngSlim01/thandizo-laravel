@@ -25,11 +25,7 @@ class SystemAdminDashboardController extends Controller
             'count' => User::where('role', $role)->count(),
         ])->values();
 
-        $programmes = DB::table('cycles')
-            ->select('programme_id')
-            ->whereNotNull('programme_id')
-            ->distinct()
-            ->count();
+        $cycles = DB::table('cycles')->count();
 
         $transactions = DB::table('transactions');
         $transactionCount = (clone $transactions)->count();
@@ -52,7 +48,7 @@ class SystemAdminDashboardController extends Controller
             'dashboard' => [
                 'users_active' => $activeUsers,
                 'users_pending' => $pendingUsers,
-                'programmes_active' => $programmes,
+                'cycles_total' => $cycles,
                 'transactions_total' => $transactionCount,
                 'transactions_value' => $transactionValue,
                 'agrodealers_total' => $agrodealers,
