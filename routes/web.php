@@ -43,6 +43,7 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/', HomeController::class)->name('home');
+    Route::get('/system/dashboard', SystemAdminDashboardController::class)->name('system.dashboard');
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
     Route::get('/password/first', [FirstPasswordController::class, 'show'])->name('password.first');
