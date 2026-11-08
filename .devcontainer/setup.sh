@@ -23,4 +23,5 @@ npm run build
 
 echo
 echo "Pronto. Abre a porta 8000 (separador PORTS)."
-echo "Login local: admin@thandizo.test / password"
+echo "Contas de demonstração (palavra-passe: password):"
+echo "  admin, gestor-meal, meal, financas, operador, gestor-agro"
