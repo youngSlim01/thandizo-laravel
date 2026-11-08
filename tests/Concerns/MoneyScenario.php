@@ -48,7 +48,7 @@ trait MoneyScenario
         $locality = Locality::factory()->create(['administrative_post_id' => AdministrativePost::factory()->create(['district_id' => $this->district->id])->id]);
         $this->community = Community::factory()->create(['locality_id' => $locality->id, 'district_id' => $this->district->id]);
         $this->agrodealer = Agrodealer::factory()->create([
-            'code' => 'AGD-MUT-001', 'district_id' => $this->district->id, 'province_id' => $this->district->province_id,
+            'code' => 'MER-MUT-001', 'district_id' => $this->district->id, 'province_id' => $this->district->province_id,
         ]);
         $this->pos = $this->agrodealer->pos()->create(['pos_code' => 'POS-MUT-001-01', 'status' => 'ACTIVE']);
         $this->operator = User::factory()->role(UserRole::AgrodealerOperator)->create(['agrodealer_id' => $this->agrodealer->id]);

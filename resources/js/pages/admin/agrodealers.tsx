@@ -44,10 +44,10 @@ function AgrodealerForm({ agrodealer, districts, onDone }: { agrodealer: Agrodea
 
     return (
         <form className="admin-form" onSubmit={save}>
-            <strong>{agrodealer ? `Editar ${agrodealer.name}` : 'Novo agrodealer'}</strong>
+            <strong>{agrodealer ? `Editar ${agrodealer.name}` : 'Novo comerciante'}</strong>
             <div className="form-grid-2">
                 <div><span className="form-label">Código</span>
-                    <div className="readonly-field">{agrodealer?.code ?? 'Gerado ao guardar (ex.: AGD-MUT-001)'}</div></div>
+                    <div className="readonly-field">{agrodealer?.code ?? 'Gerado ao guardar (ex.: MER-MUT-001)'}</div></div>
                 <div><label className="form-label" htmlFor="agd-name">Nome</label>
                     <input id="agd-name" className="input" value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} /></div>
                 <div><label className="form-label" htmlFor="agd-district">Distrito</label>
@@ -69,11 +69,11 @@ function AgrodealerForm({ agrodealer, districts, onDone }: { agrodealer: Agrodea
                     </select>
                 </>
             )}
-            {movesDistrict && <div className="warning-box">Ao mudar de distrito, o agrodealer passa a vender aos preços do novo distrito.</div>}
+            {movesDistrict && <div className="warning-box">Ao mudar de distrito, o comerciante passa a vender aos preços do novo distrito.</div>}
             {error && <div className="error-box">{error}</div>}
             <div className="admin-form-actions">
                 <button type="button" className="secondary-button" onClick={onDone} disabled={form.processing}>CANCELAR</button>
-                <button type="submit" className="primary-button" disabled={form.processing || !form.data.district_id}>{form.processing ? 'A GUARDAR…' : 'GUARDAR AGRODEALER'}</button>
+                <button type="submit" className="primary-button" disabled={form.processing || !form.data.district_id}>{form.processing ? 'A GUARDAR…' : 'GUARDAR COMERCIANTE'}</button>
             </div>
         </form>
     );
@@ -173,32 +173,32 @@ export default function Agrodealers({ agrodealers, districts, canManage }: Props
 
     return (
         <AdminLayout>
-            <Head title="Agrodealers" />
+            <Head title="Comerciantes" />
             <div className="admin-page-heading">
                 <div>
                     <div className="eyebrow">MEAL · REDE DE FORNECEDORES</div>
-                    <h1>Agrodealers</h1>
+                    <h1>Comerciantes</h1>
                     <p>Gerir fornecedores, pontos de venda e os catálogos associados a cada distrito.</p>
                 </div>
             </div>
             <div className="info-box">
-                Cada agrodealer pertence a um distrito e vende aos preços desse distrito os produtos do seu catálogo.
-                O catálogo começa vazio. Os utilizadores dos agrodealers criam-se em Utilizadores.
+                Cada comerciante pertence a um distrito e vende aos preços desse distrito os produtos do seu catálogo.
+                O catálogo começa vazio. Os utilizadores dos comerciantes criam-se em Utilizadores.
             </div>
             {flash.success && <div className="success-box">{flash.success}</div>}
 
-            {canManage && !creating && <button className="primary-button" onClick={() => setCreating(true)}>+ NOVO AGRODEALER</button>}
+            {canManage && !creating && <button className="primary-button" onClick={() => setCreating(true)}>+ NOVO COMERCIANTE</button>}
             {creating && <AgrodealerForm agrodealer={null} districts={districts} onDone={() => setCreating(false)} />}
 
             <div className="filter-row">
-                <input className="input" placeholder="Procurar nome ou código" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Procurar agrodealer" />
+                <input className="input" placeholder="Procurar nome ou código" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Procurar comerciante" />
                 <select className="input" value={districtFilter} onChange={(e) => setDistrictFilter(e.target.value)} aria-label="Filtrar por distrito">
                     <option value="">Todos os distritos</option>
                     {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
             </div>
 
-            {visible.length === 0 && <p className="muted-text">Nenhum agrodealer.</p>}
+            {visible.length === 0 && <p className="muted-text">Nenhum comerciante.</p>}
             {visible.map((a) => <AgrodealerCard key={a.id} agrodealer={a} districts={districts} canManage={canManage} />)}
 
         </AdminLayout>

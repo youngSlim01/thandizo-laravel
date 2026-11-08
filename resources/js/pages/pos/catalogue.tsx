@@ -15,7 +15,7 @@ export default function Catalogue({ canManage }: { canManage: boolean }) {
             <section className="pos-content">
                 <div className="eyebrow">{user?.agrodealer_name}</div>
                 <h1>Catálogo de produtos</h1>
-                <p>Os produtos que este agrodealer vende, aos preços do distrito.</p>
+                <p>Os produtos que este comerciante vende, aos preços do distrito.</p>
                 {user?.agrodealer_id && <CatalogueEditor agrodealerId={user.agrodealer_id} canManage={canManage} />}
             </section>
         </main>

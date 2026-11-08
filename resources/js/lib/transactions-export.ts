@@ -37,7 +37,7 @@ export async function exportTransactions(r: TxResult, f: TxFilters, dealerName: 
   const filters = [
     ['Período', periodLabel(f)],
     ['Estado', f.status ? STATUS_LABEL[f.status] ?? f.status : 'Todos'],
-    ['Agrodealer', dealerName ?? 'Todos'],
+    ['Comerciante', dealerName ?? 'Todos'],
     ...(f.search ? [['Pesquisa', f.search]] : []),
     ['Emitido', new Date().toLocaleString('pt-PT', { timeZone: 'Africa/Maputo' })],
   ];
@@ -49,21 +49,21 @@ export async function exportTransactions(r: TxResult, f: TxFilters, dealerName: 
       bold(['Valores (só vendas confirmadas)', 'MT']),
       ['Subtotal', n(s.subtotal)], ['Descontos', n(s.discount_amount)], ['Total das compras', n(s.total_amount)],
       ['Pago pelo voucher', n(s.voucher_amount)], ['Copagamento', n(s.copayment_amount)],
-      ['Agregados que compraram', n(s.households)], ['Agrodealers com vendas', n(s.agrodealers)],
+      ['Agregados que compraram', n(s.households)], ['Comerciantes com vendas', n(s.agrodealers)],
       [],
       bold(['Vendas por estado', 'Nº']),
       ...(['CONFIRMED', 'PENDING', 'REVERSED', 'REJECTED'] as const).map((k) => [STATUS_LABEL[k], n(s.by_status[k])]),
       ['Total', n(r.total)],
     ] },
     { sheet: 'Transações', columns: [16, 17, 12, 28, 14, 16, 16, 16, 28, 14, 14, 12, 12, 12, 12, 12].map((width) => ({ width })), data: [
-      bold(['REFERENCIA', 'DATA (MAPUTO)', 'ESTADO', 'AGRODEALER', 'COD AGRODEALER', 'POS', 'VOUCHER', 'CODIGO AF', 'REPRESENTANTE',
+      bold(['REFERENCIA', 'DATA (MAPUTO)', 'ESTADO', 'COMERCIANTE', 'COD COMERCIANTE', 'POS', 'VOUCHER', 'CODIGO AF', 'REPRESENTANTE',
         'DISTRITO', 'PROVINCIA', 'SUBTOTAL', 'DESCONTO', 'TOTAL', 'VOUCHER (MT)', 'COPAGAMENTO']),
       ...r.rows.map((t) => [t.transaction_code, maputo(t.sold_at), STATUS_LABEL[t.status] ?? t.status, t.agrodealer, t.agrodealer_code,
         t.pos_code ?? '', t.voucher_code, t.household_code, t.representative_name, t.district ?? '', t.province ?? '',
         n(t.subtotal), n(t.discount_amount), n(t.total_amount), n(t.voucher_amount), n(t.copayment_amount)]),
     ] },
     { sheet: 'Produtos', columns: [16, 17, 12, 28, 12, 28, 10, 12, 12, 12].map((width) => ({ width })), data: [
-      bold(['REFERENCIA', 'DATA (MAPUTO)', 'ESTADO', 'AGRODEALER', 'COD PRODUTO', 'PRODUTO', 'UNIDADE', 'QUANTIDADE', 'PRECO UNIT.', 'VALOR']),
+      bold(['REFERENCIA', 'DATA (MAPUTO)', 'ESTADO', 'COMERCIANTE', 'COD PRODUTO', 'PRODUTO', 'UNIDADE', 'QUANTIDADE', 'PRECO UNIT.', 'VALOR']),
       ...r.rows.flatMap((t) => (t.items ?? []).map((i) => [t.transaction_code, maputo(t.sold_at), STATUS_LABEL[t.status] ?? t.status,
         t.agrodealer, i.product_code, i.product, i.unit, n(i.quantity), n(i.unit_price), n(i.line_total)])),
     ] },

@@ -248,7 +248,7 @@ function HouseholdDetail({ row, onClose, onChanged, onDeleted }: {
           <h3>Compras</h3>
           {detail.sales.length === 0 ? <p className="muted-text">Ainda sem compras.</p> : (
             <table className="import-errors">
-              <thead><tr><th>Data</th><th>Transação</th><th>Agrodealer</th><th>Total</th><th>Voucher</th><th>Dinheiro</th><th>Estado</th></tr></thead>
+              <thead><tr><th>Data</th><th>Transação</th><th>Comerciante</th><th>Total</th><th>Voucher</th><th>Dinheiro</th><th>Estado</th></tr></thead>
               <tbody>
                 {detail.sales.map((s) => (
                   <tr key={s.transaction_code}>

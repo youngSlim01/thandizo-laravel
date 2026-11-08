@@ -51,7 +51,7 @@ export default function PosHome({ sales }: { sales: RecentSale[] }) {
                 </div>
 
                 <Link href="/catalogue" className="home-catalogue-link">
-                    <span><strong>Catálogo de produtos</strong><small>{user?.role === 'AGRODEALER_MANAGER' ? 'Adicionar ou retirar produtos; preços do distrito' : 'Produtos e preços deste agrodealer'}</small></span>
+                    <span><strong>Catálogo de produtos</strong><small>{user?.role === 'AGRODEALER_MANAGER' ? 'Adicionar ou retirar produtos; preços do distrito' : 'Produtos e preços deste comerciante'}</small></span>
                     <span>›</span>
                 </Link>
 

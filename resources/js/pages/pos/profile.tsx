@@ -22,7 +22,7 @@ export default function Profile() {
 
                 <div className="profile-card">
                     <div className="profile-card-title">Local de trabalho</div>
-                    <div className="profile-detail"><span>Agrodealer</span><strong>{user?.agrodealer_name ?? '—'}</strong></div>
+                    <div className="profile-detail"><span>Comerciante</span><strong>{user?.agrodealer_name ?? '—'}</strong></div>
                     <div className="profile-detail"><span>POS seleccionado</span><strong>{user?.pos?.code ?? 'Nenhum'}</strong></div>
                     {user?.pos?.label && <div className="profile-detail"><span>Dispositivo</span><strong>{user.pos.label}</strong></div>}
                 </div>

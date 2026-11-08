@@ -28,7 +28,7 @@ export default function DiscountStep() {
                 <section className="pos-content">
                     <CheckoutSteps current={3} />
                     <h1>Aplicar desconto</h1>
-                    <p>Registe apenas o desconto que o agrodealer está a oferecer. O valor final será validado pelo servidor.</p>
+                    <p>Registe apenas o desconto que o comerciante está a oferecer. O valor final será validado pelo servidor.</p>
 
                     <div className="discount-choice-grid">
                         {CHOICES.map(([type, mark, label, help]) => (

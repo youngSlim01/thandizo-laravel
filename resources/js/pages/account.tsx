@@ -38,7 +38,7 @@ export default function AccountPage({ account }: { account: Account }) {
                 <dl className="account-details">
                     <div><dt>Email</dt><dd>{account.email}</dd></div>
                     <div><dt>Função</dt><dd>{account.role_label}</dd></div>
-                    {account.agrodealer && <div><dt>Agrodealer</dt><dd>{account.agrodealer}</dd></div>}
+                    {account.agrodealer && <div><dt>Comerciante</dt><dd>{account.agrodealer}</dd></div>}
                     {account.province && <div><dt>Província</dt><dd>{account.province}</dd></div>}
                     <div><dt>Último acesso</dt><dd>{formatDateTime(account.last_login_at)}</dd></div>
                     <div><dt>Conta criada em</dt><dd>{formatDateTime(account.created_at)}</dd></div>

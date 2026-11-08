@@ -22,8 +22,8 @@ class UserPolicyTest extends TestCase
             'administrador' => [UserRole::SystemAdmin, true],
             'oficial MEAL' => [UserRole::MealOfficer, false],
             'finanças' => [UserRole::FinanceOfficer, false],
-            'gestor de agrodealer' => [UserRole::AgrodealerManager, false],
-            'operador de agrodealer' => [UserRole::AgrodealerOperator, false],
+            'gestor de comerciante' => [UserRole::AgrodealerManager, false],
+            'operador de comerciante' => [UserRole::AgrodealerOperator, false],
         ];
     }
 

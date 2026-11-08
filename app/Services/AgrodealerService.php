@@ -49,7 +49,7 @@ class AgrodealerService
     }
 
     /**
-     * Cria um agrodealer num distrito do programa com o código AGD-<DIS>-NNN.
+     * Cria um agrodealer num distrito do programa com o código MER-<DIS>-NNN.
      *
      * @param  array{name: string, district_id: string, address?: string|null, contact_phone?: string|null}  $data
      */
@@ -141,14 +141,14 @@ class AgrodealerService
 
     private function nextAgrodealerCode(District $district): string
     {
-        $prefix = 'AGD-'.$this->districtCodePrefix($district->name).'-';
+        $prefix = 'MER-'.$this->districtCodePrefix($district->name).'-';
 
         return $prefix.str_pad((string) ($this->highestNumber('agrodealers', 'code', $prefix) + 1), 3, '0', STR_PAD_LEFT);
     }
 
     private function nextPosCode(Agrodealer $agrodealer): string
     {
-        $prefix = 'POS-'.preg_replace('/^AGD-/', '', Str::upper($agrodealer->code)).'-';
+        $prefix = 'POS-'.preg_replace('/^MER-/', '', Str::upper($agrodealer->code)).'-';
 
         return $prefix.str_pad((string) ($this->highestNumber('agrodealer_pos', 'pos_code', $prefix) + 1), 2, '0', STR_PAD_LEFT);
     }

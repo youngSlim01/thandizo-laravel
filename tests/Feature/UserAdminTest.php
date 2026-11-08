@@ -136,7 +136,7 @@ class UserAdminTest extends TestCase
     {
         $this->actingAs($this->admin())
             ->post('/admin/users', $this->newAccount(['role' => 'AGRODEALER_OPERATOR']))
-            ->assertSessionHasErrors(['agrodealer_id' => 'Este papel precisa de um agrodealer.']);
+            ->assertSessionHasErrors(['agrodealer_id' => 'Este papel precisa de um comerciante.']);
     }
 
     public function test_seller_cannot_be_put_in_an_inactive_agrodealer(): void
@@ -145,7 +145,7 @@ class UserAdminTest extends TestCase
 
         $this->actingAs($this->admin())
             ->post('/admin/users', $this->newAccount(['role' => 'AGRODEALER_OPERATOR', 'agrodealer_id' => $agrodealer->id]))
-            ->assertSessionHasErrors(['agrodealer_id' => 'O agrodealer escolhido não está ativo.']);
+            ->assertSessionHasErrors(['agrodealer_id' => 'O comerciante escolhido não está ativo.']);
     }
 
     public function test_central_role_cannot_have_an_agrodealer(): void
@@ -154,7 +154,7 @@ class UserAdminTest extends TestCase
 
         $this->actingAs($this->admin())
             ->post('/admin/users', $this->newAccount(['agrodealer_id' => $agrodealer->id]))
-            ->assertSessionHasErrors(['agrodealer_id' => 'Papéis centrais (MEAL, finanças, administrador) não podem ficar ligados a um agrodealer.']);
+            ->assertSessionHasErrors(['agrodealer_id' => 'Papéis centrais (MEAL, finanças, administrador) não podem ficar ligados a um comerciante.']);
     }
 
     public function test_meal_officer_needs_a_province_and_only_the_officer_has_one(): void

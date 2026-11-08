@@ -27,7 +27,7 @@ type Settlement = {
 type MonthTrend = { month: string; voucher_amount: number; copayment_amount: number; transactions: number; agrodealers: number };
 type FinanceMonth = { month: string; months: string[]; trend: MonthTrend[]; agrodealers_active: number; provinces: string[]; settlements: Settlement[] };
 
-const dealerName = (s: Settlement) => s.agrodealer ?? 'Agrodealer';
+const dealerName = (s: Settlement) => s.agrodealer ?? 'Comerciante';
 const dealerProvince = (s: Settlement) => s.province ?? '—';
 
 const money = (n: number) => formatMT(Number(n || 0));
@@ -127,7 +127,7 @@ export default function FinanceDashboard({ dashboard: data }: { dashboard: Finan
     { label: 'Valor a liquidar (vouchers)', value: money(current.voucher), change: pctChange(current.voucher, previous.voucher), tone: 'green' as const, icon: 'wallet' as const, values: monthly.map(x => x.voucher) },
     { label: 'Copagamento dos beneficiários', value: money(current.copayment), change: pctChange(current.copayment, previous.copayment), tone: 'blue' as const, icon: 'people' as const, values: monthly.map(x => x.copayment) },
     { label: 'Transações registadas', value: current.transactions.toLocaleString('pt-PT'), change: pctChange(current.transactions, previous.transactions), tone: 'gold' as const, icon: 'receipt' as const, values: monthly.map(x => x.transactions) },
-    { label: 'Agrodealeres activos', value: (data?.agrodealers_active ?? 0).toLocaleString('pt-PT'), change: pctChange(current.dealers, previous.dealers), tone: 'purple' as const, icon: 'store' as const, values: monthly.map(x => x.dealers) },
+    { label: 'Comerciantes activos', value: (data?.agrodealers_active ?? 0).toLocaleString('pt-PT'), change: pctChange(current.dealers, previous.dealers), tone: 'purple' as const, icon: 'store' as const, values: monthly.map(x => x.dealers) },
   ];
 
   return (
@@ -164,14 +164,14 @@ export default function FinanceDashboard({ dashboard: data }: { dashboard: Finan
 
           <section className="finance-reconciliations">
             <div className="finance-section-title">
-              <h2>Reconciliações por agrodealer</h2>
+              <h2>Reconciliações por comerciante</h2>
               <span>{visibleSettlements.length} registo(s)</span>
             </div>
 
             <div className="finance-table-tools">
               <div className="finance-search">
                 <Icon name="search" />
-                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Pesquisar por agrodealer, referência ou província..." />
+                <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Pesquisar por comerciante, referência ou província..." />
               </div>
               <select value={province} onChange={e => setProvince(e.target.value)}>
                 <option value="ALL">Todas as províncias</option>
@@ -190,7 +190,7 @@ export default function FinanceDashboard({ dashboard: data }: { dashboard: Finan
               <table className="finance-table">
                 <thead>
                   <tr>
-                    <th>Agrodealer</th><th>Província</th><th>Período</th><th>Transações</th>
+                    <th>Comerciante</th><th>Província</th><th>Período</th><th>Transações</th>
                     <th>Valor voucher<br />(MT)</th><th>Copagamento<br />(MT)</th><th>Valor a liquidar<br />(MT)</th><th>Estado</th><th>Ações</th>
                   </tr>
                 </thead>

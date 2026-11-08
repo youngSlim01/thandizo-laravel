@@ -63,7 +63,7 @@ class SettlementsTest extends TestCase
 
         $batch = DB::table('settlement_batches')->where('id', $id)->first();
         $this->assertSame([2, '3000.00', '3000.00', 'RECONCILED'], [$batch->transaction_count, $batch->voucher_amount, $batch->payable_amount, $batch->status]);
-        $this->create($this->officer)->assertSessionHasErrors(['rule' => 'Já existe uma liquidação para este agrodealer e período.']);
+        $this->create($this->officer)->assertSessionHasErrors(['rule' => 'Já existe uma liquidação para este comerciante e período.']);
         $this->create($this->officer, '2026-11-01', '2099-01-01')->assertSessionHasErrors(['rule' => 'Só se liquidam dias fechados: a data final tem de ser anterior a hoje (hora de Moçambique).']);
         $this->create($this->officer, '2026-09-01', '2026-09-30')->assertSessionHasErrors(['rule' => 'Não existem transações confirmadas ainda não liquidadas neste período.']);
     }
@@ -115,7 +115,7 @@ class SettlementsTest extends TestCase
         $elsewhere = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => Province::factory()->create()->id]);
         $this->create($this->manager);
 
-        $this->create($elsewhere)->assertSessionHasErrors(['rule' => 'Agrodealer não encontrado.']);
+        $this->create($elsewhere)->assertSessionHasErrors(['rule' => 'Comerciante não encontrado.']);
         $this->actingAs($elsewhere)->get('/admin/settlements')->assertInertia(fn (Assert $page) => $page->has('settlements', 0)->has('agrodealers', 0));
         $this->actingAs($this->operator)->get('/admin/settlements')->assertForbidden();
         $this->actingAs($this->finance)->post('/admin/settlements', [])->assertForbidden();

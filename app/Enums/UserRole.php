@@ -15,8 +15,8 @@ enum UserRole: string
     public function label(): string
     {
         return match ($this) {
-            self::AgrodealerOperator => 'Operador de agrodealer',
-            self::AgrodealerManager => 'Gestor de agrodealer',
+            self::AgrodealerOperator => 'Operador de comerciante',
+            self::AgrodealerManager => 'Gestor de comerciante',
             self::MealOfficer => 'Oficial MEAL',
             self::MealManager => 'Gestor MEAL',
             self::FinanceOfficer => 'Oficial de Finanças',

@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
         // Um agrodealer de exemplo em Mutarara, com um POS.
         $mutarara = District::query()->where('name', 'Mutarara')->firstOrFail();
         $agrodealer = Agrodealer::firstOrCreate(
-            ['code' => 'AGD-MUT-001'],
+            ['code' => 'MER-MUT-001'],
             ['name' => 'Agro Mutarara (exemplo)', 'district_id' => $mutarara->id, 'province_id' => $mutarara->province_id],
         );
         $agrodealer->pos()->firstOrCreate(['pos_code' => 'POS-MUT-001-01'], ['device_label' => 'Tablet balcão']);

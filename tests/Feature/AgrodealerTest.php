@@ -107,13 +107,13 @@ class AgrodealerTest extends TestCase
 
         $this->actingAs($manager)
             ->post('/admin/agrodealers', [
-                'name' => ' Agro Mutarara ', 'district_id' => $mutarara->id, 'address' => 'Mercado', 'contact_phone' => '', 'code' => 'T-AGD-X',
+                'name' => ' Agro Mutarara ', 'district_id' => $mutarara->id, 'address' => 'Mercado', 'contact_phone' => '', 'code' => 'T-MER-X',
             ])
             ->assertRedirect('/admin/agrodealers')
-            ->assertSessionHas('success', 'Agrodealer Agro Mutarara (AGD-MUT-001) criado. O catálogo começa vazio.');
+            ->assertSessionHas('success', 'Comerciante Agro Mutarara (MER-MUT-001) criado. O catálogo começa vazio.');
 
         $agrodealer = Agrodealer::query()->sole();
-        $this->assertSame('AGD-MUT-001', $agrodealer->code);
+        $this->assertSame('MER-MUT-001', $agrodealer->code);
         $this->assertSame($mutarara->province_id, $agrodealer->province_id);
         $this->assertSame('Mercado', $agrodealer->address);
         $this->assertNull($agrodealer->contact_phone);
@@ -121,19 +121,19 @@ class AgrodealerTest extends TestCase
         $audit = AuditLog::query()->sole();
         $this->assertSame('AGRODEALER_CREATED', $audit->action);
         $this->assertSame($manager->id, $audit->actor_id);
-        $this->assertEquals(['code' => 'AGD-MUT-001', 'name' => 'Agro Mutarara', 'district_id' => $mutarara->id, 'status' => 'ACTIVE'], $audit->metadata);
+        $this->assertEquals(['code' => 'MER-MUT-001', 'name' => 'Agro Mutarara', 'district_id' => $mutarara->id, 'status' => 'ACTIVE'], $audit->metadata);
     }
 
     public function test_next_agrodealer_of_the_district_gets_the_next_number(): void
     {
         $mutarara = $this->programmeDistrict('Mutarara');
-        Agrodealer::factory()->for($mutarara)->create(['code' => 'AGD-MUT-004']);
-        Agrodealer::factory()->for($mutarara)->create(['code' => 'AGD-MUT-OLD']);
+        Agrodealer::factory()->for($mutarara)->create(['code' => 'MER-MUT-004']);
+        Agrodealer::factory()->for($mutarara)->create(['code' => 'MER-MUT-OLD']);
 
         $this->actingAs($this->manager())
             ->post('/admin/agrodealers', ['name' => 'Agro 2', 'district_id' => $mutarara->id]);
 
-        $this->assertSame('AGD-MUT-005', Agrodealer::query()->where('name', 'Agro 2')->value('code'));
+        $this->assertSame('MER-MUT-005', Agrodealer::query()->where('name', 'Agro 2')->value('code'));
     }
 
     #[TestWith(['Mutarara', 'MUT'])]
@@ -161,7 +161,7 @@ class AgrodealerTest extends TestCase
         $this->actingAs($this->manager())
             ->post('/admin/agrodealers', ['name' => ' ', 'district_id' => ''])
             ->assertSessionHasErrors([
-                'name' => 'Indique o nome do agrodealer.',
+                'name' => 'Indique o nome do comerciante.',
                 'district_id' => 'Escolha um distrito do programa.',
             ]);
     }
@@ -179,16 +179,16 @@ class AgrodealerTest extends TestCase
     {
         $mutarara = $this->programmeDistrict('Mutarara', 'Tete');
         $guro = $this->programmeDistrict('Guro', 'Manica');
-        $agrodealer = Agrodealer::factory()->for($mutarara)->create(['code' => 'AGD-MUT-001', 'province_id' => $mutarara->province_id]);
+        $agrodealer = Agrodealer::factory()->for($mutarara)->create(['code' => 'MER-MUT-001', 'province_id' => $mutarara->province_id]);
 
         $this->actingAs($this->manager())
             ->put("/admin/agrodealers/{$agrodealer->id}", [
                 'name' => 'Agro Guro', 'district_id' => $guro->id, 'address' => '', 'contact_phone' => '840000000', 'status' => 'INACTIVE',
             ])
-            ->assertSessionHas('success', 'Agrodealer Agro Guro atualizado.');
+            ->assertSessionHas('success', 'Comerciante Agro Guro atualizado.');
 
         $agrodealer->refresh();
-        $this->assertSame('AGD-MUT-001', $agrodealer->code);
+        $this->assertSame('MER-MUT-001', $agrodealer->code);
         $this->assertSame($guro->id, $agrodealer->district_id);
         $this->assertSame($guro->province_id, $agrodealer->province_id);
         $this->assertSame('840000000', $agrodealer->contact_phone);

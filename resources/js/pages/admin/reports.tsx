@@ -47,18 +47,18 @@ export default function Reports({ agrodealers, prints, seesAllPrints }: Props) {
         <AdminLayout>
             <Head title="Relatórios" />
             <div className="admin-page-heading"><div><div className="eyebrow">MEAL · RELATÓRIOS</div><h1>Relatórios</h1>
-                <p>{user?.province ? `Agrodealers da província de ${user.province}.` : 'Relatório de transações de cada agrodealer, e o registo de cada impressão.'}</p>
+                <p>{user?.province ? `Comerciantes da província de ${user.province}.` : 'Relatório de transações de cada comerciante, e o registo de cada impressão.'}</p>
             </div></div>
             {error && <div className="error-box">{error}</div>}
             {message && <div className="success-box">{message}</div>}
 
             <section className="admin-card report-builder">
-                <span className="section-label">Transações por agrodealer (PDF)</span>
+                <span className="section-label">Transações por comerciante (PDF)</span>
                 <p className="muted-text small-note">Vendas do período, por produto e uma a uma, com a reconciliação em que já entraram. Os totais só contam vendas confirmadas. Fica registado quem imprimiu e quando.</p>
                 <div className="report-form">
-                    <label><span className="form-label">Agrodealer</span>
+                    <label><span className="form-label">Comerciante</span>
                         <select className="input" value={dealerId} onChange={(e) => setDealerId(e.target.value)}>
-                            <option value="">Escolher agrodealer…</option>
+                            <option value="">Escolher comerciante…</option>
                             {agrodealers.map((d) => <option key={d.id} value={d.id}>{d.name} ({d.code})</option>)}
                         </select></label>
                     <label><span className="form-label">De</span><input className="input" type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} /></label>

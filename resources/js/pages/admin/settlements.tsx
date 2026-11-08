@@ -116,16 +116,16 @@ export default function Settlements({ settlements, agrodealers, canApprove, open
         <AdminLayout>
             <Head title="Reconciliações" />
             <div className="admin-page-heading"><div><div className="eyebrow">MEAL · RECONCILIAÇÃO</div><h1>Reconciliações</h1>
-                <p>{canApprove ? 'Fechar períodos de vendas, aprovar as reconciliações dos oficiais e encaminhá-las para Finance.' : 'Fechar períodos de vendas dos agrodealers da sua província e enviá-los ao gestor MEAL para aprovação.'}</p></div></div>
+                <p>{canApprove ? 'Fechar períodos de vendas, aprovar as reconciliações dos oficiais e encaminhá-las para Finance.' : 'Fechar períodos de vendas dos comerciantes da sua província e enviá-los ao gestor MEAL para aprovação.'}</p></div></div>
             {action.error && <div className="error-box">{action.error}</div>}
             {flash.success && <div className="success-box">{flash.success}</div>}
             <section className="settlement-builder admin-card">
                 <div><span className="section-label">Nova liquidação</span>
-                    <p className="muted-text">Seleccione o agrodealer e o período. Só dias já fechados (até ontem, hora de Moçambique). Entram as vendas confirmadas ainda não liquidadas; paga-se ao agrodealer a parte do voucher.</p></div>
+                    <p className="muted-text">Seleccione o comerciante e o período. Só dias já fechados (até ontem, hora de Moçambique). Entram as vendas confirmadas ainda não liquidadas; paga-se ao comerciante a parte do voucher.</p></div>
                 <div className="settlement-form">
-                    <label><span className="form-label">Agrodealer</span>
+                    <label><span className="form-label">Comerciante</span>
                         <select className="input" value={dealerId} onChange={(e) => setDealerId(e.target.value)}>
-                            <option value="">Seleccionar agrodealer</option>
+                            <option value="">Seleccionar comerciante</option>
                             {agrodealers.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                         </select></label>
                     <label><span className="form-label">Data inicial</span><input className="input" type="date" value={start} max={yesterday} onChange={(e) => setStart(e.target.value)} /></label>

@@ -45,7 +45,7 @@ function Detail({ settlement, onClose }: { settlement: Settlement; onClose: () =
                 <div className="admin-card finance-summary-card">
                     <span className="section-label">Informações gerais</span>
                     <div className="finance-info-list">
-                        <div><span>Agrodealer</span><strong>{s.agrodealer}</strong></div>
+                        <div><span>Comerciante</span><strong>{s.agrodealer}</strong></div>
                         <div><span>Período</span><strong>{s.period_start} · {s.period_end}</strong></div>
                         <div><span>Número de transações</span><strong>{s.transaction_count}</strong></div>
                         <div><span>Valor bruto das vendas</span><strong>{money(s.gross_amount)}</strong></div>
@@ -136,7 +136,7 @@ export default function FinanceSettlements({ settlements, openId }: { settlement
                         <option value="ALL">Todos os períodos</option>
                         {periods.map((p) => <option key={p} value={p}>{new Date(`${p}-01T12:00:00`).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}</option>)}
                     </select>
-                    <input className="input" placeholder="Pesquisar por referência ou agrodealer..." value={q} onChange={(e) => setQ(e.target.value)} />
+                    <input className="input" placeholder="Pesquisar por referência ou comerciante..." value={q} onChange={(e) => setQ(e.target.value)} />
                 </div>
 
                 <div className="finance-tabs">

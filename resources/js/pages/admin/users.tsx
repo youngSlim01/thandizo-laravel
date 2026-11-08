@@ -43,9 +43,9 @@ function AccessFields({ idPrefix, data, setData, roles, agrodealers, provinces }
 
             {role?.agrodealer && (
                 <>
-                    <label className="form-label" htmlFor={`${idPrefix}-agd`}>Agrodealer</label>
+                    <label className="form-label" htmlFor={`${idPrefix}-agd`}>Comerciante</label>
                     <select id={`${idPrefix}-agd`} className="input" value={data.agrodealer_id} onChange={(e) => setData('agrodealer_id', e.target.value)} required>
-                        <option value="" disabled>Escolher agrodealer…</option>
+                        <option value="" disabled>Escolher comerciante…</option>
                         {agrodealers.map((a) => (
                             <option key={a.id} value={a.id} disabled={a.status !== 'ACTIVE' && data.status === 'ACTIVE'}>
                                 {a.name} ({a.code}){a.status !== 'ACTIVE' ? ' — inativo' : ''}
@@ -62,7 +62,7 @@ function AccessFields({ idPrefix, data, setData, roles, agrodealers, provinces }
                         <option value="" disabled>Escolher província…</option>
                         {provinces.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
-                    <div className="muted-text small-note">O oficial só vê os beneficiários, cartões, agrodealers, vendas e reconciliações desta província.</div>
+                    <div className="muted-text small-note">O oficial só vê os beneficiários, cartões, comerciantes, vendas e reconciliações desta província.</div>
                 </>
             )}
         </>
@@ -228,7 +228,7 @@ export default function Users({ users, ...lists }: Props) {
     return (
         <AdminLayout>
             <Head title="Utilizadores" />
-            <div className="admin-page-heading"><div><div className="eyebrow">ADMINISTRAÇÃO · ACESSOS</div><h1>Utilizadores</h1><p>Gerir contas, perfis, permissões e associação dos operadores aos agrodealers.</p></div></div>
+            <div className="admin-page-heading"><div><div className="eyebrow">ADMINISTRAÇÃO · ACESSOS</div><h1>Utilizadores</h1><p>Gerir contas, perfis, permissões e associação dos operadores aos comerciantes.</p></div></div>
 
             {credentials && (
                 <div className="success-box">
@@ -245,7 +245,7 @@ export default function Users({ users, ...lists }: Props) {
                 ? <CreateUser onDone={() => setCreating(false)} {...lists} />
                 : <button className="primary-button create-user-button" onClick={() => setCreating(true)}>+ CRIAR CONTA</button>}
 
-            <input className="input admin-search" placeholder="Procurar por nome, email, utilizador ou agrodealer" value={filter} onChange={(e) => setFilter(e.target.value)} />
+            <input className="input admin-search" placeholder="Procurar por nome, email, utilizador ou comerciante" value={filter} onChange={(e) => setFilter(e.target.value)} />
 
             <h2>Contas ({visible.length})</h2>
             {visible.length === 0 && <p>Nenhuma conta encontrada.</p>}

@@ -26,7 +26,7 @@ class AgrodealerPosTest extends TestCase
 
     public function test_pos_code_follows_the_agrodealer_code_and_is_audited(): void
     {
-        $agrodealer = Agrodealer::factory()->create(['code' => 'AGD-MUT-001']);
+        $agrodealer = Agrodealer::factory()->create(['code' => 'MER-MUT-001']);
         $manager = $this->manager();
 
         $this->actingAs($manager)

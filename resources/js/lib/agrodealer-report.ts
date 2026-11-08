@@ -50,7 +50,7 @@ export async function printAgrodealerReport(r: AgrodealerReport) {
   doc.roundedRect(M, y, avail, 20, 2, 2, 'F');
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
-  doc.text('Thandizo · Transações do agrodealer', M + 5, y + 8);
+  doc.text('Thandizo · Transações do comerciante', M + 5, y + 8);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
   doc.text(fit(`${r.agrodealer.name} (${r.agrodealer.code})`, avail - 10), M + 5, y + 14.5);
   y += 26;
@@ -142,7 +142,7 @@ export async function printAgrodealerReport(r: AgrodealerReport) {
   doc.line(M, y + 10, M + 80, y + 10); doc.line(W - M - 80, y + 10, W - M, y + 10);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(70, 80, 75);
   doc.text('Oficial MEAL (nome e assinatura)', M, y + 15);
-  doc.text('Agrodealer (nome e assinatura)', W - M - 80, y + 15);
+  doc.text('Comerciante (nome e assinatura)', W - M - 80, y + 15);
 
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p += 1) {

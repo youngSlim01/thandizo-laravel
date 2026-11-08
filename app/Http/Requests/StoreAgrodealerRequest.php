@@ -32,7 +32,7 @@ class StoreAgrodealerRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Indique o nome do agrodealer.',
+            'name.required' => 'Indique o nome do comerciante.',
             'district_id.required' => 'Escolha um distrito do programa.',
             'district_id.uuid' => 'Escolha um distrito do programa.',
             'district_id.exists' => 'Escolha um distrito do programa.',

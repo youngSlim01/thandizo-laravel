@@ -86,7 +86,7 @@ function ProductForm({ product, districts, onDone }: { product: Product | null; 
                     <label className="form-label" htmlFor="product-status">Situação</label>
                     <select id="product-status" className="input" value={form.data.status} onChange={(e) => form.setData('status', e.target.value as Status)}>
                         <option value="ACTIVE">Ativo</option>
-                        <option value="INACTIVE">Inativo (deixa de se vender em todos os agrodealers)</option>
+                        <option value="INACTIVE">Inativo (deixa de se vender em todos os comerciantes)</option>
                     </select>
                 </>
             )}
@@ -291,7 +291,7 @@ export default function Products({ products, districts, canManage }: Props) {
                 </div>
             </div>
             <div className="info-box">
-                Cada distrito tem os seus preços: o MEAL lança aqui a lista entregue por cada comité, à mão ou por Excel. Um agrodealer vende ao preço do seu distrito os produtos do seu catálogo.
+                Cada distrito tem os seus preços: o MEAL lança aqui a lista entregue por cada comité, à mão ou por Excel. Um comerciante vende ao preço do seu distrito os produtos do seu catálogo.
                 Mudar um preço tem efeito imediato; o preço antigo fica no histórico e as vendas feitas não mudam.
                 Um distrito sem preço para um produto não o vende.
             </div>
@@ -327,7 +327,7 @@ export default function Products({ products, districts, canManage }: Props) {
                                 <tr key={p.id} className={p.status === 'INACTIVE' ? 'inactive-row' : ''}>
                                     <td className="product-cell">
                                         <strong>{p.name}</strong>
-                                        <small>{p.code} · {p.unit}{p.category ? ` · ${p.category}` : ''} · {p.agrodealers} agrodealer(s)</small>
+                                        <small>{p.code} · {p.unit}{p.category ? ` · ${p.category}` : ''} · {p.agrodealers} comerciante(s)</small>
                                         {p.status === 'INACTIVE' && <span className="badge">Inativo</span>}
                                         {canManage && <button className="quick-link small-link" onClick={() => setForm(p)}>Editar</button>}
                                     </td>

@@ -74,7 +74,7 @@ export async function printCycleReport(s: CycleSummary) {
     ['Agregados que compraram', `${t.households_bought} (${pct(t.households_bought, t.households)})`],
     ['Valor gasto pelo voucher', `${mt(v.voucher_amount)} (${pct(v.voucher_amount, t.allocated)})`],
     ['Copagamento dos agregados', mt(v.copayment_amount)],
-    ['Descontos dos agrodealers', mt(v.discount_amount)],
+    ['Descontos dos comerciantes', mt(v.discount_amount)],
     ['Valor total das compras', mt(v.total_amount)],
     ['Compras (transações)', v.transactions],
     [s.cycle.status === 'CLOSED' ? 'Valor não utilizado (expirou)' : 'Saldo ainda por usar', `${mt(t.unused)} (${t.households_with_unused} agregados)`],
@@ -89,8 +89,8 @@ export async function printCycleReport(s: CycleSummary) {
   table(['Género', 'Agregados', 'Compraram', 'Gasto pelo voucher'], [60, 35, 35, W - 2 * M - 130],
     s.by_gender.map((g) => [SEX[g.sex] ?? g.sex, g.households, g.households_bought, mt(g.spent)]), [1, 2, 3]);
 
-  title('Por agrodealer');
-  table(['Agrodealer', 'Distrito', 'Compras', 'Voucher', 'Copagamento', 'Total'], [52, 26, 18, 28, 29, 29],
+  title('Por comerciante');
+  table(['Comerciante', 'Distrito', 'Compras', 'Voucher', 'Copagamento', 'Total'], [52, 26, 18, 28, 29, 29],
     s.by_agrodealer.map((a) => [`${a.agrodealer} (${a.code})`, a.district ?? '—', a.transactions, mt(a.voucher_amount), mt(a.copayment_amount), mt(a.total_amount)]), [2, 3, 4, 5]);
 
   title('Por produto');
@@ -137,8 +137,8 @@ export async function exportCycleReport(s: CycleSummary) {
       bold(['GENERO', 'AGREGADOS', 'COMPRARAM', 'GASTO']),
       ...s.by_gender.map((g) => [SEX[g.sex] ?? g.sex, n(g.households), n(g.households_bought), n(g.spent)]),
     ] },
-    { sheet: 'Agrodealers', columns: [28, 14, 14, 10, 14, 14, 14].map((width) => ({ width })), data: [
-      bold(['AGRODEALER', 'CODIGO', 'DISTRITO', 'COMPRAS', 'VOUCHER', 'COPAGAMENTO', 'TOTAL']),
+    { sheet: 'Comerciantes', columns: [28, 14, 14, 10, 14, 14, 14].map((width) => ({ width })), data: [
+      bold(['COMERCIANTE', 'CODIGO', 'DISTRITO', 'COMPRAS', 'VOUCHER', 'COPAGAMENTO', 'TOTAL']),
       ...s.by_agrodealer.map((a) => [a.agrodealer, a.code, a.district ?? '', n(a.transactions), n(a.voucher_amount), n(a.copayment_amount), n(a.total_amount)]),
     ] },
     { sheet: 'Produtos', columns: [28, 12, 16, 10, 12, 14].map((width) => ({ width })), data: [

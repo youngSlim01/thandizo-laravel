@@ -57,7 +57,7 @@ class AgrodealerController extends Controller
         $agrodealer = $agrodealers->create($request->user(), $request->validated());
 
         return to_route('admin.agrodealers.index')
-            ->with('success', "Agrodealer {$agrodealer->name} ({$agrodealer->code}) criado. O catálogo começa vazio.");
+            ->with('success', "Comerciante {$agrodealer->name} ({$agrodealer->code}) criado. O catálogo começa vazio.");
     }
 
     public function update(UpdateAgrodealerRequest $request, Agrodealer $agrodealer, AgrodealerService $agrodealers): RedirectResponse
@@ -65,6 +65,6 @@ class AgrodealerController extends Controller
         $agrodealers->update($request->user(), $agrodealer, $request->validated());
 
         return to_route('admin.agrodealers.index')
-            ->with('success', "Agrodealer {$agrodealer->name} atualizado.");
+            ->with('success', "Comerciante {$agrodealer->name} atualizado.");
     }
 }

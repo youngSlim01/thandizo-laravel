@@ -33,7 +33,7 @@ export async function downloadSettlementPdf(s: Settlement, sales: SettlementSale
     doc.setFontSize(13); doc.setTextColor(30, 40, 50);
     doc.text(meal ? 'MAPA DE VENDAS E LIQUIDAÇÃO' : 'MAPA DE RECONCILIAÇÃO', 18, 27);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 100, 110);
-    doc.text(meal ? 'Documento de suporte à submissão da factura pelo agrodealer' : 'Documento recebido do MEAL para conferência financeira', 18, 34);
+    doc.text(meal ? 'Documento de suporte à submissão da factura pelo comerciante' : 'Documento recebido do MEAL para conferência financeira', 18, 34);
     doc.setDrawColor(210, 220, 215); doc.line(18, 39, W - 18, 39);
 
     doc.setFontSize(9); doc.setTextColor(35, 45, 55);
@@ -41,7 +41,7 @@ export async function downloadSettlementPdf(s: Settlement, sales: SettlementSale
         doc.setFont('helvetica', 'normal'); doc.text(label, 18, y);
         doc.setFont('helvetica', 'bold'); doc.text(value, 48, y);
     };
-    field('Agrodealer:', s.agrodealer, 48);
+    field('Comerciante:', s.agrodealer, 48);
     field('Referência:', s.settlement_code, 55);
     field('Período:', `${s.period_start} a ${s.period_end}`, 62);
 
@@ -80,7 +80,7 @@ export async function downloadSettlementPdf(s: Settlement, sales: SettlementSale
         y += 8; doc.setDrawColor(210, 220, 215); doc.line(18, y, W - 18, y); y += 8;
         doc.setFontSize(8); doc.setTextColor(90, 100, 110);
         doc.text(`Este documento apresenta as transações confirmadas no Thandizo${brand.programme ? ` (${brand.programme})` : ''} no período indicado.`, 18, y);
-        doc.text('A factura deve ser emitida pelo agrodealer de acordo com os procedimentos financeiros aplicáveis.', 18, y + 5);
+        doc.text('A factura deve ser emitida pelo comerciante de acordo com os procedimentos financeiros aplicáveis.', 18, y + 5);
         doc.setFont('helvetica', 'bold'); doc.setTextColor(35, 45, 55);
         doc.text(`Preparado por: ${s.created_by ?? 'MEAL'}`, 18, y + 18);
         doc.text(`Estado: ${statusLabel}`, 18, y + 25);

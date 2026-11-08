@@ -84,7 +84,7 @@ class StoreUserRequest extends FormRequest
                     ->where('status', RecordStatus::Active)
                     ->exists();
                 if (! $agrodealerActive) {
-                    $validator->errors()->add('agrodealer_id', 'O agrodealer escolhido não está ativo.');
+                    $validator->errors()->add('agrodealer_id', 'O comerciante escolhido não está ativo.');
                 }
             },
         ];
@@ -108,10 +108,10 @@ class StoreUserRequest extends FormRequest
             'full_name.required' => 'Indique o nome completo.',
             'role.required' => 'Escolha o papel e o estado.',
             'role.enum' => 'Escolha o papel e o estado.',
-            'agrodealer_id.required' => 'Este papel precisa de um agrodealer.',
-            'agrodealer_id.uuid' => 'Este papel precisa de um agrodealer.',
-            'agrodealer_id.exists' => 'Agrodealer não encontrado.',
-            'agrodealer_id.prohibited' => 'Papéis centrais (MEAL, finanças, administrador) não podem ficar ligados a um agrodealer.',
+            'agrodealer_id.required' => 'Este papel precisa de um comerciante.',
+            'agrodealer_id.uuid' => 'Este papel precisa de um comerciante.',
+            'agrodealer_id.exists' => 'Comerciante não encontrado.',
+            'agrodealer_id.prohibited' => 'Papéis centrais (MEAL, finanças, administrador) não podem ficar ligados a um comerciante.',
             'province_id.required' => 'Um oficial MEAL tem de ter uma província.',
             'province_id.uuid' => 'Um oficial MEAL tem de ter uma província.',
             'province_id.exists' => 'Província não encontrada.',

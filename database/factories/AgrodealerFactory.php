@@ -18,7 +18,7 @@ class AgrodealerFactory extends Factory
     public function definition(): array
     {
         return [
-            'code' => 'AGD-TST-'.str_pad((string) fake()->unique()->numberBetween(1, 999), 3, '0', STR_PAD_LEFT),
+            'code' => 'MER-TST-'.str_pad((string) fake()->unique()->numberBetween(1, 999), 3, '0', STR_PAD_LEFT),
             'name' => 'Agro '.fake()->unique()->numberBetween(1, 99999),
             'district_id' => District::factory()->inProgramme(),
             'province_id' => fn (array $attributes): string => District::query()->findOrFail($attributes['district_id'])->province_id,

@@ -9,7 +9,7 @@ export default function FinanceReports({ cycles }: { cycles: Cycle[] }) {
         <FinanceLayout>
             <Head title="Relatórios" />
             <div className="admin-page-heading"><div><div className="eyebrow">FINANCE · RELATÓRIOS</div><h1>Relatórios</h1>
-                <p>Relatório de cada ciclo: valor atribuído, gasto, copagamento, não utilizado, por distrito, agrodealer e produto.</p>
+                <p>Relatório de cada ciclo: valor atribuído, gasto, copagamento, não utilizado, por distrito, comerciante e produto.</p>
             </div></div>
             {cycles.length === 0 && <div className="recent-empty">Ainda não há ciclos. O primeiro relatório aparece quando o MEAL abrir um ciclo.</div>}
             {cycles.map((c) => <CycleCard key={c.cycle_id} cycle={c} canManage={false} />)}

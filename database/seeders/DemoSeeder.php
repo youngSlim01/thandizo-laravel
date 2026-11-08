@@ -44,11 +44,11 @@ class DemoSeeder extends Seeder
 
         $admin = User::query()->where('email', 'admin@thandizo.test')->firstOrFail();
         $district = District::query()->where('name', 'Mutarara')->firstOrFail();
-        $agrodealer = Agrodealer::query()->where('code', 'AGD-MUT-001')->firstOrFail();
+        $agrodealer = Agrodealer::query()->where('code', 'MER-MUT-001')->firstOrFail();
 
         $users = [
             ['operador@thandizo.test', 'Operador POS', UserRole::AgrodealerOperator, ['agrodealer_id' => $agrodealer->id]],
-            ['gestor-agro@thandizo.test', 'Gestor do Agrodealer', UserRole::AgrodealerManager, ['agrodealer_id' => $agrodealer->id]],
+            ['gestor-agro@thandizo.test', 'Gestor do Comerciante', UserRole::AgrodealerManager, ['agrodealer_id' => $agrodealer->id]],
             ['meal@thandizo.test', 'Oficial MEAL Tete', UserRole::MealOfficer, ['province_id' => $district->province_id]],
             ['gestor-meal@thandizo.test', 'Gestor MEAL', UserRole::MealManager, []],
             ['financas@thandizo.test', 'Oficial de Finanças', UserRole::FinanceOfficer, []],

@@ -39,7 +39,7 @@ class SettlementController extends Controller
             'agrodealer_id' => ['required', 'string'],
             'period_start' => ['required', 'date'],
             'period_end' => ['required', 'date'],
-        ], ['agrodealer_id.required' => 'Seleccione um agrodealer.']);
+        ], ['agrodealer_id.required' => 'Seleccione um comerciante.']);
         $id = $this->settlements->create($request->user(), $data['agrodealer_id'], $data['period_start'], $data['period_end']);
 
         return redirect()->route('admin.settlements.index', ['open' => $id])->with('success', 'Liquidação criada.');

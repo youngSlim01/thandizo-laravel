@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Fornecedor de insumos. O código (AGD-<DIS>-NNN) é gerado ao criar e nunca
+ * Comerciante (antes "agrodealer"): fornecedor de insumos. O código (MER-<DIS>-NNN) é gerado ao criar e nunca
  * muda; ver AgrodealerService.
  */
 #[Fillable(['code', 'name', 'province_id', 'district_id', 'address', 'contact_phone', 'status'])]

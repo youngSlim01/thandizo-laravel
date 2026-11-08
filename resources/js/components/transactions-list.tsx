@@ -117,9 +117,9 @@ export function TransactionsList({ eyebrow }: { eyebrow: string }) {
       </button>
     </div>
     <div className="admin-filters admin-transaction-filters tx-filters">
-      <input className="input" placeholder="Pesquisar referência, voucher, CODIGO AF, beneficiário ou agrodealer" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
-      <select className="input" aria-label="Agrodealer" value={filters.agrodealer_id} onChange={(e) => set({ agrodealer_id: e.target.value })}>
-        <option value="">Todos os agrodealers</option>
+      <input className="input" placeholder="Pesquisar referência, voucher, CODIGO AF, beneficiário ou comerciante" value={searchText} onChange={(e) => setSearchText(e.target.value)} />
+      <select className="input" aria-label="Comerciante" value={filters.agrodealer_id} onChange={(e) => set({ agrodealer_id: e.target.value })}>
+        <option value="">Todos os comerciantes</option>
         {(result?.agrodealers ?? []).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
       </select>
       <select className="input" aria-label="Estado" value={filters.status} onChange={(e) => set({ status: e.target.value })}>
@@ -132,7 +132,7 @@ export function TransactionsList({ eyebrow }: { eyebrow: string }) {
         <small>{s.by_status.CONFIRMED} confirmadas{s.by_status.REVERSED ? ` · ${s.by_status.REVERSED} anuladas` : ''}{s.by_status.PENDING ? ` · ${s.by_status.PENDING} pendentes` : ''}</small></div>
       <div><span>Total confirmado</span><strong>{formatMT(s.total_amount)}</strong><small>{periodLabel(filters)}</small></div>
       <div><span>Pago pelo voucher</span><strong>{formatMT(s.voucher_amount)}</strong><small>{s.households.toLocaleString('pt-PT')} agregado(s)</small></div>
-      <div><span>Copagamento</span><strong>{formatMT(s.copayment_amount)}</strong><small>{s.agrodealers} agrodealer(s)</small></div>
+      <div><span>Copagamento</span><strong>{formatMT(s.copayment_amount)}</strong><small>{s.agrodealers} comerciante(s)</small></div>
     </div>}
     {loading ? <div className="loading-card"><span className="loading-dot" /> A carregar transações…</div> :
       <div className="admin-table-card admin-transactions-list">

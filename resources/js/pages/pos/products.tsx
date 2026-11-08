@@ -29,7 +29,7 @@ export default function ProductsStep({ products }: { products: Product[] }) {
                         <span className="balance-pill">Saldo {formatMT(transaction.voucher?.balance)}</span>
                     </div>
 
-                    {products.length === 0 && <div className="error-box">Não há insumos no catálogo deste agrodealer com preço no distrito. Fale com o gestor do agrodealer ou com a equipa MEAL.</div>}
+                    {products.length === 0 && <div className="error-box">Não há insumos no catálogo deste comerciante com preço no distrito. Fale com o gestor do comerciante ou com a equipa MEAL.</div>}
 
                     <div className="product-page-layout">
                         <div className="product-grid product-grid-refined">{products.map((product) => {
