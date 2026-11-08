@@ -43,6 +43,8 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::get('/', WelcomeController::class)->name('home');
+// O website também para quem já entrou (em / vai para a sua área).
+Route::inertia('/website', 'landing')->name('website');
 
 Route::middleware('auth')->group(function () {
     Route::get('/system/dashboard', SystemAdminDashboardController::class)->name('system.dashboard');

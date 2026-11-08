@@ -21,4 +21,11 @@ class LandingTest extends TestCase
         $this->get('/')->assertOk()->assertInertia(fn (Assert $page) => $page->component('landing'));
         $this->actingAs(User::factory()->role(UserRole::MealManager)->create())->get('/')->assertRedirect('/admin/dashboard');
     }
+
+    public function test_the_website_opens_for_everyone_at_its_own_address(): void
+    {
+        $this->get('/website')->assertOk()->assertInertia(fn (Assert $page) => $page->component('landing'));
+        $this->actingAs(User::factory()->role(UserRole::SystemAdmin)->create())->get('/website')
+            ->assertOk()->assertInertia(fn (Assert $page) => $page->component('landing'));
+    }
 }
