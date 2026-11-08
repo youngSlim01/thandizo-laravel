@@ -184,7 +184,8 @@ Dois perfis de administração, com papéis distintos:
 - O **e-mail continua obrigatório** em todas as contas (a recuperação depende dele).
 
 **Página pública** (8/11/2026)
-- Em `/`, quem não tem sessão vê a apresentação do Thandizo (o que faz, módulos, perfis, configuração, entrada); quem tem sessão vai directo para a sua área. Razão: quem quer conhecer a solução tem onde a ver sem conta.
+- Em `/`, quem não tem sessão vê a apresentação do Thandizo; quem tem sessão vai directo para a sua área. Razão: quem quer conhecer a solução tem onde a ver sem conta.
+- Conteúdo (8/11/2026): o Thandizo apresenta-se como plataforma de **gestão de programas, assistência e monitoria de impacto**, não só de vouchers. Secções: início, sobre (propósito, solução, para quem), funcionalidades (beneficiários, vouchers, programas, monitoria, transações, reconciliação, administração, segurança), como funciona (planear, implementar, acompanhar, reportar), perfis (administrador, gestor de programa, MEAL, finanças, comerciante) e impacto (inclusão, eficiência, transparência, impacto).
 - Os textos descrevem só o que o sistema faz hoje: não prometem funcionamento sem rede nem medição da produção agrícola. Os números do painel na ilustração são de exemplo.
 - O cliente aparece discretamente no rodapé ("Em uso: …"), como no ecrã de entrada.
 
