@@ -29,6 +29,7 @@ use App\Http\Controllers\Finance\SettlementController as FinanceSettlementContro
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\SystemAdminDashboardController;
+use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,8 +43,9 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.update');
 });
 
+Route::get('/', WelcomeController::class)->name('home');
+
 Route::middleware('auth')->group(function () {
-    Route::get('/', HomeController::class)->name('home');
     Route::get('/system/dashboard', SystemAdminDashboardController::class)->name('system.dashboard');
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
