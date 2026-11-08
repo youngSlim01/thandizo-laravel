@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
+import { usePage } from '@inertiajs/react';
 import { errorText, requestJson } from '@/lib/http';
 import { formatDateTime } from '@/lib/format';
 import { GeoFilter, type GeoValue, useGeography } from '@/components/geo-filter';
@@ -11,15 +12,32 @@ export type EditableHousehold = {
   household_id: string; household_code: string;
   first_name: string | null; last_name: string | null; gender: string | null; birth_date: string | null;
   relationship: string | null; community_id: string | null; locality_id: string | null; administrative_post_id: string | null;
-  district_id: string | null; province_id: string | null; has_cards: boolean;
+  district_id: string | null; province_id: string | null; has_cards: boolean; voucher_tier_id: string;
 };
+
+// Escalões ativos, enviados pela página dos beneficiários.
+export type TierOption = { id: string; name: string; amount: number; is_default: boolean };
+
+function useTiers(): TierOption[] {
+  return usePage<{ tiers?: TierOption[] }>().props.tiers ?? [];
+}
+
+function TierSelect({ value, onChange, id }: { value: string; onChange: (v: string) => void; id: string }) {
+  const tiers = useTiers();
+  return (
+    <div><label className="form-label" htmlFor={id}>Escalão do voucher</label>
+      <select id={id} className="input" value={value} onChange={(e) => onChange(e.target.value)}>
+        {tiers.map((t) => <option key={t.id} value={t.id}>{t.name} — {t.amount.toLocaleString('pt-PT')} MT</option>)}
+      </select></div>
+  );
+}
 
 type Fields = { first_name: string; last_name: string; sex: string; birth_date: string; relationship: string };
 
 const FIELD_LABEL: Record<string, string> = {
   representative_name: 'Nome completo', representative_first_name: 'Nome', representative_last_name: 'Apelido',
   representative_sex: 'Género', representative_birth_date: 'Data de nascimento', representative_relationship: 'Grau de parentesco',
-  community_id: 'Bairro', locality_id: 'Localidade', administrative_post_id: 'Posto', district_id: 'Distrito', province_id: 'Província',
+  voucher_tier: 'Escalão', community_id: 'Bairro', locality_id: 'Localidade', administrative_post_id: 'Posto', district_id: 'Distrito', province_id: 'Província',
 };
 const ACTION_LABEL: Record<string, string> = {
   HOUSEHOLD_CREATED: 'Registado', HOUSEHOLD_UPDATED: 'Dados alterados',
@@ -58,6 +76,7 @@ export function EditHousehold({ household, onSaved, onCancel }: { household: Edi
     administrative_post_id: household.administrative_post_id ?? undefined, locality_id: household.locality_id ?? undefined,
     community_id: household.community_id ?? undefined,
   });
+  const [tier, setTier] = useState(household.voucher_tier_id);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +85,7 @@ export function EditHousehold({ household, onSaved, onCancel }: { household: Edi
   const changes: Record<string, string> = {};
   (Object.keys(fields) as (keyof Fields)[]).forEach((k) => { if (fields[k] !== initial[k]) changes[k] = fields[k]; });
   if (place.community_id && place.community_id !== household.community_id) changes.community_id = place.community_id;
+  if (tier !== household.voucher_tier_id) changes.voucher_tier_id = tier;
   const moving = 'community_id' in changes;
   const nothing = Object.keys(changes).length === 0;
 
@@ -83,6 +103,8 @@ export function EditHousehold({ household, onSaved, onCancel }: { household: Edi
     <form className="admin-form household-edit" onSubmit={save}>
       <strong>Editar dados de {household.household_code}</strong>
       <PersonFields value={fields} onChange={setFields} idPrefix="edit" />
+      <TierSelect id="edit-tier" value={tier} onChange={setTier} />
+      {'voucher_tier_id' in changes && <div className="warning-box">O novo escalão vale a partir da próxima ativação ou recarga. O que já está no cartão não muda.</div>}
       <div className="form-label">Bairro / povoação</div>
       <GeoFilter geo={geo} value={place} onChange={setPlace} hideEmpty={false} idPrefix="edit-geo" />
       {moving && <div className="warning-box">O agregado muda de bairro{household.has_cards ? '. O cartão continua a funcionar e passa a comprar aos preços do novo distrito; um cartão já impresso mostra o bairro antigo' : ''}.</div>}
@@ -104,6 +126,8 @@ export function NewHousehold({ onSaved, onCancel }: { onSaved: (m: string, id: s
   const [code, setCode] = useState('');
   const [fields, setFields] = useState<Fields>({ first_name: '', last_name: '', sex: '', birth_date: '', relationship: 'Chefe' });
   const [place, setPlace] = useState<GeoValue>({});
+  const tiers = useTiers();
+  const [tier, setTier] = useState(() => tiers.find((t) => t.is_default)?.id ?? tiers[0]?.id ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,7 +136,7 @@ export function NewHousehold({ onSaved, onCancel }: { onSaved: (m: string, id: s
     setBusy(true); setError(null);
     try {
       const r = await requestJson<{ household_id: string; household_code: string }>('POST', '/admin/households', {
-        household_code: code, ...fields, community_id: place.community_id,
+        household_code: code, ...fields, community_id: place.community_id, voucher_tier_id: tier,
       });
       onSaved(`Agregado ${r.household_code} registado.`, r.household_id);
     } catch (err) { setError(errorText(err)); }
@@ -125,6 +149,7 @@ export function NewHousehold({ onSaved, onCancel }: { onSaved: (m: string, id: s
       <label className="form-label" htmlFor="new-code">CODIGO AF</label>
       <input id="new-code" className="input" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ex.: 1234AF000001" />
       <PersonFields value={fields} onChange={setFields} idPrefix="new" />
+      <TierSelect id="new-tier" value={tier} onChange={setTier} />
       <div className="form-label">Bairro / povoação</div>
       <GeoFilter geo={geo} value={place} onChange={setPlace} hideEmpty={false} idPrefix="new-geo" />
       <div className="muted-text small-note">Para muitos agregados use a importação de Excel. Um bairro novo entra pela importação.</div>

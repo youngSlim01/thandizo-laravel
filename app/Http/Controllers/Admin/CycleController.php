@@ -65,9 +65,9 @@ class CycleController extends Controller
         Gate::authorize('meal-manager');
         [$ids, $codes] = $this->selection($request);
         $result = $this->cycles->allocate($request->user(), $cycle, $ids, $codes, true);
-        $amount = number_format((float) $result['amount_each'], 0, ',', ' ');
+        $total = number_format((float) $result['total_amount'], 0, ',', ' ');
 
-        return back()->with('success', "{$result['allocated']} agregado(s) recarregado(s) com {$amount} MT cada, no mesmo cartão.");
+        return back()->with('success', "{$result['allocated']} agregado(s) recarregado(s), no total de {$total} MT, no mesmo cartão.");
     }
 
     /**

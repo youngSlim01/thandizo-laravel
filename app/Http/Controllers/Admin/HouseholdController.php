@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\RecordStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Household;
+use App\Models\VoucherTier;
 use App\Services\HouseholdSearchService;
 use App\Services\HouseholdService;
 use Closure;
@@ -30,6 +31,9 @@ class HouseholdController extends Controller
 
         return Inertia::render('admin/households', [
             'canManage' => $request->user()->can('create', Household::class),
+            'tiers' => VoucherTier::query()->where('status', RecordStatus::Active)->orderByDesc('amount')
+                ->get(['id', 'name', 'amount', 'is_default'])
+                ->map(fn (VoucherTier $tier): array => ['id' => $tier->id, 'name' => $tier->name, 'amount' => (float) $tier->amount, 'is_default' => $tier->is_default]),
         ]);
     }
 
@@ -84,6 +88,7 @@ class HouseholdController extends Controller
             'birth_date' => ['nullable', 'string', 'max:20'],
             'relationship' => ['nullable', 'string', 'max:255'],
             'community_id' => ['nullable', 'string'],
+            'voucher_tier_id' => ['nullable', 'string'],
         ]);
 
         return $this->respond(function () use ($request, $households, $data): array {

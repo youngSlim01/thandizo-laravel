@@ -3,8 +3,8 @@ import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '@/components/admin-layout';
 import { HouseholdList } from '@/components/households/household-list';
 import { HouseholdLists } from '@/components/households/household-lists';
-import { formatDateTime } from '@/lib/format';
-import { type ImportRow, readHouseholdFile, REQUIRED_HEADERS } from '@/lib/household-import';
+import { formatDateTime, formatMT } from '@/lib/format';
+import { type ImportRow, OPTIONAL_HEADERS, readHouseholdFile, REQUIRED_HEADERS } from '@/lib/household-import';
 import { errorText, requestJson } from '@/lib/http';
 
 // Beneficiários, como app/admin/households/page.tsx do Next.js: lista com
@@ -28,6 +28,7 @@ type ImportResult = {
   error_count: number;
   errors: ImportError[];
   summary: Summary;
+  by_tier?: { name: string; amount: number; households: number }[];
   existing_codes?: string[];
 };
 type Batch = { id: string; file_name: string | null; row_count: number; created_households: number; existing_households: number; created_at: string };
@@ -40,6 +41,8 @@ const CODE_LABELS: Record<string, string> = {
   INVALID_DATE: 'data inválida (use dd/mm/aaaa)',
   DATE_OUT_OF_RANGE: 'data fora do intervalo',
   PROVINCE_OUT_OF_SCOPE: 'província fora da sua área',
+  INVALID_AMOUNT: 'valor inválido (ex.: 7500)',
+  NO_TIER_FOR_AMOUNT: 'não há escalão ativo com este valor (crie-o na Configuração)',
 };
 
 function SummaryView({ summary, committed }: { summary: Summary; committed: boolean }) {
@@ -125,7 +128,8 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
     <>
       <div className="info-box">
         Importe a lista do MEAL em <strong>.xlsx</strong> ou <strong>.csv</strong>. Cada linha é o representante de um agregado.
-        Colunas: {REQUIRED_HEADERS.map((h) => h.label).join(', ')}.
+        Colunas: {REQUIRED_HEADERS.map((h) => h.label).join(', ')}. Coluna opcional: {OPTIONAL_HEADERS.map((h) => h.label).join(', ')}, o valor
+        do voucher de cada agregado, que o coloca no escalão com esse valor; sem ela, ficam no escalão padrão.
         A lista é validada antes de gravar; se houver um erro, nada é gravado. Agregados cujo CODIGO AF já existe ficam como estão.
       </div>
 
@@ -149,6 +153,16 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
         <>
           <h2>{result.committed ? 'Resultado' : 'Pré-visualização'}</h2>
           <SummaryView summary={result.summary} committed={result.committed} />
+          {(result.by_tier?.length ?? 0) > 0 && (
+            <table className="import-errors">
+              <thead><tr><th>Escalão</th><th>Valor</th><th>{result.committed ? 'Agregados criados' : 'Agregados novos'}</th><th>Total por ativação</th></tr></thead>
+              <tbody>
+                {result.by_tier!.map((t) => (
+                  <tr key={t.name}><td>{t.name}</td><td>{formatMT(t.amount)}</td><td>{t.households}</td><td>{formatMT(t.amount * t.households)}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          )}
 
           {result.error_count > 0 && (
             <>

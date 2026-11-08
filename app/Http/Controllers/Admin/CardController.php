@@ -65,7 +65,8 @@ class CardController extends Controller
         $result = $this->cards->distribute($request->user(), $batch, array_values($data['voucher_ids']), array_values($data['substitutes'] ?? []));
 
         $activated = $result['activated'];
-        $message = $activated === 1 ? '1 cartão ativado com 6 000 MT.' : "{$activated} cartões ativados com 6 000 MT cada.";
+        $total = number_format($result['total_amount'], 0, ',', ' ');
+        $message = $activated === 1 ? "1 cartão ativado com {$total} MT." : "{$activated} cartões ativados, no total de {$total} MT.";
         $message .= $result['remaining'] > 0 ? " Faltam entregar {$result['remaining']}." : ' Todos os cartões do lote foram entregues.';
 
         return back()->with('success', $message);

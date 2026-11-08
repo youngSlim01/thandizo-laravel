@@ -17,6 +17,7 @@ use App\Services\CycleService;
 use App\Services\PosService;
 use App\Services\PriceService;
 use App\Services\ProductService;
+use App\Services\VoucherTierService;
 use Illuminate\Database\Seeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
@@ -25,7 +26,7 @@ use Illuminate\Support\Facades\DB;
 /**
  * Dados de demonstração para experimentar o sistema no browser:
  * utilizadores de cada papel (palavra-passe "password"), produtos com
- * preço, catálogo, ciclo aberto, 20 agregados com cartão entregue e 5 vendas
+ * preço, catálogo, ciclo aberto, 3 escalões, 20 agregados com cartão entregue e 5 vendas
  * do mês passado (para experimentar as reconciliações).
  *
  * php artisan db:seed --class=DemoSeeder (só desenvolvimento).
@@ -71,6 +72,14 @@ class DemoSeeder extends Seeder
         $locality = Locality::query()->create(['administrative_post_id' => $post->id, 'name' => 'Charre-Sede']);
         $community = Community::query()->create(['locality_id' => $locality->id, 'district_id' => $district->id, 'name' => 'Nhacatundo']);
         Household::factory()->count(20)->inCommunity($community)->create();
+
+        // Escalões: 6 agregados a 7 500 MT, 10 no padrão (6 000 MT) e 4 a 3 000 MT.
+        $tiers = app(VoucherTierService::class);
+        $tierA = $tiers->create($admin, ['name' => 'Grupo A — muito vulnerável', 'amount' => 7500, 'description' => 'Chefiados por mulheres ou com mais de 6 membros']);
+        $tierC = $tiers->create($admin, ['name' => 'Grupo C — apoio parcial', 'amount' => 3000, 'description' => 'Com outra fonte de rendimento']);
+        $codes = Household::query()->orderBy('household_code')->pluck('id');
+        Household::query()->whereIn('id', $codes->take(6))->update(['voucher_tier_id' => $tierA->id]);
+        Household::query()->whereIn('id', $codes->take(-4))->update(['voucher_tier_id' => $tierC->id]);
 
         app(CycleService::class)->open($admin, 'Ciclo 1 — demonstração', null, null);
 

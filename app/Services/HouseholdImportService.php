@@ -22,6 +22,11 @@ use InvalidArgumentException;
  * Primeiro valida tudo e mostra o resumo (pré-visualização); só grava se
  * não houver nenhum erro, e então grava tudo de uma vez. Agregados cujo
  * CODIGO AF já existe ficam como estão.
+ *
+ * A coluna VALOR (opcional) diz o valor do voucher de cada agregado: o
+ * agregado fica no escalão activo com esse valor. Sem valor, fica no escalão
+ * padrão. Um valor sem escalão é um erro: os escalões criam-se primeiro na
+ * Configuração, para um engano no ficheiro não criar dinheiro.
  */
 class HouseholdImportService
 {
@@ -31,7 +36,7 @@ class HouseholdImportService
 
     private const PLACE_LEVELS = ['province', 'district', 'administrative_post', 'locality', 'community'];
 
-    public function __construct(private GeographyService $geography) {}
+    public function __construct(private GeographyService $geography, private VoucherTierService $tiers) {}
 
     /**
      * @param  list<array<string, mixed>>  $rawRows
@@ -47,9 +52,11 @@ class HouseholdImportService
         }
 
         $rows = array_map($this->parseRow(...), $rawRows, array_keys($rawRows));
+        $rows = $this->assignTiers($rows);
         $errors = $this->validate($actor, $rows);
         $existingCodes = $this->existingCodes(array_column($rows, 'household_code'));
         $summary = $this->summary($rows, $existingCodes);
+        $byTier = $this->byTier($rows, $existingCodes);
 
         if ($errors !== [] || ! $commit) {
             return [
@@ -58,11 +65,12 @@ class HouseholdImportService
                 'error_count' => count($errors),
                 'errors' => array_slice($errors, 0, self::MAX_ERRORS_SHOWN),
                 'summary' => $summary,
+                'by_tier' => $byTier,
                 'existing_codes' => array_slice(array_values($existingCodes), 0, 50),
             ];
         }
 
-        return DB::transaction(function () use ($actor, $rows, $fileName, $existingCodes, $summary): array {
+        return DB::transaction(function () use ($actor, $rows, $fileName, $existingCodes, $summary, $byTier): array {
             $batch = HouseholdImportBatch::query()->create([
                 'file_name' => $fileName,
                 'imported_by' => $actor->id,
@@ -97,6 +105,7 @@ class HouseholdImportService
                     'administrative_post_id' => $community->locality?->administrative_post_id,
                     'locality_id' => $community->locality_id,
                     'community_id' => $community->id,
+                    'voucher_tier_id' => $row['voucher_tier_id'],
                     'status' => 'ACTIVE',
                     'import_batch_id' => $batch->id,
                     'created_at' => $now,
@@ -114,7 +123,7 @@ class HouseholdImportService
                 'action' => 'HOUSEHOLDS_IMPORTED',
                 'entity_type' => 'HOUSEHOLD_IMPORT_BATCH',
                 'entity_id' => $batch->id,
-                'metadata' => ['file_name' => $fileName, 'summary' => $summary, 'created' => $created],
+                'metadata' => ['file_name' => $fileName, 'summary' => $summary, 'by_tier' => $byTier, 'created' => $created],
             ]);
 
             return [
@@ -124,6 +133,7 @@ class HouseholdImportService
                 'error_count' => 0,
                 'errors' => [],
                 'summary' => [...$summary, 'new_households' => $created],
+                'by_tier' => $byTier,
             ];
         });
     }
@@ -150,7 +160,55 @@ class HouseholdImportService
             'birth_date' => $birth?->toDateString(),
             'birth_date_plausible' => $birth !== null && HouseholdInput::isPlausibleBirthDate($birth),
             'relationship' => HouseholdInput::clean($raw['relationship'] ?? null),
+            'amount_text' => HouseholdInput::clean($raw['amount'] ?? null),
+            'amount' => HouseholdInput::amount($raw['amount'] ?? null),
         ];
+    }
+
+    /**
+     * Escalão de cada linha: o activo com o valor da coluna VALOR, ou o
+     * padrão quando a linha não tem valor.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function assignTiers(array $rows): array
+    {
+        $default = $this->tiers->default();
+        $byAmount = [];
+        foreach ($this->tiers->list() as $tier) {
+            if ($tier->status->value === 'ACTIVE') {
+                $byAmount[number_format((float) $tier->amount, 2, '.', '')] = $tier;
+            }
+        }
+
+        return array_map(function (array $row) use ($default, $byAmount): array {
+            $tier = $row['amount_text'] === null ? $default : ($row['amount'] === null ? null : ($byAmount[number_format($row['amount'], 2, '.', '')] ?? null));
+
+            return [...$row, 'voucher_tier_id' => $tier?->id, 'voucher_tier' => $tier?->name, 'voucher_amount' => $tier === null ? null : (float) $tier->amount];
+        }, $rows);
+    }
+
+    /**
+     * Agregados novos por escalão, com o valor a atribuir em cada ativação.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @param  array<string, string>  $existingCodes
+     * @return list<array{name: string, amount: float, households: int}>
+     */
+    private function byTier(array $rows, array $existingCodes): array
+    {
+        $groups = [];
+        foreach ($rows as $row) {
+            if ($row['voucher_tier_id'] === null || isset($existingCodes[$row['household_code']])) {
+                continue;
+            }
+            $groups[$row['voucher_tier_id']] ??= ['name' => $row['voucher_tier'], 'amount' => $row['voucher_amount'], 'households' => 0];
+            $groups[$row['voucher_tier_id']]['households']++;
+        }
+        usort($groups, fn (array $a, array $b): int => $b['amount'] <=> $a['amount']);
+
+        return $groups;
     }
 
     /**
@@ -198,6 +256,11 @@ class HouseholdImportService
                 $add('DATA NASC', 'INVALID_DATE');
             } elseif (! $row['birth_date_plausible']) {
                 $add('DATA NASC', 'DATE_OUT_OF_RANGE');
+            }
+            if ($row['amount_text'] !== null && $row['amount'] === null) {
+                $add('VALOR', 'INVALID_AMOUNT');
+            } elseif ($row['voucher_tier_id'] === null) {
+                $add('VALOR', 'NO_TIER_FOR_AMOUNT');
             }
             if ($actor->isProvinceScoped() && $row['province'] !== null && $this->key($row['province']) !== $scopeProvince) {
                 $add('PROVINCIA', 'PROVINCE_OUT_OF_SCOPE');

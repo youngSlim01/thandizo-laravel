@@ -5,7 +5,7 @@ import { CycleCard, type Cycle } from '@/components/cycle-card';
 import type { SharedProps } from '@/types';
 
 // Ciclos do programa: um aberto de cada vez. O MEAL recarrega os agregados
-// escolhidos (mesmo cartão, 6 000 MT), acompanha quem ainda tem saldo e
+// escolhidos (mesmo cartão, valor do escalão), acompanha quem ainda tem saldo e
 // fecha o ciclo: o que sobra expira e fica no relatório como não utilizado.
 
 type Props = { cycles: Cycle[]; canManage: boolean };
@@ -47,7 +47,7 @@ export default function Cycles({ cycles, canManage }: Props) {
             <Head title="Ciclos" />
             <h1>Ciclos</h1>
             <div className="info-box">
-                Um ciclo de cada vez. Em cada ciclo o MEAL escolhe quem recebe: cada agregado recebe 6.000 MT no mesmo cartão e tem de usar tudo dentro do ciclo.
+                Um ciclo de cada vez. Em cada ciclo o MEAL escolhe quem recebe: cada agregado recebe no mesmo cartão o valor do seu escalão e tem de usar tudo dentro do ciclo.
                 Ao fechar, o saldo que sobrar expira e fica no relatório como não utilizado.
             </div>
             {flash.success && <div className="success-box">{flash.success}</div>}

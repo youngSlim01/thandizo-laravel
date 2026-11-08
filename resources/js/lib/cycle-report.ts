@@ -2,11 +2,12 @@
 // entregar e um Excel com uma folha por tabela para análise.
 
 export type CycleSummary = {
-  cycle: { code: string; name: string; status: string; amount: number; starts_on: string | null; ends_on: string | null; opened_at: string; closed_at: string | null };
+  cycle: { code: string; name: string; status: string; starts_on: string | null; ends_on: string | null; opened_at: string; closed_at: string | null };
   totals: { households: number; recharged: number; delivered: number; allocated: number; households_bought: number;
     households_with_unused: number; unused: number; women: number; men: number };
   sales: { transactions: number; voucher_amount: number; copayment_amount: number; total_amount: number; discount_amount: number };
   by_district: { province: string | null; district: string | null; households: number; households_bought: number; allocated: number; spent: number; unused: number }[];
+  by_tier: { tier: string; households: number; households_bought: number; allocated: number; spent: number; unused: number }[];
   by_gender: { sex: string; households: number; households_bought: number; spent: number }[];
   by_agrodealer: { agrodealer: string; code: string; district: string | null; transactions: number; voucher_amount: number; copayment_amount: number; total_amount: number }[];
   by_product: { product: string; code: string; category: string | null; unit: string; quantity: number; total_amount: number }[];
@@ -62,7 +63,7 @@ export async function printCycleReport(s: CycleSummary) {
   doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
   doc.text(`Relatório do ${s.cycle.name} (${s.cycle.code})`, M, y + 6);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
-  doc.text(`Período: ${period(s)} · ${mt(s.cycle.amount)} por agregado · ${s.cycle.status === 'CLOSED' ? 'ciclo fechado' : 'ciclo em curso (valores provisórios)'}`, M, y + 12);
+  doc.text(`Período: ${period(s)} · ${s.cycle.status === 'CLOSED' ? 'ciclo fechado' : 'ciclo em curso (valores provisórios)'}`, M, y + 12);
   y += 20;
 
   title('Resumo');
@@ -84,6 +85,10 @@ export async function printCycleReport(s: CycleSummary) {
   title('Por distrito');
   table(['Província', 'Distrito', 'Agregados', 'Compraram', 'Atribuído', 'Gasto', 'Não usado'], [26, 30, 20, 22, 30, 28, 26],
     s.by_district.map((d) => [d.province ?? '—', d.district ?? '—', d.households, d.households_bought, mt(d.allocated), mt(d.spent), mt(d.unused)]), [2, 3, 4, 5, 6]);
+
+  title('Por escalão');
+  table(['Escalão', 'Agregados', 'Compraram', 'Atribuído', 'Gasto', 'Não usado'], [52, 20, 22, 30, 28, 30],
+    s.by_tier.map((e) => [e.tier, e.households, e.households_bought, mt(e.allocated), mt(e.spent), mt(e.unused)]), [1, 2, 3, 4, 5]);
 
   title('Por género do representante');
   table(['Género', 'Agregados', 'Compraram', 'Gasto pelo voucher'], [60, 35, 35, W - 2 * M - 130],
@@ -132,6 +137,10 @@ export async function exportCycleReport(s: CycleSummary) {
     { sheet: 'Distritos', columns: [16, 16, 12, 12, 14, 14, 14].map((width) => ({ width })), data: [
       bold(['PROVINCIA', 'DISTRITO', 'AGREGADOS', 'COMPRARAM', 'ATRIBUIDO', 'GASTO', 'NAO USADO']),
       ...s.by_district.map((d) => [d.province ?? '', d.district ?? '', n(d.households), n(d.households_bought), n(d.allocated), n(d.spent), n(d.unused)]),
+    ] },
+    { sheet: 'Escaloes', columns: [24, 12, 12, 14, 14, 14].map((width) => ({ width })), data: [
+      bold(['ESCALAO', 'AGREGADOS', 'COMPRARAM', 'ATRIBUIDO', 'GASTO', 'NAO USADO']),
+      ...s.by_tier.map((e) => [e.tier, n(e.households), n(e.households_bought), n(e.allocated), n(e.spent), n(e.unused)]),
     ] },
     { sheet: 'Genero', columns: [16, 12, 12, 16].map((width) => ({ width })), data: [
       bold(['GENERO', 'AGREGADOS', 'COMPRARAM', 'GASTO']),

@@ -64,7 +64,7 @@ class CyclesTest extends TestCase
         $this->assertEquals(['NO_DELIVERED_CARD' => 1, 'UNKNOWN_HOUSEHOLD' => 1], $preview['left_out']);
 
         $this->actingAs($this->admin)->post("/admin/cycles/{$cycle}/allocation", ['household_ids' => [$withCard->id]])
-            ->assertSessionHas('success', '1 agregado(s) recarregado(s) com 6 000 MT cada, no mesmo cartão.');
+            ->assertSessionHas('success', '1 agregado(s) recarregado(s), no total de 6 000 MT, no mesmo cartão.');
         $this->assertSame('6000.00', DB::table('vouchers')->where('id', $voucher->id)->value('current_balance'));
         $this->assertSame('CYCLE_ALLOCATION', DB::table('voucher_ledger')->orderByDesc('created_at')->orderByDesc('id')->value('entry_type'));
 

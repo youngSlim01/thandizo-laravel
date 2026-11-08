@@ -10,11 +10,12 @@ import { errorText, requestJson } from '@/lib/http';
 // Finanças só lêem.
 
 export type Cycle = {
-    cycle_id: string; code: string; name: string; amount: number; status: 'OPEN' | 'CLOSED'; starts_on: string | null;
+    cycle_id: string; code: string; name: string; status: 'OPEN' | 'CLOSED'; starts_on: string | null;
     ends_on: string | null; opened_at: string; closed_at: string | null; households: number; allocated: number;
 };
 type Preview = {
-    to_allocate: number; total_amount: number; amount_each: number; left_out: Record<string, number>;
+    to_allocate: number; total_amount: number; left_out: Record<string, number>;
+    by_tier: { tier: string; amount: number; households: number; total_amount: number }[];
     left_out_rows: { household_code: string; reason: string }[];
 };
 type ClosePreview = {
@@ -82,7 +83,7 @@ function Recharge({ cycle, onClose }: { cycle: Cycle; onClose: () => void }) {
     return (
         <div className="admin-form cycle-recharge">
             <div className="row-between"><strong>Recarregar agregados — {cycle.name}</strong><button className="quick-link" onClick={onClose}>Fechar</button></div>
-            <p className="muted-text">Cada agregado escolhido recebe {formatMT(cycle.amount)} no cartão que já tem. Quem ainda não tem cartão entregue recebe-o na distribuição de cartões (e entra no ciclo nesse momento).</p>
+            <p className="muted-text">Cada agregado escolhido recebe no cartão que já tem o valor do seu escalão. Quem ainda não tem cartão entregue recebe-o na distribuição de cartões (e entra no ciclo nesse momento).</p>
             <div className="tab-row" role="tablist">
                 <button role="tab" aria-selected={mode === 'zone'} className={mode === 'zone' ? 'tab active' : 'tab'} onClick={() => { setMode('zone'); setPreview(null); }}>Por zona</button>
                 <button role="tab" aria-selected={mode === 'list'} className={mode === 'list' ? 'tab active' : 'tab'} onClick={() => { setMode('list'); setPreview(null); }}>Lista de CODIGO AF</button>
@@ -107,7 +108,10 @@ function Recharge({ cycle, onClose }: { cycle: Cycle; onClose: () => void }) {
             {preview && (
                 <>
                     <div className="info-box">
-                        <strong>{preview.to_allocate} agregado(s)</strong> vão receber {formatMT(preview.amount_each)} — total {formatMT(preview.total_amount)}.
+                        <strong>{preview.to_allocate} agregado(s)</strong> vão receber, no total, {formatMT(preview.total_amount)}.
+                        {preview.by_tier.length > 0 && (
+                            <ul>{preview.by_tier.map((t) => <li key={t.tier}>{t.tier}: {t.households} × {formatMT(t.amount)} = {formatMT(t.total_amount)}</li>)}</ul>
+                        )}
                         {Object.keys(preview.left_out).length > 0 && (
                             <ul>{Object.entries(preview.left_out).map(([k, v]) => <li key={k}>{v} ficam de fora: {REASON[k] ?? k}</li>)}</ul>
                         )}

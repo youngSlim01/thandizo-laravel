@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\RecordStatus;
 use App\Models\Community;
 use App\Models\Household;
+use App\Models\VoucherTier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -29,6 +30,7 @@ class HouseholdFactory extends Factory
             'representative_birth_date' => '1985-06-15',
             'representative_relationship' => 'Chefe',
             'community_id' => Community::factory(),
+            'voucher_tier_id' => fn () => VoucherTier::query()->where('is_default', true)->value('id'),
             'status' => RecordStatus::Active,
         ];
     }
@@ -56,6 +58,11 @@ class HouseholdFactory extends Factory
     public function inCommunity(Community $community): static
     {
         return $this->state(fn () => ['community_id' => $community->id]);
+    }
+
+    public function inTier(VoucherTier $tier): static
+    {
+        return $this->state(fn () => ['voucher_tier_id' => $tier->id]);
     }
 
     public function inactive(): static

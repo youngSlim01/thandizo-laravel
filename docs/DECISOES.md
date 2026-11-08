@@ -9,7 +9,7 @@ A migração técnica (Next.js + Supabase → Laravel + MySQL) está em
 [`MIGRACAO_LARAVEL.md`](MIGRACAO_LARAVEL.md). Este documento fala do sistema
 e do produto.
 
-Última actualização: Novembro de 2026 (perfis de administração e criação do administrador).
+Última actualização: 8 de Novembro de 2026 (escalões do voucher; CODIGO AF gerado decidido, por implementar).
 
 ---
 
@@ -43,7 +43,7 @@ e do produto.
 | **Os dados do sistema antigo não são migrados**; passa só a estrutura. Os dados são repostos nos testes com utilizadores reais. | Decisão do projecto; evita um comando de migração arriscado sobre saldos. |
 | Toda a **comunidade tem localidade** (obrigatória). | Não existem comunidades sem localidade. |
 | O **nome do produto é único**. | Não existem produtos com nomes repetidos. |
-| **Dados de demonstração** (`php artisan db:seed --class=DemoSeeder`): utilizadores de cada papel, produtos com preço, ciclo aberto, 20 agregados com cartão, 5 vendas do mês anterior, cliente e logótipos de exemplo. | Experimentar todos os fluxos no browser, incluindo reconciliações. |
+| **Dados de demonstração** (`php artisan db:seed --class=DemoSeeder`): utilizadores de cada papel, produtos com preço, ciclo aberto, 3 escalões (7 500 / 6 000 / 3 000 MT), 20 agregados com cartão, 5 vendas do mês anterior, cliente e logótipos de exemplo. | Experimentar todos os fluxos no browser, incluindo reconciliações. |
 
 ## 4. Regras do dinheiro
 
@@ -67,15 +67,35 @@ ecrã, são garantidas pelos Services e, as mais críticas, pela base de dados.
 
 **Cartões**
 - Um **lote por bairro** (`LOTE-<DIS>-NNNN`), um cartão por agregado activo sem cartão. Código do cartão: `VCH-<DIS>-NNNNNN-<dígito>`, com QR.
-- O cartão nasce **por distribuir, sem saldo**. Só na **entrega em mão** fica activo com **6 000 MT**, e só com um **ciclo aberto**.
+- O cartão nasce **por distribuir, sem saldo**. Só na **entrega em mão** fica activo com o **valor do escalão** do agregado nesse momento, e só com um **ciclo aberto**.
 - Na ausência do representante, o cartão pode ser entregue a um **substituto**: o nome e o parentesco ficam no cartão; os dados do agregado não mudam.
 - **Cartão perdido**: é cancelado e emitido um novo com o saldo que restava (gestor MEAL ou administrador).
 - **Cancelar ou fechar um lote**: gestor MEAL ou administrador; os cartões não entregues são cancelados.
 
 **Ciclos**
 - **Um ciclo aberto de cada vez** (`CIC-NN`).
-- **Recarga**: 6 000 MT no **mesmo cartão**, para os agregados escolhidos (por zona ou lista de CODIGO AF).
+- **Recarga**: o **valor do escalão** de cada agregado, no **mesmo cartão**, para os agregados escolhidos (por zona ou lista de CODIGO AF). A pré-visualização mostra quanto vai a cada escalão. O ciclo guarda o escalão em que cada agregado estava quando recebeu, para os relatórios.
 - **Fecho**: o saldo que sobra **expira** e fica no relatório como não utilizado. Não se fecha nos **15 minutos** a seguir a uma venda (ainda pode ser anulada).
+
+**Escalões do voucher** (decidido a 8/11/2026)
+
+Os beneficiários recebem valores diferentes (ex.: 7 500, 6 000 ou 3 000 MT) consoante a vulnerabilidade e a categoria do grupo.
+
+| Decisão | Razão |
+|---|---|
+| O valor mora num **escalão** (nome, valor, descrição); cada agregado pertence a um escalão. Não há valor por agregado nem por ciclo. | Mudar o valor de um grupo é uma só alteração, não centenas; os relatórios por escalão saem directamente. |
+| Os escalões são geridos pelo **gestor MEAL e pelo administrador do sistema**, na Configuração. | Decisão do projecto: são regras do programa. |
+| O valor **congela-se no momento** da activação ou da recarga (fica no ledger e no cartão). Mudar o valor de um escalão, ou o escalão de um agregado, só conta para as **próximas** activações e recargas. | O dinheiro já entregue nunca muda por uma alteração de configuração. |
+| Na **importação**, a coluna opcional **VALOR** escolhe o escalão activo com esse valor; sem a coluna, ou com a célula vazia, o agregado fica no **escalão padrão**. Um valor sem escalão activo é um **erro**: nada é gravado. | Os valores vêm da fonte de dados (lista do MEAL). O escalão cria-se primeiro na Configuração, para que um engano no ficheiro (750 em vez de 7500) nunca crie dinheiro. |
+| **Dois escalões activos não podem ter o mesmo valor.** | A importação encontra o escalão pelo valor; dois escalões com o mesmo valor tornariam isso ambíguo. *A rever se for preciso distinguir categorias com o mesmo valor (aí a importação passaria a ter uma coluna ESCALAO).* |
+| Os escalões **nunca se apagam**, desactivam-se, e só quando já não têm agregados activos. Há sempre um **escalão padrão** activo (de início "Padrão", 6 000 MT), que não pode ser desactivado. | Os relatórios antigos continuam a apontar para o escalão; nenhum agregado fica sem valor. |
+| A mudança de escalão de um agregado faz-se em "Editar dados", com motivo, e fica no histórico (escalão antigo → novo). | Auditoria igual à dos outros dados do agregado. |
+| O cartão impresso **não mostra o valor**. | O cartão serve vários ciclos e o escalão pode mudar. |
+
+**CODIGO AF gerado pelo sistema** (decidido a 8/11/2026, por implementar)
+- Alguns beneficiários não têm CODIGO AF: o sistema gera um, com **formato próprio** (ex.: `TZ-MUT-000123`), que nunca se confunde nem colide com um código oficial.
+- O código gerado é **definitivo**: nunca é substituído pelo oficial.
+- Só se gera com **pedido explícito** ("Não tem CODIGO AF" no registo; valor próprio na importação, com a contagem na pré-visualização). Um campo vazio continua a ser erro, para um registo apressado não criar um código definitivo para quem já tinha um.
 
 **Reconciliação (pagamento ao comerciante)**
 - Só **dias já fechados** (até ontem, hora de Moçambique) e só vendas confirmadas ainda não reconciliadas.
@@ -91,7 +111,7 @@ Dois perfis de administração, com papéis distintos:
 | Papel | O que faz |
 |---|---|
 | **Administrador do sistema** (administrador técnico) | Acesso global: tudo, incluindo utilizadores, Configuração e o **nome da organização**. |
-| **Gestor MEAL** (administrador operacional) | Back office completo, utilizadores, aprovar reconciliações, gerir ciclos, cancelar lotes, substituir cartões; em **Configuração**: programa, frase do cliente e logótipos. |
+| **Gestor MEAL** (administrador operacional) | Back office completo, utilizadores, aprovar reconciliações, gerir ciclos, cancelar lotes, substituir cartões; em **Configuração**: programa, frase do cliente, escalões do voucher e logótipos. |
 | **Oficial MEAL** | Back office **só da sua província** (beneficiários, cartões, comerciantes, vendas, reconciliações). Sem província não vê nada. |
 | **Oficial de Finanças** | Painel, validar ou devolver reconciliações, transacções, relatórios; vê **produtos e preços sem alterar**. |
 | **Gestor de comerciante** | POS, vendas e o **catálogo** do seu comerciante. |
@@ -100,7 +120,7 @@ Dois perfis de administração, com papéis distintos:
 - Ninguém altera o seu próprio acesso nem repõe a sua própria palavra-passe pelo ecrã de Utilizadores.
 - **Primeiro administrador de uma instalação**: criado com `php artisan thandizo:create-admin` (nome, e-mail, nome de utilizador). O comando gera uma palavra-passe temporária forte, mostrada uma só vez, a trocar no primeiro acesso, e regista a criação na auditoria. Razão: em produção nunca se usa uma conta conhecida.
 - A conta `admin` / `password` dos seeders é **só para desenvolvimento** e nunca deve existir em produção.
-- Toda a alteração de acessos, cliente e logótipos fica na **auditoria** (quem, quando, antes e depois).
+- Toda a alteração de acessos, cliente, escalões e logótipos fica na **auditoria** (quem, quando, antes e depois).
 
 ## 6. POS
 
@@ -149,7 +169,8 @@ Dois perfis de administração, com papéis distintos:
 **Já decidido**
 - Primeiro cliente (LINK GCF): instalação própria, configurada pelo ecrã de Configuração.
 - O **núcleo** do produto não é configurável: ledger imutável, POS, anulação por movimento inverso, reconciliação com aprovação, auditoria.
-- O que varia entre clientes vai para **configuração**, começando pelos parâmetros hoje fixos no código: valor do cartão (6 000 MT), limite de copagamento (20%), janela de anulação (15 min), moeda (MT), fuso (Maputo), língua.
+- O **valor do voucher** já é configurável, por escalões (ver Regras do dinheiro).
+- O que varia entre clientes vai para **configuração**, começando pelos parâmetros hoje fixos no código: limite de copagamento (20%), janela de anulação (15 min), moeda (MT), fuso (Maputo), língua.
 
 **Por decidir (com o segundo cliente à vista)**
 - **Como separar os clientes**: uma base de dados por cliente (isolamento forte, preferido pelo tipo de dados) ou uma base partilhada.

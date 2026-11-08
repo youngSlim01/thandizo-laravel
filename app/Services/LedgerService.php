@@ -26,11 +26,13 @@ class LedgerService
         if ($entryType === 'INITIAL_ALLOCATION') {
             $cycleId = DB::table('programme_cycles')->where('status', 'OPEN')->value('id')
                 ?? throw new DomainRuleException('NO_OPEN_CYCLE');
-            $householdId = DB::table('vouchers')->where('id', $voucherId)->value('household_id');
+            $household = DB::table('vouchers as v')->join('households as h', 'h.id', '=', 'v.household_id')
+                ->where('v.id', $voucherId)->first(['h.id', 'h.voucher_tier_id']);
             DB::table('cycle_households')->insertOrIgnore([
                 'cycle_id' => $cycleId,
-                'household_id' => $householdId,
+                'household_id' => $household->id,
                 'voucher_id' => $voucherId,
+                'voucher_tier_id' => $household->voucher_tier_id,
                 'amount' => $amount,
                 'allocated_at' => $createdAt,
                 'allocated_by' => $extra['created_by'] ?? null,

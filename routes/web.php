@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SettlementController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserPasswordController;
+use App\Http\Controllers\Admin\VoucherTierController;
 use App\Http\Controllers\Auth\FirstPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -56,6 +57,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/logos', [SettingsController::class, 'storeLogo'])->name('logos.store');
         Route::put('/logos/{logo}/move-left', [SettingsController::class, 'moveLogo'])->name('logos.move');
         Route::delete('/logos/{logo}', [SettingsController::class, 'destroyLogo'])->name('logos.destroy');
+        Route::post('/tiers', [VoucherTierController::class, 'store'])->name('tiers.store');
+        Route::put('/tiers/{tier}', [VoucherTierController::class, 'update'])->whereUuid('tier')->name('tiers.update');
+        Route::put('/tiers/{tier}/status', [VoucherTierController::class, 'updateStatus'])->whereUuid('tier')->name('tiers.status');
+        Route::put('/tiers/{tier}/default', [VoucherTierController::class, 'makeDefault'])->whereUuid('tier')->name('tiers.default');
     });
     Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password');
 

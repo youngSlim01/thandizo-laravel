@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CardLogo;
+use App\Models\VoucherTier;
 use App\Services\CardLogoService;
 use App\Services\ClientProfileService;
+use App\Services\VoucherTierService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -15,15 +17,15 @@ use Inertia\Response;
 use InvalidArgumentException;
 
 /**
- * Configuração da instalação: o cliente (organização, programa, frase) e os
- * logótipos dos cartões. Gestor MEAL e administrador; o nome da organização
+ * Configuração da instalação: o cliente (organização, programa, frase), os
+ * logótipos dos cartões e os escalões do voucher (VoucherTierController). Gestor MEAL e administrador; o nome da organização
  * só o administrador muda (ClientProfileService).
  */
 class SettingsController extends Controller
 {
     public function __construct(private CardLogoService $logos, private ClientProfileService $profile) {}
 
-    public function index(): Response
+    public function index(VoucherTierService $tiers): Response
     {
         return Inertia::render('admin/settings', [
             'client' => $this->profile->current(),
@@ -35,6 +37,15 @@ class SettingsController extends Controller
                 'url' => $logo->url(),
             ]),
             'maxLogos' => CardLogoService::MAX_LOGOS,
+            'tiers' => $tiers->list()->map(fn (VoucherTier $tier): array => [
+                'id' => $tier->id,
+                'name' => $tier->name,
+                'amount' => (float) $tier->amount,
+                'description' => $tier->description,
+                'is_default' => $tier->is_default,
+                'status' => $tier->status->value,
+                'households' => $tier->households_count,
+            ]),
         ]);
     }
 

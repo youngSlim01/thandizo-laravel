@@ -36,6 +36,24 @@ class HouseholdInput
     }
 
     /**
+     * Valor em meticais como vem nas listas ("7500", "7 500", "7.500",
+     * "7500,00", "7500 MT"); null quando não é um valor positivo.
+     */
+    public static function amount(mixed $value): ?float
+    {
+        $text = preg_replace('/\s|MT$|MZN$/i', '', (string) self::clean($value));
+        if (preg_match('/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/', $text) === 1) {
+            $text = str_replace('.', '', $text);
+        }
+        $text = str_replace(',', '.', $text);
+        if (preg_match('/^\d+(\.\d{1,2})?$/', $text) !== 1 || (float) $text <= 0) {
+            return null;
+        }
+
+        return round((float) $text, 2);
+    }
+
+    /**
      * F/M a partir das formas usadas nas listas; null quando não se reconhece.
      */
     public static function gender(mixed $value): ?string

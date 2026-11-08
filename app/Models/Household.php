@@ -17,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable([
     'household_code', 'representative_name', 'representative_first_name', 'representative_last_name',
     'representative_sex', 'representative_birth_date', 'representative_relationship',
-    'province_id', 'district_id', 'administrative_post_id', 'locality_id', 'community_id',
+    'province_id', 'district_id', 'administrative_post_id', 'locality_id', 'community_id', 'voucher_tier_id',
     'status', 'status_reason', 'status_changed_at', 'status_changed_by', 'import_batch_id',
 ])]
 class Household extends Model
@@ -40,6 +40,16 @@ class Household extends Model
     public function community(): BelongsTo
     {
         return $this->belongsTo(Community::class);
+    }
+
+    /**
+     * Escalão do voucher: o valor que o agregado recebe.
+     *
+     * @return BelongsTo<VoucherTier, $this>
+     */
+    public function voucherTier(): BelongsTo
+    {
+        return $this->belongsTo(VoucherTier::class);
     }
 
     /**

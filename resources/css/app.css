@@ -1719,3 +1719,11 @@ select.input { background: var(--surface); }
 
 /* Campo bloqueado (ex.: organização para o gestor MEAL em Configuração) */
 .input:disabled{background:#f1f4f3;color:#6b7774;cursor:not-allowed}
+
+/* Escalões do voucher (Configuração) */
+.tier-table { overflow-x: auto; margin-bottom: 12px; }
+.tier-table .batch-actions { white-space: nowrap; }
+.tier-default { margin-left: 8px; background: #ecfdf3; color: var(--success); }
+.muted-row { opacity: .55; }
+.tier-form { margin-top: 12px; }
+.tier-table .small-note { font-size: 12px; }

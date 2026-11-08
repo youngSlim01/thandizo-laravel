@@ -16,7 +16,8 @@ use Illuminate\Support\Str;
  * Substitui open_programme_cycle, allocate_cycle, close_programme_cycle,
  * list_programme_cycles e cycle_summary (20261008114400, 20261008114600).
  *
- * Regras: um só ciclo aberto; 6 000 MT por agregado e por ciclo; no fecho o
+ * Regras: um só ciclo aberto; cada agregado recebe por ciclo o valor do seu
+ * escalão no momento da recarga; no fecho o
  * saldo que resta expira (CYCLE_EXPIRY) e fica registado por agregado; um
  * ciclo só fecha 15 minutos depois da última venda (janela de anulação).
  */
@@ -62,8 +63,9 @@ class CycleService
     }
 
     /**
-     * Recarrega 6 000 MT no cartão entregue de cada agregado escolhido (por
-     * ids ou por CODIGO AF). Sem commit, só mostra quem fica de fora e porquê.
+     * Recarrega o cartão entregue de cada agregado escolhido (por ids ou por
+     * CODIGO AF) com o valor do escalão do agregado. Sem commit, só mostra
+     * quanto vai cada escalão, quem fica de fora e porquê.
      *
      * @param  list<string>|null  $householdIds
      * @param  list<string>|null  $householdCodes
@@ -79,9 +81,9 @@ class CycleService
                 throw new DomainRuleException('CYCLE_HOUSEHOLDS_REQUIRED');
             }
 
-            $households = DB::table('households')
-                ->where(fn ($q) => $q->whereIn('id', $ids)->orWhereIn('household_code', $codes))
-                ->get(['id', 'household_code', 'status'])->keyBy('id');
+            $households = DB::table('households as h')->join('voucher_tiers as vt', 'vt.id', '=', 'h.voucher_tier_id')
+                ->where(fn ($q) => $q->whereIn('h.id', $ids)->orWhereIn('h.household_code', $codes))
+                ->get(['h.id', 'h.household_code', 'h.status', 'vt.id as tier_id', 'vt.name as tier', 'vt.amount'])->keyBy('id');
             $known = $households->pluck('household_code')->map(fn ($c) => mb_strtoupper($c))->all();
 
             $picks = collect();
@@ -102,6 +104,7 @@ class CycleService
                 $picks->push([
                     'household_id' => $household->id, 'household_code' => $household->household_code, 'reason' => $reason,
                     'voucher_id' => $voucher?->id, 'balance' => (float) ($voucher?->current_balance ?? 0),
+                    'tier_id' => $household->tier_id, 'tier' => $household->tier, 'amount' => (float) $household->amount,
                 ]);
             }
 
@@ -110,8 +113,10 @@ class CycleService
             $result = [
                 'cycle_id' => $cycle->id,
                 'to_allocate' => $toAllocate->count(),
-                'amount_each' => $cycle->amount,
-                'total_amount' => $toAllocate->count() * (float) $cycle->amount,
+                'total_amount' => round($toAllocate->sum('amount'), 2),
+                'by_tier' => $toAllocate->groupBy('tier')->map(fn (Collection $g, string $tier) => [
+                    'tier' => $tier, 'amount' => $g->first()['amount'], 'households' => $g->count(), 'total_amount' => round($g->sum('amount'), 2),
+                ])->sortByDesc('amount')->values()->all(),
                 'left_out' => (object) $leftOut->countBy('reason')->all(),
                 'left_out_rows' => $leftOut->sortBy(fn ($p) => $p['reason'].'|'.$p['household_code'])->take(500)
                     ->map(fn ($p) => ['household_code' => $p['household_code'], 'reason' => $p['reason']])->values()->all(),
@@ -120,18 +125,22 @@ class CycleService
                 return [...$result, 'committed' => false];
             }
 
+            // O saldo é zero (BALANCE_LEFT fica de fora): o valor carregado
+            // passa a ser o valor inicial do cartão neste ciclo.
             foreach ($toAllocate as $pick) {
-                DB::table('vouchers')->where('id', $pick['voucher_id'])->increment('current_balance', (float) $cycle->amount);
-                $this->ledger->record($pick['voucher_id'], 'CYCLE_ALLOCATION', $cycle->amount, $pick['balance'] + (float) $cycle->amount, [
+                DB::table('vouchers')->where('id', $pick['voucher_id'])->update([
+                    'current_balance' => $pick['balance'] + $pick['amount'], 'initial_value' => $pick['amount'], 'updated_at' => now(),
+                ]);
+                $this->ledger->record($pick['voucher_id'], 'CYCLE_ALLOCATION', $pick['amount'], $pick['balance'] + $pick['amount'], [
                     'notes' => "{$cycle->code}: recarga do ciclo", 'created_by' => $actor->id,
                 ]);
                 DB::table('cycle_households')->insert([
                     'cycle_id' => $cycle->id, 'household_id' => $pick['household_id'], 'voucher_id' => $pick['voucher_id'],
-                    'amount' => $cycle->amount, 'allocated_by' => $actor->id, 'allocated_at' => now(), 'source' => 'RECHARGE',
+                    'voucher_tier_id' => $pick['tier_id'], 'amount' => $pick['amount'], 'allocated_by' => $actor->id, 'allocated_at' => now(), 'source' => 'RECHARGE',
                 ]);
             }
             Audit::log($actor->id, 'CYCLE_ALLOCATED', 'CYCLE', $cycle->id, [
-                'code' => $cycle->code, 'allocated' => $toAllocate->count(), 'amount_each' => $cycle->amount, 'left_out' => $result['left_out'],
+                'code' => $cycle->code, 'allocated' => $toAllocate->count(), 'total_amount' => $result['total_amount'], 'by_tier' => $result['by_tier'], 'left_out' => $result['left_out'],
             ]);
 
             return [...$result, 'committed' => true, 'allocated' => $toAllocate->count()];
@@ -154,7 +163,7 @@ class CycleService
                 ->leftJoin('districts as d', 'd.id', '=', DB::raw('coalesce(h.district_id, c.district_id)'))
                 ->where('v.current_balance', '>', 0)
                 ->orderBy('d.name')->orderBy('c.name')->orderBy('h.household_code')
-                ->get(['v.id', 'v.household_id', 'v.current_balance', 'v.distributed_at', 'v.issued_at', 'h.household_code', 'h.representative_name', 'c.name as community', 'd.name as district']);
+                ->get(['v.id', 'v.household_id', 'v.current_balance', 'v.distributed_at', 'v.issued_at', 'h.voucher_tier_id', 'h.household_code', 'h.representative_name', 'c.name as community', 'd.name as district']);
             $total = round($withBalance->sum(fn ($v) => (float) $v->current_balance), 2);
 
             if (! $commit) {
@@ -183,7 +192,7 @@ class CycleService
                 if ($updated === 0) {
                     DB::table('cycle_households')->insert([
                         'cycle_id' => $cycle->id, 'household_id' => $voucher->household_id, 'voucher_id' => $voucher->id,
-                        'amount' => $voucher->current_balance, 'allocated_at' => $voucher->distributed_at ?? $voucher->issued_at ?? now(),
+                        'voucher_tier_id' => $voucher->voucher_tier_id, 'amount' => $voucher->current_balance, 'allocated_at' => $voucher->distributed_at ?? $voucher->issued_at ?? now(),
                         'source' => 'DELIVERY', 'unused_amount' => $voucher->current_balance,
                     ]);
                 }
@@ -213,7 +222,7 @@ class CycleService
             $members = $this->scopedMembers($viewer, $cycle->id);
 
             return [
-                'cycle_id' => $cycle->id, 'code' => $cycle->code, 'name' => $cycle->name, 'amount' => $cycle->amount,
+                'cycle_id' => $cycle->id, 'code' => $cycle->code, 'name' => $cycle->name,
                 'status' => $cycle->status, 'starts_on' => $cycle->starts_on, 'ends_on' => $cycle->ends_on,
                 'opened_at' => $cycle->opened_at, 'closed_at' => $cycle->closed_at,
                 'households' => $members->count(), 'allocated' => round($members->sum(fn ($m) => (float) $m->amount), 2),
@@ -279,6 +288,11 @@ class CycleService
                 'households_bought' => $g->filter(fn ($m) => $buyers->has($m->household_id))->count(),
                 'allocated' => $sum($g, 'amount'), 'spent' => round($g->sum(fn ($m) => $buyers->get($m->household_id, 0)), 2), 'unused' => $sum($g, 'unused'),
             ])->sortBy(fn ($x) => $x['province'].'|'.$x['district'])->values()->all(),
+            'by_tier' => $members->groupBy('tier')->map(fn (Collection $g, string $tier) => [
+                'tier' => $tier, 'households' => $g->count(),
+                'households_bought' => $g->filter(fn ($m) => $buyers->has($m->household_id))->count(),
+                'allocated' => $sum($g, 'amount'), 'spent' => round($g->sum(fn ($m) => $buyers->get($m->household_id, 0)), 2), 'unused' => $sum($g, 'unused'),
+            ])->sortByDesc('allocated')->values()->all(),
             'by_gender' => $members->groupBy(fn ($m) => $m->representative_sex ?? '-')->map(fn (Collection $g, string $sex) => [
                 'sex' => $sex, 'households' => $g->count(),
                 'households_bought' => $g->filter(fn ($m) => $buyers->has($m->household_id))->count(),
@@ -322,8 +336,9 @@ class CycleService
     {
         $query = $this->households->baseQuery($viewer)
             ->join('cycle_households as ch', 'ch.household_id', '=', 'h.id')
+            ->join('voucher_tiers as vt', 'vt.id', '=', DB::raw('coalesce(ch.voucher_tier_id, h.voucher_tier_id)'))
             ->where('ch.cycle_id', $cycleId)
-            ->select(['ch.household_id', 'ch.amount', 'ch.source', 'ch.voucher_id', 'ch.unused_amount', 'h.household_code', 'h.representative_name', 'h.representative_sex', 'c.name as community', 'd.name as district', 'p.name as province']);
+            ->select(['vt.name as tier', 'ch.household_id', 'ch.amount', 'ch.source', 'ch.voucher_id', 'ch.unused_amount', 'h.household_code', 'h.representative_name', 'h.representative_sex', 'c.name as community', 'd.name as district', 'p.name as province']);
 
         return $query->get();
     }

@@ -27,13 +27,12 @@ type Batch = {
 type BatchCard = VoucherCard & {
     voucher_id: string; voucher_status: string; household_status: string;
     received_by_name: string | null; received_by_relationship: string | null;
+    tier_name: string; tier_amount: number;
 };
 
 type HouseholdCard = VoucherCard & { voucher_status: string; current_balance: number; distributed_at: string | null };
 
 type Props = { communities: Community[]; batches: Batch[]; canManage: boolean };
-
-const CARD_VALUE = 6000;
 
 const BATCH_STATUS: Record<BatchStatus, string> = {
     GENERATED: 'Gerado', PRINTED: 'Impresso', IN_DISTRIBUTION: 'Em distribuição', DISTRIBUTED: 'Distribuído', CANCELLED: 'Cancelado',
@@ -48,7 +47,7 @@ function batchCards(batchId: string) {
 }
 
 // Dia da distribuição: o MEAL marca os agregados presentes (ou lê o QR do
-// cartão) e só esses cartões ficam ativos com 6 000 MT. Na ausência do
+// cartão) e só esses cartões ficam ativos, com o valor do escalão. Na ausência do
 // representante o cartão pode ir para um substituto: o nome e o parentesco
 // ficam no cartão; os dados do agregado não mudam.
 type Substitute = { name: string; relationship: string };
@@ -72,6 +71,7 @@ function DistributePanel({ batch, onClose }: { batch: Batch; onClose: () => void
     const deliverable = (c: BatchCard) => c.voucher_status === 'PENDING' && c.household_status === 'ACTIVE';
     const pending = (cards ?? []).filter(deliverable);
     const delivered = (cards ?? []).filter((c) => c.voucher_status === 'ACTIVE').length;
+    const selectedTotal = (cards ?? []).filter((c) => selected.has(c.voucher_id)).reduce((sum, c) => sum + Number(c.tier_amount), 0);
 
     const term = filter.trim().toLowerCase();
     const visible = useMemo(() => (cards ?? []).filter((c) => !term
@@ -124,7 +124,7 @@ function DistributePanel({ batch, onClose }: { batch: Batch; onClose: () => void
                 <button className="quick-link" onClick={onClose}>Fechar</button>
             </div>
             <p className="muted-text">
-                Marque os agregados presentes, ou leia o QR do cartão. Só os cartões marcados ficam ativos com {formatMT(CARD_VALUE)}.
+                Marque os agregados presentes, ou leia o QR do cartão. Só os cartões marcados ficam ativos, cada um com o valor do escalão do seu agregado.
                 {cards && ` ${delivered} de ${cards.length} já entregues.`}
             </p>
 
@@ -155,7 +155,7 @@ function DistributePanel({ batch, onClose }: { batch: Batch; onClose: () => void
                             <label className="distribute-main">
                                 <input type="checkbox" disabled={!can} checked={c.voucher_status === 'ACTIVE' || isSelected}
                                     onChange={() => toggle(c.voucher_id)} aria-label={`Presente: ${c.representative_name}`} />
-                                <span className="distribute-who"><strong>{c.representative_name}</strong><small>{c.household_code} · {c.voucher_code}</small></span>
+                                <span className="distribute-who"><strong>{c.representative_name}</strong><small>{c.household_code} · {c.voucher_code}{can && ` · ${c.tier_name} ${formatMT(c.tier_amount)}`}</small></span>
                                 {label && <span className="muted-text small-note">{label}</span>}
                             </label>
                             {can && isSelected && (
@@ -188,7 +188,7 @@ function DistributePanel({ batch, onClose }: { batch: Batch; onClose: () => void
                 <>
                     <div className="warning-box">
                         Confirme que entregou os cartões em mão. Isto ativa <strong>{selected.size} {selected.size === 1 ? 'cartão' : 'cartões'}</strong>, no total de{' '}
-                        <strong>{formatMT(selected.size * CARD_VALUE)}</strong>, e não pode ser desfeito.
+                        <strong>{formatMT(selectedTotal)}</strong>, e não pode ser desfeito.
                         {subList.length > 0 && <> {subList.length === 1 ? '1 cartão é entregue' : `${subList.length} cartões são entregues`} a substituto; o agregado continua registado com o representante.</>}
                     </div>
                     <div className="admin-form-actions">
@@ -470,7 +470,7 @@ export default function Cards({ communities, batches, canManage }: Props) {
             <div className="admin-page-heading"><div><div className="eyebrow">MEAL · DISTRIBUIÇÃO</div><h1>Cartões e distribuição</h1><p>Gerir lotes, imprimir cartões e acompanhar a entrega aos agregados familiares.</p></div></div>
             <div className="info-box">
                 Gere um lote por bairro, descarregue o PDF (folhas A4 com 10 cartões) e imprima. No dia da distribuição, marque quem está
-                presente (ou leia o QR do cartão): só esses cartões ficam ativos, com {formatMT(CARD_VALUE)}. Um cartão que não chegou ao agregado
+                presente (ou leia o QR do cartão): só esses cartões ficam ativos, com o valor do escalão de cada agregado. Um cartão que não chegou ao agregado
                 nunca tem saldo.
             </div>
 

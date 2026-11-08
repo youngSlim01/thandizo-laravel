@@ -2,11 +2,97 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState, type FormEvent } from 'react';
 import { AdminLayout } from '@/components/admin-layout';
 import { firstError } from '@/lib/action';
+import { formatMT } from '@/lib/format';
 import type { SharedProps } from '@/types';
 
 type Logo = { id: string; position: number; name: string; url: string };
 type Client = { client: string | null; programme: string | null; tagline: string | null };
-type Props = { client: Client; canEditOrganization: boolean; logos: Logo[]; maxLogos: number };
+type Tier = { id: string; name: string; amount: number; description: string | null; is_default: boolean; status: 'ACTIVE' | 'INACTIVE'; households: number };
+type Props = { client: Client; canEditOrganization: boolean; logos: Logo[]; maxLogos: number; tiers: Tier[] };
+
+function TierForm({ tier, onDone }: { tier: Tier | null; onDone: () => void }) {
+    const form = useForm({ name: tier?.name ?? '', amount: tier ? String(tier.amount) : '', description: tier?.description ?? '' });
+    const options = { preserveScroll: true, onSuccess: () => { form.reset(); onDone(); } };
+
+    function save(event: FormEvent) {
+        event.preventDefault();
+        if (tier) form.put(`/admin/settings/tiers/${tier.id}`, options);
+        else form.post('/admin/settings/tiers', options);
+    }
+
+    const error = form.errors.name ?? form.errors.amount ?? form.errors.description ?? (form.errors as Record<string, string>).rule;
+    const changingAmount = tier !== null && form.data.amount !== '' && Number(form.data.amount.replace(',', '.')) !== tier.amount;
+
+    return (
+        <form className="admin-form tier-form" onSubmit={save}>
+            <strong>{tier ? `Editar ${tier.name}` : 'Novo escalão'}</strong>
+            <div className="form-grid-2">
+                <div><label className="form-label" htmlFor="tier-name">Nome</label>
+                    <input id="tier-name" className="input" maxLength={80} placeholder="Ex.: Grupo A — muito vulnerável"
+                        value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} /></div>
+                <div><label className="form-label" htmlFor="tier-amount">Valor por ativação e recarga (MT)</label>
+                    <input id="tier-amount" className="input" inputMode="decimal" placeholder="Ex.: 7500"
+                        value={form.data.amount} onChange={(e) => form.setData('amount', e.target.value)} /></div>
+            </div>
+            <label className="form-label" htmlFor="tier-description">Quem fica neste escalão (opcional)</label>
+            <input id="tier-description" className="input" maxLength={255} placeholder="Ex.: agregados chefiados por mulheres com mais de 5 membros"
+                value={form.data.description} onChange={(e) => form.setData('description', e.target.value)} />
+            {changingAmount && tier.households > 0 && (
+                <div className="warning-box">
+                    O novo valor vale para as próximas ativações e recargas dos {tier.households} agregados deste escalão. O que já está nos cartões não muda.
+                </div>
+            )}
+            {error && <div className="error-box">{error}</div>}
+            <div className="admin-form-actions">
+                <button type="button" className="secondary-button" onClick={onDone} disabled={form.processing}>CANCELAR</button>
+                <button type="submit" className="primary-button" disabled={form.processing || !form.isDirty}>{form.processing ? 'A GUARDAR…' : 'GUARDAR ESCALÃO'}</button>
+            </div>
+        </form>
+    );
+}
+
+// Escalões do voucher: cada agregado recebe o valor do seu escalão.
+function Tiers({ tiers, onAction }: { tiers: Tier[]; onAction: (method: 'put', url: string, data?: Record<string, string>) => void }) {
+    const [editing, setEditing] = useState<Tier | 'new' | null>(null);
+
+    return (
+        <>
+            <h2>Escalões do voucher</h2>
+            <p className="muted-text">
+                Cada agregado pertence a um escalão e recebe o valor desse escalão quando o cartão é ativado e em cada recarga do ciclo.
+                Na importação, a coluna VALOR escolhe o escalão; sem ela, o agregado fica no escalão padrão. Dois escalões ativos não podem ter o mesmo valor.
+            </p>
+            <div className="tier-table">
+                <table className="import-errors">
+                    <thead><tr><th>Escalão</th><th>Valor</th><th>Agregados ativos</th><th>Estado</th><th /></tr></thead>
+                    <tbody>
+                        {tiers.map((tier) => (
+                            <tr key={tier.id} className={tier.status === 'ACTIVE' ? undefined : 'muted-row'}>
+                                <td><strong>{tier.name}</strong>{tier.is_default && <span className="badge tier-default">padrão</span>}
+                                    {tier.description && <div className="muted-text small-note">{tier.description}</div>}</td>
+                                <td>{formatMT(tier.amount)}</td>
+                                <td>{tier.households}</td>
+                                <td>{tier.status === 'ACTIVE' ? 'Ativo' : 'Desativado'}</td>
+                                <td className="batch-actions">
+                                    <button className="quick-link" onClick={() => setEditing(tier)}>Editar</button>
+                                    {tier.status === 'ACTIVE' && !tier.is_default && (
+                                        <button className="quick-link" onClick={() => onAction('put', `/admin/settings/tiers/${tier.id}/default`)}>Tornar padrão</button>
+                                    )}
+                                    {!tier.is_default && (tier.status === 'ACTIVE'
+                                        ? <button className="quick-link danger" onClick={() => onAction('put', `/admin/settings/tiers/${tier.id}/status`, { status: 'INACTIVE' })}>Desativar</button>
+                                        : <button className="quick-link" onClick={() => onAction('put', `/admin/settings/tiers/${tier.id}/status`, { status: 'ACTIVE' })}>Reativar</button>)}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            {editing === null
+                ? <button className="secondary-button" onClick={() => setEditing('new')}>+ NOVO ESCALÃO</button>
+                : <TierForm key={editing === 'new' ? 'new' : editing.id} tier={editing === 'new' ? null : editing} onDone={() => setEditing(null)} />}
+        </>
+    );
+}
 
 function ClientForm({ client, canEditOrganization }: { client: Client; canEditOrganization: boolean }) {
     const form = useForm({ name: client.client ?? '', programme: client.programme ?? '', tagline: client.tagline ?? '' });
@@ -45,10 +131,11 @@ function ClientForm({ client, canEditOrganization }: { client: Client; canEditOr
     );
 }
 
-// Configuração da instalação: o cliente e os logótipos impressos nos cartões.
+// Configuração da instalação: o cliente, os escalões do voucher e os
+// logótipos impressos nos cartões.
 // O gestor MEAL muda o programa, a frase e os logótipos; o nome da
 // organização só o administrador do sistema.
-export default function Settings({ client, canEditOrganization, logos, maxLogos }: Props) {
+export default function Settings({ client, canEditOrganization, logos, maxLogos, tiers }: Props) {
     const { flash } = usePage<SharedProps>().props;
     const form = useForm<{ logo: File | null }>({ logo: null });
     const fileInput = useRef<HTMLInputElement>(null);
@@ -63,10 +150,10 @@ export default function Settings({ client, canEditOrganization, logos, maxLogos 
         });
     }
 
-    function change(method: 'put' | 'delete', url: string) {
+    function change(method: 'put' | 'delete', url: string, data: Record<string, string> = {}) {
         setError(null);
         const options = { preserveScroll: true, onError: (errors: Record<string, string>) => setError(firstError(errors)) };
-        if (method === 'put') router.put(url, {}, options);
+        if (method === 'put') router.put(url, data, options);
         else router.delete(url, options);
     }
 
@@ -76,11 +163,13 @@ export default function Settings({ client, canEditOrganization, logos, maxLogos 
         <AdminLayout>
             <Head title="Configuração" />
             <div className="admin-page-heading"><div><div className="eyebrow">ADMINISTRAÇÃO</div><h1>Configuração</h1>
-                <p>O cliente desta instalação e os logótipos impressos nos cartões.</p></div></div>
+                <p>O cliente desta instalação, os escalões do voucher e os logótipos impressos nos cartões.</p></div></div>
             {flash.success && <div className="success-box">{flash.success}</div>}
             {error && <div className="error-box">{error}</div>}
 
             <ClientForm client={client} canEditOrganization={canEditOrganization} />
+
+            <Tiers tiers={tiers} onAction={change} />
 
             <h2>Logótipos do cartão</h2>
             <p className="muted-text">

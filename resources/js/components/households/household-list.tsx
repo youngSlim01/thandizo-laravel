@@ -40,6 +40,9 @@ type Detail = {
   gender: string | null;
   birth_date: string | null;
   relationship: string | null;
+  voucher_tier_id: string;
+  voucher_tier: string;
+  voucher_tier_amount: number;
   status: string;
   status_reason: string | null;
   status_changed_at: string | null;
@@ -170,7 +173,7 @@ function HouseholdDetail({ row, onClose, onChanged, onDeleted }: {
     first_name: detail.first_name, last_name: detail.last_name, gender: detail.gender, birth_date: detail.birth_date,
     relationship: detail.relationship, community_id: row.community_id, locality_id: row.locality_id,
     administrative_post_id: row.administrative_post_id, district_id: row.district_id, province_id: row.province_id,
-    has_cards: detail.cards.length > 0,
+    has_cards: detail.cards.length > 0, voucher_tier_id: detail.voucher_tier_id,
   };
 
   return (
@@ -195,6 +198,7 @@ function HouseholdDetail({ row, onClose, onChanged, onDeleted }: {
             <div><span>Género</span><strong>{GENDER[detail.gender ?? ''] ?? '—'}</strong></div>
             <div><span>Data de nascimento</span><strong>{formatDate(detail.birth_date)}</strong></div>
             <div><span>Grau de parentesco</span><strong>{detail.relationship ?? '—'}</strong></div>
+            <div><span>Escalão do voucher</span><strong>{detail.voucher_tier} · {formatMT(detail.voucher_tier_amount)}</strong></div>
             <div><span>Bairro / povoação</span><strong>{detail.community ?? '—'}</strong></div>
             <div><span>Localidade</span><strong>{detail.locality ?? '—'}</strong></div>
             <div><span>Posto administrativo</span><strong>{detail.administrative_post ?? '—'}</strong></div>

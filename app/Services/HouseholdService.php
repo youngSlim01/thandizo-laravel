@@ -7,6 +7,7 @@ use App\Models\AuditLog;
 use App\Models\Community;
 use App\Models\Household;
 use App\Models\User;
+use App\Models\VoucherTier;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -22,7 +23,7 @@ use InvalidArgumentException;
 class HouseholdService
 {
     /** Campos que se podem alterar (o CODIGO AF é fixo). */
-    public const EDITABLE = ['first_name', 'last_name', 'sex', 'birth_date', 'relationship', 'community_id'];
+    public const EDITABLE = ['first_name', 'last_name', 'sex', 'birth_date', 'relationship', 'community_id', 'voucher_tier_id'];
 
     /** Acções da auditoria que formam o histórico do agregado. */
     private const HISTORY_ACTIONS = ['HOUSEHOLD_CREATED', 'HOUSEHOLD_UPDATED', 'HOUSEHOLD_DEACTIVATED', 'HOUSEHOLD_REACTIVATED'];
@@ -31,11 +32,15 @@ class HouseholdService
     private const TRACKED = [
         'representative_name', 'representative_first_name', 'representative_last_name', 'representative_sex',
         'representative_birth_date', 'representative_relationship', 'community_id', 'locality_id',
-        'administrative_post_id', 'district_id', 'province_id',
+        'administrative_post_id', 'district_id', 'province_id', 'voucher_tier_id',
     ];
 
+    public function __construct(private VoucherTierService $tiers) {}
+
     /**
-     * @param  array<string, mixed>  $data  household_code, first_name, last_name, sex, birth_date, relationship, community_id
+     * Sem escalão, o agregado fica no escalão padrão.
+     *
+     * @param  array<string, mixed>  $data  household_code, first_name, last_name, sex, birth_date, relationship, community_id, voucher_tier_id
      */
     public function create(User $actor, array $data): Household
     {
@@ -53,7 +58,9 @@ class HouseholdService
             throw new InvalidArgumentException('Preencha nome, apelido e grau de parentesco.');
         }
 
-        return DB::transaction(function () use ($actor, $data, $code, $first, $last, $relationship): Household {
+        $tier = $this->tiers->assignable($data['voucher_tier_id'] ?? null);
+
+        return DB::transaction(function () use ($actor, $data, $code, $first, $last, $relationship, $tier): Household {
             $household = Household::query()->create([
                 'household_code' => $code,
                 'representative_name' => "{$first} {$last}",
@@ -63,6 +70,7 @@ class HouseholdService
                 'representative_birth_date' => $this->birthDate($data['birth_date'] ?? null),
                 'representative_relationship' => $relationship,
                 ...$this->location($data['community_id'] ?? null),
+                'voucher_tier_id' => $tier->id,
                 'status' => RecordStatus::Active,
             ]);
 
@@ -70,6 +78,7 @@ class HouseholdService
                 'household_code' => $code,
                 'representative_name' => $household->representative_name,
                 'community_id' => $household->community_id,
+                'voucher_tier' => $tier->name,
             ]);
 
             return $household;
@@ -119,6 +128,10 @@ class HouseholdService
             if (array_key_exists('community_id', $changes)) {
                 $new = [...$new, ...$this->location($changes['community_id'])];
             }
+            // O novo escalão vale a partir da próxima ativação ou recarga.
+            if (array_key_exists('voucher_tier_id', $changes)) {
+                $new['voucher_tier_id'] = $this->tiers->assignable((string) $changes['voucher_tier_id'] ?: 'none')->id;
+            }
 
             $household->fill($new);
             $after = $this->tracked($household);
@@ -130,6 +143,10 @@ class HouseholdService
             }
             if ($diff === []) {
                 return ['changed' => false, 'changes' => []];
+            }
+            if (isset($diff['voucher_tier_id'])) {
+                $names = VoucherTier::query()->whereIn('id', $diff['voucher_tier_id'])->pluck('name', 'id');
+                $diff['voucher_tier'] = ['old' => $names[$diff['voucher_tier_id']['old']] ?? null, 'new' => $names[$diff['voucher_tier_id']['new']] ?? null];
             }
 
             $household->save();
@@ -206,8 +223,10 @@ class HouseholdService
         // A visibilidade foi verificada por quem chama (Policy / isVisible).
         $row = $search->locationQuery()
             ->leftJoin('household_import_batches as b', 'b.id', '=', 'h.import_batch_id')
+            ->join('voucher_tiers as vt', 'vt.id', '=', 'h.voucher_tier_id')
             ->where('h.id', $household->id)
             ->first([
+                'vt.name as tier_name', 'vt.amount as tier_amount',
                 'h.*', 'c.name as community_name', 'l.name as locality_name', 'a.name as post_name',
                 'd.name as district_name', 'p.name as province_name', 'b.id as batch_id', 'b.file_name', 'b.created_at as imported_at',
             ]);
@@ -221,6 +240,9 @@ class HouseholdService
             'gender' => $row->representative_sex,
             'birth_date' => $row->representative_birth_date,
             'relationship' => $row->representative_relationship,
+            'voucher_tier_id' => $row->voucher_tier_id,
+            'voucher_tier' => $row->tier_name,
+            'voucher_tier_amount' => (float) $row->tier_amount,
             'status' => $row->status,
             'status_reason' => $row->status_reason,
             'status_changed_at' => $row->status_changed_at,

@@ -9,6 +9,7 @@ use App\Models\Household;
 use App\Models\HouseholdImportBatch;
 use App\Models\Province;
 use App\Models\User;
+use App\Models\VoucherTier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -165,6 +166,43 @@ class HouseholdImportTest extends TestCase
         ], true, $officer);
 
         $response->assertJson(['valid' => false, 'errors' => [['row' => 3, 'field' => 'PROVINCIA', 'code' => 'PROVINCE_OUT_OF_SCOPE']]]);
+        $this->assertSame(0, Household::query()->count());
+    }
+
+    public function test_the_value_column_puts_each_household_in_the_tier_with_that_value(): void
+    {
+        VoucherTier::query()->create(['name' => 'Grupo A', 'amount' => 7500]);
+        VoucherTier::query()->create(['name' => 'Grupo C', 'amount' => 3000]);
+
+        $this->import([
+            $this->row(2, '9999AF000001', ['amount' => '7.500']),
+            $this->row(3, '9999AF000002', ['amount' => '3000 MT']),
+            $this->row(4, '9999AF000003', ['amount' => '7500']),
+            $this->row(5, '9999AF000004'),
+        ], true)->assertJson(['committed' => true, 'by_tier' => [
+            ['name' => 'Grupo A', 'amount' => 7500, 'households' => 2],
+            ['name' => 'Padrão', 'amount' => 6000, 'households' => 1],
+            ['name' => 'Grupo C', 'amount' => 3000, 'households' => 1],
+        ]]);
+
+        $tiers = Household::query()->join('voucher_tiers as t', 't.id', '=', 'households.voucher_tier_id')
+            ->orderBy('household_code')->pluck('t.name')->all();
+        $this->assertSame(['Grupo A', 'Grupo C', 'Grupo A', 'Padrão'], $tiers);
+    }
+
+    public function test_a_value_without_an_active_tier_is_an_error_and_nothing_is_saved(): void
+    {
+        VoucherTier::query()->create(['name' => 'Antigo', 'amount' => 4000, 'status' => 'INACTIVE']);
+
+        $this->import([
+            $this->row(2, '9999AF000001', ['amount' => '750']),
+            $this->row(3, '9999AF000002', ['amount' => '4000']),
+            $this->row(4, '9999AF000003', ['amount' => 'muito']),
+        ], true)->assertJson(['valid' => false, 'errors' => [
+            ['row' => 2, 'field' => 'VALOR', 'code' => 'NO_TIER_FOR_AMOUNT'],
+            ['row' => 3, 'field' => 'VALOR', 'code' => 'NO_TIER_FOR_AMOUNT'],
+            ['row' => 4, 'field' => 'VALOR', 'code' => 'INVALID_AMOUNT'],
+        ]]);
         $this->assertSame(0, Household::query()->count());
     }
 }

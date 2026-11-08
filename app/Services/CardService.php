@@ -18,15 +18,14 @@ use Illuminate\Support\Str;
  * luhn_check_digit, next_voucher_code e voucher_card_json (20261008052549,
  * 20261008113500, 20261008113700, 20261008114600).
  *
- * Regras: um cartão nasce PENDING com saldo 0 e só fica ACTIVE, com
- * 6 000 MT e uma entrada INITIAL_ALLOCATION, quando é entregue. Um cartão
+ * Regras: um cartão nasce PENDING com saldo 0 e só fica ACTIVE, com o
+ * valor do escalão do agregado nesse momento e uma entrada
+ * INITIAL_ALLOCATION, quando é entregue. Um cartão
  * perdido é REPLACED e o saldo passa para um cartão novo (duas entradas
  * REPLACEMENT_TRANSFER).
  */
 class CardService
 {
-    public const CARD_VALUE = 6000;
-
     private const NOT_LIVE = ['REPLACED', 'CANCELLED', 'INVALIDATED'];
 
     public function __construct(
@@ -82,9 +81,10 @@ class CardService
             }
 
             $households = DB::table('households as h')
+                ->join('voucher_tiers as vt', 'vt.id', '=', 'h.voucher_tier_id')
                 ->where('h.community_id', $communityId)->where('h.status', 'ACTIVE')
                 ->whereNotExists(fn ($q) => $q->from('vouchers as v')->whereColumn('v.household_id', 'h.id')->whereNotIn('v.status', self::NOT_LIVE))
-                ->orderBy('h.household_code')->pluck('h.id');
+                ->orderBy('h.household_code')->pluck('vt.amount', 'h.id');
             if ($households->isEmpty()) {
                 throw new DomainRuleException('NO_HOUSEHOLDS_WITHOUT_CARD');
             }
@@ -98,16 +98,17 @@ class CardService
             ]);
 
             $now = now();
-            DB::table('vouchers')->insert($households->map(fn (string $householdId): array => [
+            // O valor fica definido na entrega; aqui é só o do escalão de hoje.
+            DB::table('vouchers')->insert($households->map(fn (string $amount, string $householdId): array => [
                 'id' => (string) Str::uuid7(),
                 'voucher_code' => $this->nextVoucherCode($community->district_name),
                 'household_id' => $householdId,
-                'initial_value' => self::CARD_VALUE,
+                'initial_value' => $amount,
                 'current_balance' => 0,
                 'status' => 'PENDING',
                 'card_batch_id' => $batchId,
                 'issued_at' => $now, 'created_at' => $now, 'updated_at' => $now,
-            ])->all());
+            ])->values()->all());
 
             Audit::log($actor->id, 'CARD_BATCH_GENERATED', 'CARD_BATCH', $batchId, [
                 'batch_code' => $batchCode, 'community_id' => $communityId, 'card_count' => $households->count(),
@@ -182,7 +183,8 @@ class CardService
     }
 
     /**
-     * Activa os cartões entregues (ACTIVE, 6 000 MT, INITIAL_ALLOCATION).
+     * Activa os cartões entregues (ACTIVE, com o valor do escalão do
+     * agregado, INITIAL_ALLOCATION).
      * Um cartão entregue a um substituto guarda o nome e o parentesco.
      *
      * @param  list<string>|null  $voucherIds
@@ -204,8 +206,9 @@ class CardService
                 throw new DomainRuleException('CARDS_REQUIRED');
             }
             $cards = DB::table('vouchers as v')->join('households as h', 'h.id', '=', 'v.household_id')
+                ->join('voucher_tiers as vt', 'vt.id', '=', 'h.voucher_tier_id')
                 ->whereIn('v.id', $ids)->where('v.card_batch_id', $batch->id)->lockForUpdate()
-                ->get(['v.id', 'v.status', 'h.status as household_status'])->keyBy('id');
+                ->get(['v.id', 'v.status', 'h.status as household_status', 'vt.amount'])->keyBy('id');
             if ($cards->count() !== count($ids)) {
                 throw new DomainRuleException('CARD_NOT_IN_BATCH');
             }
@@ -233,16 +236,18 @@ class CardService
             }
 
             $activated = 0;
+            $total = 0.0;
             foreach ($cards->where('status', 'PENDING') as $card) {
                 DB::table('vouchers')->where('id', $card->id)->update([
-                    'status' => 'ACTIVE', 'current_balance' => self::CARD_VALUE, 'distributed_at' => now(), 'updated_at' => now(),
+                    'status' => 'ACTIVE', 'initial_value' => $card->amount, 'current_balance' => $card->amount, 'distributed_at' => now(), 'updated_at' => now(),
                     'received_by_name' => $subs[$card->id]['name'] ?? null,
                     'received_by_relationship' => $subs[$card->id]['relationship'] ?? null,
                 ]);
-                $this->ledger->record($card->id, 'INITIAL_ALLOCATION', self::CARD_VALUE, self::CARD_VALUE, [
+                $this->ledger->record($card->id, 'INITIAL_ALLOCATION', $card->amount, $card->amount, [
                     'notes' => "Card distributed ({$batch->batch_code})", 'created_by' => $actor->id,
                 ]);
                 $activated++;
+                $total += (float) $card->amount;
             }
 
             $remaining = DB::table('vouchers')->where('card_batch_id', $batch->id)->where('status', 'PENDING')->count();
@@ -255,12 +260,12 @@ class CardService
 
             if ($activated > 0) {
                 Audit::log($actor->id, 'CARDS_DISTRIBUTED', 'CARD_BATCH', $batch->id, [
-                    'batch_code' => $batch->batch_code, 'activated' => $activated, 'amount_each' => self::CARD_VALUE,
+                    'batch_code' => $batch->batch_code, 'activated' => $activated, 'total_amount' => $total,
                     'voucher_ids' => $ids, 'remaining' => $remaining, 'substitutes' => $subs,
                 ]);
             }
 
-            return ['success' => true, 'status' => $status, 'activated' => $activated, 'remaining' => $remaining, 'duplicate' => $activated === 0];
+            return ['success' => true, 'status' => $status, 'activated' => $activated, 'total_amount' => $total, 'remaining' => $remaining, 'duplicate' => $activated === 0];
         });
     }
 
@@ -368,7 +373,7 @@ class CardService
             $newId = (string) Str::uuid7();
             $newCode = $this->nextVoucherCode((string) $district);
             DB::table('vouchers')->insert([
-                'id' => $newId, 'voucher_code' => $newCode, 'household_id' => $old->household_id, 'initial_value' => self::CARD_VALUE,
+                'id' => $newId, 'voucher_code' => $newCode, 'household_id' => $old->household_id, 'initial_value' => $old->initial_value,
                 'current_balance' => $remaining, 'status' => 'ACTIVE', 'replaced_voucher_id' => $old->id, 'replacement_reason' => $reason,
                 'distributed_at' => now(), 'issued_at' => now(), 'created_at' => now(), 'updated_at' => now(),
             ]);
@@ -398,6 +403,7 @@ class CardService
     {
         return (array) DB::table('vouchers as v')
             ->join('households as h', 'h.id', '=', 'v.household_id')
+            ->join('voucher_tiers as vt', 'vt.id', '=', 'h.voucher_tier_id')
             ->leftJoin('communities as c', 'c.id', '=', 'h.community_id')
             ->leftJoin('localities as l', 'l.id', '=', 'h.locality_id')
             ->leftJoin('administrative_posts as a', 'a.id', '=', 'h.administrative_post_id')
@@ -406,6 +412,7 @@ class CardService
             ->where('v.id', $voucherId)
             ->first([
                 'v.id as voucher_id', 'v.voucher_code', 'v.status as voucher_status', 'v.current_balance',
+                'vt.name as tier_name', 'vt.amount as tier_amount',
                 'h.household_code', 'h.status as household_status', 'h.representative_name',
                 'v.received_by_name', 'v.received_by_relationship', 'c.name as community', 'l.name as locality',
                 'a.name as administrative_post', 'd.name as district', 'p.name as province',

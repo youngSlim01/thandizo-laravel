@@ -83,4 +83,12 @@ return [
     'VOUCHER_HAS_RECENT_SALE' => 'Este cartão fez uma venda há menos de 15 minutos, que ainda pode ser anulada. Tente de novo daqui a pouco.',
     'VOUCHER_NOT_ACTIVE' => 'Este voucher não está ativo.',
     'VOUCHER_NOT_FOUND' => 'Voucher não encontrado. Verifique o código no cartão.',
+    'TIER_AMOUNT_INVALID' => 'Indique o valor do escalão em meticais, maior que zero.',
+    'TIER_AMOUNT_TAKEN' => 'O escalão ":details" já tem este valor. Dois escalões ativos não podem ter o mesmo valor.',
+    'TIER_INACTIVE' => 'Este escalão está desativado.',
+    'TIER_IN_USE' => 'Este escalão ainda tem :details agregado(s) ativo(s). Mude-os primeiro para outro escalão.',
+    'TIER_IS_DEFAULT' => 'O escalão padrão não pode ser desativado. Escolha antes outro escalão padrão.',
+    'TIER_NAME_REQUIRED' => 'Indique o nome do escalão.',
+    'TIER_NAME_TAKEN' => 'Já existe um escalão com este nome.',
+    'TIER_NOT_FOUND' => 'Escalão não encontrado.',
 ];

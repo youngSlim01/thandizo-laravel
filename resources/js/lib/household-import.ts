@@ -17,6 +17,7 @@ export type ImportRow = {
   gender: string;
   birth_date: string;
   relationship: string;
+  amount?: string;
 };
 
 type Field = Exclude<keyof ImportRow, 'row'>;
@@ -46,6 +47,10 @@ const HEADERS: Record<string, Field> = {
   'GRAU PARENTESCO': 'relationship',
   'GRAU DE PARENTESCO': 'relationship',
   PARENTESCO: 'relationship',
+  VALOR: 'amount',
+  'VALOR VOUCHER': 'amount',
+  'VALOR DO VOUCHER': 'amount',
+  MONTANTE: 'amount',
 };
 
 export const REQUIRED_HEADERS: { field: Field; label: string }[] = [
@@ -60,6 +65,12 @@ export const REQUIRED_HEADERS: { field: Field; label: string }[] = [
   { field: 'gender', label: 'GENERO' },
   { field: 'birth_date', label: 'DATA NASC' },
   { field: 'relationship', label: 'GRAU PARENTESCO' },
+];
+
+// Coluna opcional: o valor do voucher do agregado, que escolhe o escalão.
+// Sem ela, os agregados ficam no escalão padrão.
+export const OPTIONAL_HEADERS: { field: Field; label: string }[] = [
+  { field: 'amount', label: 'VALOR' },
 ];
 
 
@@ -117,6 +128,10 @@ export function mapSheet(data: Cell[][]): ParsedList {
     for (const { field } of REQUIRED_HEADERS) {
       const col = columns[field];
       row[field] = col === undefined ? '' : cellText(line[col], field);
+    }
+    for (const { field } of OPTIONAL_HEADERS) {
+      const col = columns[field];
+      if (col !== undefined) row[field] = cellText(line[col], field);
     }
     rows.push(row);
   }
