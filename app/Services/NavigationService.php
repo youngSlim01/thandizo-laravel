@@ -34,8 +34,7 @@ class NavigationService
             return $this->allowed($user, $sections);
         }
 
-        $sections = [
-            ['href' => '/admin/dashboard', 'label' => 'Painel MEAL', 'icon' => '▦', 'ability' => ['meal-back-office']],
+        if ($user->role === UserRole::SystemAdmin) {\n            $systemSections = [\n                ['href' => '/system/dashboard', 'label' => 'Dashboard', 'icon' => '▦', 'ability' => ['meal-back-office']],\n                ['href' => '/admin/users', 'label' => 'Utilizadores', 'icon' => '♙', 'ability' => ['viewAny', User::class]],\n                ['href' => '/admin/users', 'label' => 'Perfis e Permissões', 'icon' => '◇', 'ability' => ['viewAny', User::class]],\n                ['href' => '/admin/dashboard', 'label' => 'MEAL', 'icon' => '▣', 'ability' => ['meal-back-office']],\n                ['href' => '/admin/cycles', 'label' => 'Programas / Ciclos', 'icon' => '▤', 'ability' => ['meal-back-office']],\n                ['href' => '/admin/settings', 'label' => 'Configurações', 'icon' => '⚙', 'ability' => ['configure-programme']],\n                ['href' => '/admin/reports', 'label' => 'Relatórios do Sistema', 'icon' => '◫', 'ability' => ['meal-back-office']],\n            ];\n            return $this->allowed($user, $systemSections);\n        }\n\n        $sections = [\n            ['href' => '/admin/dashboard', 'label' => 'Painel MEAL', 'icon' => '▦', 'ability' => ['meal-back-office']],
             ['href' => '/admin/households', 'label' => 'Beneficiários', 'icon' => '♙', 'ability' => ['viewAny', Household::class]],
             ['href' => '/admin/cards', 'label' => 'Cartões e distribuição', 'icon' => '▣', 'ability' => ['meal-back-office']],
             ['href' => '/admin/cycles', 'label' => 'Ciclos', 'icon' => '◷', 'ability' => ['meal-back-office']],
