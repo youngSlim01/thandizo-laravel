@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\AgrodealerPos;
+use App\Models\CardLogo;
+use App\Services\CardLogoService;
 use App\Services\NavigationService;
 use App\Services\PosTerminal;
 use Illuminate\Http\Request;
@@ -46,6 +48,8 @@ class HandleInertiaRequests extends Middleware
                 'client' => $this->filled(config('thandizo.client.name')),
                 'programme' => $this->filled(config('thandizo.client.programme')),
                 'tagline' => $this->filled(config('thandizo.client.tagline')),
+                // Logótipos dos cartões (endereços), da esquerda para a direita.
+                'logos' => fn () => $user ? app(CardLogoService::class)->list()->map(fn (CardLogo $logo): string => $logo->url())->all() : [],
             ],
             // Menu lateral do back office (vazio para quem não tem secções).
             'navigation' => fn () => $user ? app(NavigationService::class)->sectionsFor($user) : [],

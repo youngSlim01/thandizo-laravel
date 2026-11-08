@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -30,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('meal-manager', fn (User $user): bool => $user->isActive() && $user->role->canManageHouseholds());
         // Ver as operações de todo o programa: back office MEAL e Finanças.
         Gate::define('view-operations', fn (User $user): bool => $user->isActive() && $user->role->canViewAllOperations());
+        // Configuração da instalação (cliente, logótipos): só o administrador do sistema.
+        Gate::define('configure-installation', fn (User $user): bool => $user->isActive() && $user->role === UserRole::SystemAdmin);
         Gate::define('finance', fn (User $user): bool => $user->isActive() && $user->role->isFinance());
         Gate::define('pos', fn (User $user): bool => $user->isActive() && $user->role->isSeller() && $user->agrodealer_id !== null);
 

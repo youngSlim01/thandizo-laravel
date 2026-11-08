@@ -14,12 +14,14 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductPriceController;
 use App\Http\Controllers\Admin\ProgrammeDistrictController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SettlementController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserPasswordController;
 use App\Http\Controllers\Auth\FirstPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\BrandLogoController;
 use App\Http\Controllers\Finance\DashboardController as FinanceDashboardController;
 use App\Http\Controllers\Finance\ReportController as FinanceReportController;
 use App\Http\Controllers\Finance\SettlementController as FinanceSettlementController;
@@ -46,6 +48,14 @@ Route::middleware('auth')->group(function () {
     Route::put('/password/first', [FirstPasswordController::class, 'update'])->name('password.first.update');
 
     Route::get('/account', [AccountController::class, 'show'])->name('account');
+    Route::get('/brand/logos/{logo}', BrandLogoController::class)->name('brand.logo');
+
+    Route::middleware('can:configure-installation')->prefix('admin/settings')->name('admin.settings.')->group(function () {
+        Route::get('/', [SettingsController::class, 'index'])->name('index');
+        Route::post('/logos', [SettingsController::class, 'storeLogo'])->name('logos.store');
+        Route::put('/logos/{logo}/move-left', [SettingsController::class, 'moveLogo'])->name('logos.move');
+        Route::delete('/logos/{logo}', [SettingsController::class, 'destroyLogo'])->name('logos.destroy');
+    });
     Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password');
 
     Route::middleware('can:meal-back-office')->prefix('admin')->name('admin.')->group(function () {

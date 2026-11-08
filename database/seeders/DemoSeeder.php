@@ -10,12 +10,14 @@ use App\Models\District;
 use App\Models\Household;
 use App\Models\Locality;
 use App\Models\User;
+use App\Services\CardLogoService;
 use App\Services\CardService;
 use App\Services\CycleService;
 use App\Services\PosService;
 use App\Services\PriceService;
 use App\Services\ProductService;
 use Illuminate\Database\Seeder;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -88,6 +90,12 @@ class DemoSeeder extends Seeder
             $sales->confirm($operator, "demo-{$code}", $code, $pos->id, $items, null, 0, $preview['total_amount'], $preview['voucher_amount']);
         }
         Carbon::setTestNow();
+
+        // Logótipos do cliente de demonstração, como se fossem carregados na Configuração.
+        $logos = app(CardLogoService::class);
+        foreach (glob(__DIR__.'/demo-logos/*') as $file) {
+            $logos->add($admin, new UploadedFile($file, basename($file), null, null, true));
+        }
 
         $this->command?->info('Pronto. Utilizadores: admin, operador, gestor-agro, meal, gestor-meal, financas @thandizo.test — palavra-passe "password".');
     }

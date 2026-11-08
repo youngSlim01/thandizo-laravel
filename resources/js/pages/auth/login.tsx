@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { brandSubtitle } from '@/lib/brand';
+import { brandSubtitle, PRODUCT_TAGLINE } from '@/lib/brand';
 import type { SharedProps } from '@/types';
 import type { FormEvent } from 'react';
 import { ThandizoMark } from '@/components/thandizo-mark';
@@ -38,7 +38,7 @@ export default function Login() {
                     <span className="thandizo-brand-icon"><ThandizoMark /></span>
                     <span>
                         <strong>THANDIZO</strong>
-                        <small>{brandSubtitle(brand).toUpperCase()}</small>
+                        <small>{PRODUCT_TAGLINE.toUpperCase()}</small>
                     </span>
                 </div>
 

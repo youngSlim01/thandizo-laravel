@@ -1709,3 +1709,10 @@ select.input { background: var(--surface); }
 .report-print-row small{font-size:10.5px;color:var(--muted)}
 .report-print-row .quick-link{width:auto;min-height:30px;padding:4px 10px;font-size:11px}
 @media(max-width:760px){.report-form{grid-template-columns:1fr}.report-print-row{grid-template-columns:1fr auto}.report-print-row>span:nth-child(2){grid-column:1/-1;grid-row:2}}
+/* Logótipos do cliente na pré-visualização do cartão (Configuração) */
+.voucher-card-preview-head>.voucher-card-preview-logos{display:flex;align-items:center;gap:8px}
+.voucher-card-preview-logos img{height:clamp(16px,3vw,26px);max-width:70px;object-fit:contain;background:#fff;border-radius:3px;padding:2px}
+.voucher-card-preview-logos>div{display:grid;gap:2px}
+.card-logo-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin:12px 0 20px}
+.card-logo-image{height:90px;display:flex;align-items:center;justify-content:center;background:#166546;border-radius:10px;padding:12px;margin-bottom:8px}
+.card-logo-image img{max-height:100%;max-width:100%;object-fit:contain;background:#fff;border-radius:4px;padding:4px}

@@ -225,7 +225,10 @@ function CardPreview({ card, busy, onPrint, onClose }: { card: VoucherCard; busy
                 </div>
                 <div className="voucher-card-preview">
                     <div className="voucher-card-preview-head">
-                        <div><strong>THANDIZO</strong><small>{cardSubtitle(brand).toUpperCase()}</small></div>
+                        <div className="voucher-card-preview-logos">
+                            {brand.logos.map((src) => <img key={src} src={src} alt="" />)}
+                            <div><strong>THANDIZO</strong><small>{cardSubtitle(brand).toUpperCase()}</small></div>
+                        </div>
                         <span>e-VOUCHER</span>
                     </div>
                     <div className="voucher-card-preview-body">
@@ -276,7 +279,7 @@ function BatchRow({ batch, canManage }: { batch: Batch; canManage: boolean }) {
 
     const pdf = () => work(async () => {
         const data = await batchCards(batch.batch_id);
-        await downloadCardsPdf(data.cards, data.batch_code, cardSubtitle(brand));
+        await downloadCardsPdf(data.cards, data.batch_code, cardSubtitle(brand), brand.logos);
     });
 
     function cancel(event: FormEvent) {
@@ -342,7 +345,7 @@ function BatchRow({ batch, canManage }: { batch: Batch; canManage: boolean }) {
                     ))}
                     {selectedCard && (
                         <CardPreview card={selectedCard} busy={busy} onClose={() => setSelectedCard(null)}
-                            onPrint={() => work(() => downloadCardsPdf([selectedCard], selectedCard.voucher_code, cardSubtitle(brand)))} />
+                            onPrint={() => work(() => downloadCardsPdf([selectedCard], selectedCard.voucher_code, cardSubtitle(brand), brand.logos))} />
                     )}
                 </div>
             )}
@@ -412,7 +415,7 @@ function ReplaceCard({ canManage }: { canManage: boolean }) {
             {replaced && (
                 <div className="success-box">
                     Cartão {replaced.old_voucher_code} substituído por <strong>{replaced.new_voucher_code}</strong> com {formatMT(replaced.transferred)}.
-                    <button className="secondary-button link-button" onClick={() => downloadCardsPdf([replaced.card], replaced.new_voucher_code, cardSubtitle(brand))}>
+                    <button className="secondary-button link-button" onClick={() => downloadCardsPdf([replaced.card], replaced.new_voucher_code, cardSubtitle(brand), brand.logos)}>
                         DESCARREGAR CARTÃO NOVO (PDF)
                     </button>
                 </div>

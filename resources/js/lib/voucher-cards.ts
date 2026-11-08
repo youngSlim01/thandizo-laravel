@@ -11,11 +11,6 @@ export type VoucherCard = {
   province: string | null;
 };
 
-// Logótipos em cada cartão, da esquerda para a direita: public/logos/logo-1
-// … logo-3, em .png, .jpg ou .webp. Os que faltam são ignorados.
-export const CARD_LOGOS = ['logo-1', 'logo-2', 'logo-3'];
-const LOGO_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp'];
-
 const CARD_W = 85;
 const CARD_H = 54;
 const COLS = 2;
@@ -28,42 +23,41 @@ const BRAND: [number, number, number] = [22, 101, 70];
 
 type Logo = { data: string; ratio: number };
 
-// Draws the image on a canvas and returns it as PNG, whatever the source
-// format, so jsPDF only ever receives PNG.
-async function loadLogo(name: string): Promise<Logo | null> {
-  for (const ext of LOGO_EXTENSIONS) {
+// Desenha a imagem num canvas e devolve-a em PNG, seja qual for o formato
+// de origem, para o jsPDF receber sempre PNG. Um logótipo que não carrega é
+// ignorado e o cartão sai sem ele.
+async function loadLogo(src: string): Promise<Logo | null> {
+  try {
+    const response = await fetch(src, { credentials: 'same-origin' });
+    if (!response.ok || !(response.headers.get('content-type') ?? '').startsWith('image/')) return null;
+    const url = URL.createObjectURL(await response.blob());
     try {
-      const response = await fetch(`/logos/${name}.${ext}`);
-      if (!response.ok || !(response.headers.get('content-type') ?? '').startsWith('image/')) continue;
-      const url = URL.createObjectURL(await response.blob());
-      try {
-        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-          const el = new Image();
-          el.onload = () => resolve(el);
-          el.onerror = reject;
-          el.src = url;
-        });
-        // Enough pixels for 8 mm of height at print resolution.
-        const scale = Math.min(1, 400 / Math.max(img.naturalHeight, 1));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
-        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
-        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-        return { data: canvas.toDataURL('image/png'), ratio: canvas.width / canvas.height };
-      } finally {
-        URL.revokeObjectURL(url);
-      }
-    } catch {
-      // Try the next extension.
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image();
+        el.onload = () => resolve(el);
+        el.onerror = reject;
+        el.src = url;
+      });
+      // Pixéis suficientes para 8 mm de altura na impressão.
+      const scale = Math.min(1, 400 / Math.max(img.naturalHeight, 1));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      return { data: canvas.toDataURL('image/png'), ratio: canvas.width / canvas.height };
+    } finally {
+      URL.revokeObjectURL(url);
     }
+  } catch {
+    return null;
   }
-  return null;
 }
 
-// subtitle: linha por baixo de THANDIZO no cartão (programa ou organização cliente).
-export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitle: string) {
+// subtitle: linha por baixo de THANDIZO no cartão (programa ou organização cliente);
+// logoUrls: logótipos do cliente, da esquerda para a direita (Configuração).
+export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitle: string, logoUrls: string[]) {
   const [{ jsPDF }, QRCode] = await Promise.all([import('jspdf'), import('qrcode')]);
-  const logos = (await Promise.all(CARD_LOGOS.map(loadLogo))).filter((l): l is Logo => l !== null);
+  const logos = (await Promise.all(logoUrls.map(loadLogo))).filter((l): l is Logo => l !== null);
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const perPage = COLS * ROWS;
   const pages = Math.max(1, Math.ceil(cards.length / perPage));
@@ -140,7 +134,7 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
   return doc;
 }
 
-export async function downloadCardsPdf(cards: VoucherCard[], label: string, subtitle: string) {
-  const doc = await buildCardsPdf(cards, label, subtitle);
+export async function downloadCardsPdf(cards: VoucherCard[], label: string, subtitle: string, logoUrls: string[]) {
+  const doc = await buildCardsPdf(cards, label, subtitle, logoUrls);
   doc.save(`${label}.pdf`);
 }

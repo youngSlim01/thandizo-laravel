@@ -33,6 +33,6 @@ class BrandTest extends TestCase
         config(['thandizo.client' => ['name' => null, 'programme' => '', 'tagline' => null]]);
 
         $this->get('/login')->assertInertia(fn (Assert $page) => $page
-            ->where('brand', ['client' => null, 'programme' => null, 'tagline' => null]));
+            ->where('brand', ['client' => null, 'programme' => null, 'tagline' => null, 'logos' => []]));
     }
 }
