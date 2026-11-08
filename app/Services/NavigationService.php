@@ -1,40 +1,41 @@
 <?php
 
-namespace App\Services;
+namespace App\\Services;
 
-use App\Enums\UserRole;
-use App\Models\Agrodealer;
-use App\Models\Household;
-use App\Models\Product;
-use App\Models\User;
+use App\\Enums\\UserRole;
+use App\\Models\\Agrodealer;
+use App\\Models\\Household;
+use App\\Models\\Product;
+use App\\Models\\User;
 
-/**
- * Secções do back office que cada pessoa vê no menu lateral (antigo
- * ADMIN_SECTIONS do Next.js). Cada secção aparece só se a Policy da página
- * deixar entrar, por isso o menu e as permissões nunca divergem. As secções
- * entram aqui à medida que cada módulo é migrado.
- */
 class NavigationService
 {
-    /**
-     * @return list<array{href: string, label: string, icon: string}>
-     */
     public function sectionsFor(User $user): array
     {
-        // Finanças tem a sua área; os produtos e preços só para consulta.
         if ($user->role === UserRole::FinanceOfficer) {
-            $sections = [
+            return $this->allowed($user, [
                 ['href' => '/finance', 'label' => 'Painel', 'icon' => '▣', 'ability' => ['finance']],
                 ['href' => '/finance/settlements', 'label' => 'Reconciliações', 'icon' => '▤', 'ability' => ['finance']],
                 ['href' => '/finance/transactions', 'label' => 'Transações', 'icon' => '⇄', 'ability' => ['finance']],
                 ['href' => '/finance/reports', 'label' => 'Relatórios', 'icon' => '◫', 'ability' => ['finance']],
                 ['href' => '/admin/products', 'label' => 'Produtos e preços', 'icon' => '◈', 'ability' => ['viewAny', Product::class]],
-            ];
-
-            return $this->allowed($user, $sections);
+            ]);
         }
 
-        if ($user->role === UserRole::SystemAdmin) {\n            $systemSections = [\n                ['href' => '/system/dashboard', 'label' => 'Dashboard', 'icon' => '▦', 'ability' => ['meal-back-office']],\n                ['href' => '/admin/users', 'label' => 'Utilizadores', 'icon' => '♙', 'ability' => ['viewAny', User::class]],\n                ['href' => '/admin/users', 'label' => 'Perfis e Permissões', 'icon' => '◇', 'ability' => ['viewAny', User::class]],\n                ['href' => '/admin/dashboard', 'label' => 'MEAL', 'icon' => '▣', 'ability' => ['meal-back-office']],\n                ['href' => '/admin/cycles', 'label' => 'Programas / Ciclos', 'icon' => '▤', 'ability' => ['meal-back-office']],\n                ['href' => '/admin/settings', 'label' => 'Configurações', 'icon' => '⚙', 'ability' => ['configure-programme']],\n                ['href' => '/admin/reports', 'label' => 'Relatórios do Sistema', 'icon' => '◫', 'ability' => ['meal-back-office']],\n            ];\n            return $this->allowed($user, $systemSections);\n        }\n\n        $sections = [\n            ['href' => '/admin/dashboard', 'label' => 'Painel MEAL', 'icon' => '▦', 'ability' => ['meal-back-office']],
+        if ($user->role === UserRole::SystemAdmin) {
+            return $this->allowed($user, [
+                ['href' => '/system/dashboard', 'label' => 'Dashboard', 'icon' => '▦', 'ability' => ['meal-back-office']],
+                ['href' => '/admin/users', 'label' => 'Utilizadores', 'icon' => '♙', 'ability' => ['viewAny', User::class]],
+                ['href' => '/admin/users', 'label' => 'Perfis e Permissões', 'icon' => '◇', 'ability' => ['viewAny', User::class]],
+                ['href' => '/admin/dashboard', 'label' => 'MEAL', 'icon' => '▣', 'ability' => ['meal-back-office']],
+                ['href' => '/admin/cycles', 'label' => 'Programas / Ciclos', 'icon' => '▤', 'ability' => ['meal-back-office']],
+                ['href' => '/admin/settings', 'label' => 'Configurações', 'icon' => '⚙', 'ability' => ['configure-programme']],
+                ['href' => '/admin/reports', 'label' => 'Relatórios do Sistema', 'icon' => '◫', 'ability' => ['meal-back-office']],
+            ]);
+        }
+
+        return $this->allowed($user, [
+            ['href' => '/admin/dashboard', 'label' => 'Painel MEAL', 'icon' => '▦', 'ability' => ['meal-back-office']],
             ['href' => '/admin/households', 'label' => 'Beneficiários', 'icon' => '♙', 'ability' => ['viewAny', Household::class]],
             ['href' => '/admin/cards', 'label' => 'Cartões e distribuição', 'icon' => '▣', 'ability' => ['meal-back-office']],
             ['href' => '/admin/cycles', 'label' => 'Ciclos', 'icon' => '◷', 'ability' => ['meal-back-office']],
@@ -46,15 +47,9 @@ class NavigationService
             ['href' => '/admin/users', 'label' => 'Utilizadores', 'icon' => '♧', 'ability' => ['viewAny', User::class]],
             ['href' => '/finance/settlements', 'label' => 'Validação Finance', 'icon' => '▤', 'ability' => ['finance']],
             ['href' => '/admin/settings', 'label' => 'Configuração', 'icon' => '⚙', 'ability' => ['configure-programme']],
-        ];
-
-        return $this->allowed($user, $sections);
+        ]);
     }
 
-    /**
-     * @param  list<array{href: string, label: string, icon: string, ability: array<int, string>}>  $sections
-     * @return list<array{href: string, label: string, icon: string}>
-     */
     private function allowed(User $user, array $sections): array
     {
         return array_values(array_map(
