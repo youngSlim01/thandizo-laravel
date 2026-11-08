@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title inertia>THANDIZO</title>
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" href="/thandizo-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta name="theme-color" content="#007716">
     @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     <x-inertia::head />

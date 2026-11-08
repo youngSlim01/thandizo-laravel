@@ -38,7 +38,7 @@ export default function Login() {
                     <div className="thandizo-login-photo-overlay" aria-hidden="true" />
                     <div className="thandizo-photo-brand">
                         <span className="thandizo-brand-icon"><ThandizoMark /></span>
-                        <strong>THANDIZO</strong>
+                        <strong>Thandizo</strong>
                     </div>
                     <div className="thandizo-photo-message">
                         <span className="thandizo-photo-accent" />
@@ -51,7 +51,7 @@ export default function Login() {
                     <div className="thandizo-login-form-inner">
                         <div className="thandizo-form-brand">
                             <span className="thandizo-brand-icon"><ThandizoMark /></span>
-                            <strong>THANDIZO</strong>
+                            <strong>Thandizo</strong>
                             <p>{PRODUCT_TAGLINE}</p>
                         </div>
                         {client && (

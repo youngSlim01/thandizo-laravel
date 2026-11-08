@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { ThandizoMark } from '@/components/thandizo-mark';
 import { brandSubtitle } from '@/lib/brand';
 import type { SharedProps } from '@/types';
 
@@ -7,7 +8,7 @@ export const initials = (name: string | null | undefined) =>
     (name ?? '').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || '··';
 
 function BrandMark() {
-    return <div className="meal-brand-mark" aria-hidden="true"><i /><i /><i /></div>;
+    return <span className="meal-brand-mark"><ThandizoMark /></span>;
 }
 
 // Nome e papel de quem está ligado, no canto superior direito; abre o perfil.
@@ -59,7 +60,7 @@ export function AdminHeader({ topbar = true }: { topbar?: boolean }) {
             <aside id="admin-menu" className={open ? 'meal-sidebar admin-sidebar open' : 'meal-sidebar admin-sidebar'}>
                 <Link href={brandHref} className="meal-brand">
                     <BrandMark />
-                    <div><strong>THANDIZO</strong><span>{brandSubtitle(brand).toUpperCase()}</span></div>
+                    <div><strong>Thandizo</strong><span>{brandSubtitle(brand).toUpperCase()}</span></div>
                 </Link>
                 <nav className="meal-nav" aria-label="Navegação principal">
                     {navigation.map((s) => {
@@ -77,7 +78,7 @@ export function AdminHeader({ topbar = true }: { topbar?: boolean }) {
                 </div>
             </aside>
             <header className="meal-mobile-header admin-mobile-header">
-                <Link href={brandHref} className="meal-mobile-brand"><BrandMark /><strong>THANDIZO</strong></Link>
+                <Link href={brandHref} className="meal-mobile-brand"><BrandMark /><strong>Thandizo</strong></Link>
                 <Link href="/account" className="mobile-user" title={auth.user?.full_name ?? 'Perfil'} aria-label="Abrir o meu perfil">{initials(auth.user?.full_name)}</Link>
                 <button type="button" className="mobile-menu-button" aria-expanded={open} aria-controls="admin-menu" onClick={() => setOpen((o) => !o)}>
                     <span aria-hidden="true">{open ? '✕' : '☰'}</span> Menu

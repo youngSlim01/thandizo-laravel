@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
+import { ThandizoMark } from '@/components/thandizo-mark';
 import type { SharedProps } from '@/types';
 import { signOut } from './pos-layout';
 
@@ -21,8 +22,8 @@ export function PosHeader({ title, back, right }: { title: string; back?: string
         <>
             <aside className="app-sidebar no-print">
                 <Link href="/" className="app-logo" aria-label="THANDIZO">
-                    <span className="app-logo-mark">T</span>
-                    <span><strong>THANDIZO</strong><small>{(brand.client ?? 'E-voucher').toUpperCase()} · POS</small></span>
+                    <span className="app-logo-mark"><ThandizoMark /></span>
+                    <span><strong>Thandizo</strong><small>{(brand.client ?? 'E-voucher').toUpperCase()} · POS</small></span>
                 </Link>
                 <nav className="app-nav" aria-label="Navegação principal">
                     {NAV.map((item) => (
@@ -44,7 +45,7 @@ export function PosHeader({ title, back, right }: { title: string; back?: string
             <header className="pos-header">
                 {back ? <Link href={back} className="header-back" aria-label="Voltar">‹</Link> : <span className="header-back" />}
                 <div className="header-title">
-                    <span className="header-brand">THANDIZO</span>
+                    <span className="header-brand">Thandizo</span>
                     <span className="header-page">{title}</span>
                 </div>
                 <div className="header-status">

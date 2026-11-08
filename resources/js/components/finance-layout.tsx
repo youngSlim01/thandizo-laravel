@@ -1,11 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { ThandizoMark } from '@/components/thandizo-mark';
 import { brandSubtitle } from '@/lib/brand';
 import type { SharedProps } from '@/types';
 import { AdminLayout, initials, UserMenu } from './admin-layout';
 
 function Mark() {
-    return <div className="finance-brand-mark" aria-hidden="true"><span /><span /><span /></div>;
+    return <span className="finance-brand-mark"><ThandizoMark /></span>;
 }
 
 // Área das Finanças, com o desenho próprio do sistema antigo. O menu vem do
@@ -29,7 +30,7 @@ export function FinanceLayout({ children }: { children: ReactNode }) {
             <aside id="finance-menu" className={open ? 'finance-sidebar open' : 'finance-sidebar'}>
                 <Link href={home} className="finance-brand">
                     <Mark />
-                    <div><strong>THANDIZO</strong><span>{brandSubtitle(brand).toUpperCase()}</span></div>
+                    <div><strong>Thandizo</strong><span>{brandSubtitle(brand).toUpperCase()}</span></div>
                 </Link>
                 <nav className="finance-nav">
                     {navigation.map((link) => {
@@ -48,7 +49,7 @@ export function FinanceLayout({ children }: { children: ReactNode }) {
             </aside>
 
             <header className="finance-header-bar">
-                <Link href={home} className="finance-mobile-brand"><Mark /><strong>THANDIZO</strong></Link>
+                <Link href={home} className="finance-mobile-brand"><Mark /><strong>Thandizo</strong></Link>
                 <UserMenu className="finance-user" />
                 <Link href="/account" className="mobile-user" title={auth.user?.full_name ?? 'Perfil'} aria-label="Abrir o meu perfil">{initials(auth.user?.full_name)}</Link>
                 <button type="button" className="mobile-menu-button" aria-expanded={open} aria-controls="finance-menu" onClick={() => setOpen((o) => !o)}>
