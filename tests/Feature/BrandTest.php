@@ -43,14 +43,23 @@ class BrandTest extends TestCase
             ->where('brand.tagline', null));
     }
 
-    public function test_only_the_system_administrator_changes_the_client(): void
+    public function test_the_meal_manager_changes_the_programme_but_only_the_administrator_the_organization(): void
     {
-        $manager = User::factory()->role(UserRole::MealManager)->create();
         $admin = User::factory()->role(UserRole::SystemAdmin)->create();
+        $manager = User::factory()->role(UserRole::MealManager)->create();
+        $officer = User::factory()->role(UserRole::MealOfficer)->create();
+        $this->actingAs($admin)->put('/admin/settings/client', ['name' => 'Save the Children', 'programme' => 'Projecto LINK GCF']);
 
-        $this->actingAs($manager)->put('/admin/settings/client', ['name' => 'Outra'])->assertForbidden();
+        $this->actingAs($manager)->get('/admin/settings')->assertInertia(fn (Assert $page) => $page->where('canEditOrganization', false));
+        $this->actingAs($manager)->put('/admin/settings/client', ['name' => 'Save the Children', 'programme' => 'Projecto Novo', 'tagline' => 'Juntos'])
+            ->assertSessionHas('success');
+        $this->actingAs($manager)->put('/admin/settings/client', ['name' => 'Outra Organização', 'programme' => 'Projecto Novo'])
+            ->assertSessionHasErrors(['rule' => 'Só o administrador do sistema pode mudar o nome da organização.']);
+
+        $profile = ClientProfile::query()->sole();
+        $this->assertSame(['Save the Children', 'Projecto Novo', 'Juntos'], [$profile->name, $profile->programme, $profile->tagline]);
+        $this->actingAs($officer)->put('/admin/settings/client', ['programme' => 'X'])->assertForbidden();
         $this->actingAs($admin)->put('/admin/settings/client', ['name' => str_repeat('a', 121)])
             ->assertSessionHasErrors(['name' => 'O nome da organização tem no máximo 120 caracteres.']);
-        $this->assertSame(0, ClientProfile::query()->count());
     }
 }

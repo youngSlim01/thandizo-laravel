@@ -6,6 +6,7 @@
 */
 
 return [
+    'CLIENT_NAME_NOT_ALLOWED' => 'Só o administrador do sistema pode mudar o nome da organização.',
     'AGRODEALER_DISTRICT_REQUIRED' => 'Este agrodealer não tem distrito. Peça à equipa MEAL para o definir.',
     'AGRODEALER_NOT_ALLOWED' => 'O seu utilizador não está associado a um agrodealer ativo.',
     'AGRODEALER_NOT_FOUND' => 'Agrodealer não encontrado.',

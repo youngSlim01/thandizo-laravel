@@ -50,7 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/account', [AccountController::class, 'show'])->name('account');
     Route::get('/brand/logos/{logo}', BrandLogoController::class)->name('brand.logo');
 
-    Route::middleware('can:configure-installation')->prefix('admin/settings')->name('admin.settings.')->group(function () {
+    Route::middleware('can:configure-programme')->prefix('admin/settings')->name('admin.settings.')->group(function () {
         Route::get('/', [SettingsController::class, 'index'])->name('index');
         Route::put('/client', [SettingsController::class, 'updateClient'])->name('client.update');
         Route::post('/logos', [SettingsController::class, 'storeLogo'])->name('logos.store');

@@ -46,7 +46,7 @@ class NavigationService
             ['href' => '/admin/products', 'label' => 'Produtos e preços', 'icon' => '◈', 'ability' => ['viewAny', Product::class]],
             ['href' => '/admin/users', 'label' => 'Utilizadores', 'icon' => '♧', 'ability' => ['viewAny', User::class]],
             ['href' => '/finance/settlements', 'label' => 'Validação Finance', 'icon' => '▤', 'ability' => ['finance']],
-            ['href' => '/admin/settings', 'label' => 'Configuração', 'icon' => '⚙', 'ability' => ['configure-installation']],
+            ['href' => '/admin/settings', 'label' => 'Configuração', 'icon' => '⚙', 'ability' => ['configure-programme']],
         ];
 
         return $this->allowed($user, $sections);

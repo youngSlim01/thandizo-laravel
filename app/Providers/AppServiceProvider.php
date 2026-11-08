@@ -32,7 +32,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('meal-manager', fn (User $user): bool => $user->isActive() && $user->role->canManageHouseholds());
         // Ver as operações de todo o programa: back office MEAL e Finanças.
         Gate::define('view-operations', fn (User $user): bool => $user->isActive() && $user->role->canViewAllOperations());
-        // Configuração da instalação (cliente, logótipos): só o administrador do sistema.
+        // Configuração: o gestor MEAL muda o programa e os logótipos; o nome da
+        // organização (a identidade do cliente) só o administrador do sistema.
+        Gate::define('configure-programme', fn (User $user): bool => $user->isActive() && in_array($user->role, [UserRole::MealManager, UserRole::SystemAdmin], true));
         Gate::define('configure-installation', fn (User $user): bool => $user->isActive() && $user->role === UserRole::SystemAdmin);
         Gate::define('finance', fn (User $user): bool => $user->isActive() && $user->role->isFinance());
         Gate::define('pos', fn (User $user): bool => $user->isActive() && $user->role->isSeller() && $user->agrodealer_id !== null);

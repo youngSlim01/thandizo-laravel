@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Enums\UserRole;
+use App\Exceptions\DomainRuleException;
 use App\Models\ClientProfile;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Cliente desta instalação, editado pelo administrador em Configuração e
+ * Cliente desta instalação, editado em Configuração (o programa e a frase
+ * pelo gestor MEAL; o nome da organização só pelo administrador) e
  * mostrado junto do nome THANDIZO (ecrãs, recibo, cartão, PDFs e email).
  */
 class ClientProfileService
@@ -36,8 +39,13 @@ class ClientProfileService
         return DB::transaction(function () use ($actor, $data): ClientProfile {
             $profile = ClientProfile::query()->lockForUpdate()->first() ?? new ClientProfile;
             $before = $profile->only(['name', 'programme', 'tagline']);
+            $name = $this->clean($data['name'] ?? null);
+            // O nome da organização é a identidade do cliente: só o administrador o muda.
+            if ($name !== $profile->name && $actor->role !== UserRole::SystemAdmin) {
+                throw new DomainRuleException('CLIENT_NAME_NOT_ALLOWED');
+            }
             $profile->fill([
-                'name' => $this->clean($data['name'] ?? null),
+                'name' => $name,
                 'programme' => $this->clean($data['programme'] ?? null),
                 'tagline' => $this->clean($data['tagline'] ?? null),
                 'updated_by' => $actor->id,

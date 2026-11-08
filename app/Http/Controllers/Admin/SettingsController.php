@@ -8,14 +8,16 @@ use App\Services\CardLogoService;
 use App\Services\ClientProfileService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use InvalidArgumentException;
 
 /**
- * Configuração da instalação (só o administrador do sistema): o cliente
- * (organização, programa, frase) e os logótipos dos cartões.
+ * Configuração da instalação: o cliente (organização, programa, frase) e os
+ * logótipos dos cartões. Gestor MEAL e administrador; o nome da organização
+ * só o administrador muda (ClientProfileService).
  */
 class SettingsController extends Controller
 {
@@ -25,6 +27,7 @@ class SettingsController extends Controller
     {
         return Inertia::render('admin/settings', [
             'client' => $this->profile->current(),
+            'canEditOrganization' => Gate::allows('configure-installation'),
             'logos' => $this->logos->list()->map(fn (CardLogo $logo): array => [
                 'id' => $logo->id,
                 'position' => $logo->position,

@@ -40,13 +40,16 @@ class CardLogosTest extends TestCase
         return CardLogo::query()->orderBy('position')->pluck('original_name')->all();
     }
 
-    public function test_only_the_system_administrator_configures_the_installation(): void
+    public function test_the_meal_manager_and_the_administrator_manage_the_logos_and_nobody_else(): void
     {
         $manager = User::factory()->role(UserRole::MealManager)->create();
+        $officer = User::factory()->role(UserRole::MealOfficer)->create();
 
         $this->actingAs($this->admin)->get('/admin/settings')->assertOk()->assertInertia(fn (Assert $page) => $page->component('admin/settings'));
-        $this->actingAs($manager)->get('/admin/settings')->assertForbidden();
-        $this->actingAs($manager)->post('/admin/settings/logos', ['logo' => UploadedFile::fake()->image('x.png')])->assertForbidden();
+        $this->actingAs($manager)->post('/admin/settings/logos', ['logo' => UploadedFile::fake()->image('x.png')])->assertSessionHasNoErrors();
+        $this->assertSame(1, CardLogo::query()->count());
+        $this->actingAs($officer)->get('/admin/settings')->assertForbidden();
+        $this->actingAs($officer)->post('/admin/settings/logos', ['logo' => UploadedFile::fake()->image('y.png')])->assertForbidden();
     }
 
     public function test_logos_are_stored_served_and_sent_to_every_page_in_order(): void

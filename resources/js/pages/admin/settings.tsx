@@ -6,9 +6,9 @@ import type { SharedProps } from '@/types';
 
 type Logo = { id: string; position: number; name: string; url: string };
 type Client = { client: string | null; programme: string | null; tagline: string | null };
-type Props = { client: Client; logos: Logo[]; maxLogos: number };
+type Props = { client: Client; canEditOrganization: boolean; logos: Logo[]; maxLogos: number };
 
-function ClientForm({ client }: { client: Client }) {
+function ClientForm({ client, canEditOrganization }: { client: Client; canEditOrganization: boolean }) {
     const form = useForm({ name: client.client ?? '', programme: client.programme ?? '', tagline: client.tagline ?? '' });
 
     function save(event: FormEvent) {
@@ -16,7 +16,7 @@ function ClientForm({ client }: { client: Client }) {
         form.put('/admin/settings/client', { preserveScroll: true });
     }
 
-    const error = form.errors.name ?? form.errors.programme ?? form.errors.tagline;
+    const error = form.errors.name ?? form.errors.programme ?? form.errors.tagline ?? (form.errors as Record<string, string>).rule;
 
     return (
         <form className="admin-card admin-form" onSubmit={save}>
@@ -27,8 +27,9 @@ function ClientForm({ client }: { client: Client }) {
             </p>
             <div className="form-grid-2">
                 <div><label className="form-label" htmlFor="client-name">Organização</label>
-                    <input id="client-name" className="input" maxLength={120} placeholder="Ex.: Save the Children"
-                        value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} /></div>
+                    <input id="client-name" className="input" maxLength={120} placeholder="Ex.: Save the Children" disabled={!canEditOrganization}
+                        value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} />
+                    {!canEditOrganization && <div className="muted-text small-note">Só o administrador do sistema muda o nome da organização.</div>}</div>
                 <div><label className="form-label" htmlFor="client-programme">Programa</label>
                     <input id="client-programme" className="input" maxLength={120} placeholder="Ex.: Projecto LINK GCF"
                         value={form.data.programme} onChange={(e) => form.setData('programme', e.target.value)} /></div>
@@ -44,9 +45,10 @@ function ClientForm({ client }: { client: Client }) {
     );
 }
 
-// Configuração da instalação: o cliente (definido no .env) e os logótipos
-// impressos nos cartões, carregados aqui pelo administrador.
-export default function Settings({ client, logos, maxLogos }: Props) {
+// Configuração da instalação: o cliente e os logótipos impressos nos cartões.
+// O gestor MEAL muda o programa, a frase e os logótipos; o nome da
+// organização só o administrador do sistema.
+export default function Settings({ client, canEditOrganization, logos, maxLogos }: Props) {
     const { flash } = usePage<SharedProps>().props;
     const form = useForm<{ logo: File | null }>({ logo: null });
     const fileInput = useRef<HTMLInputElement>(null);
@@ -78,13 +80,14 @@ export default function Settings({ client, logos, maxLogos }: Props) {
             {flash.success && <div className="success-box">{flash.success}</div>}
             {error && <div className="error-box">{error}</div>}
 
-            <ClientForm client={client} />
+            <ClientForm client={client} canEditOrganization={canEditOrganization} />
 
             <h2>Logótipos do cartão</h2>
             <p className="muted-text">
                 Até {maxLogos} logótipos, impressos da esquerda para a direita na faixa verde do cartão, com 8 mm de altura.
                 Use PNG, JPG ou WebP até 1 MB, de preferência com fundo transparente e pelo menos 300 px de altura.
             </p>
+            <div className="warning-box">Os cartões já impressos não mudam: só os próximos lotes saem com os logótipos novos. Evite trocá-los a meio de uma distribuição.</div>
 
             <div className="card-logo-list">
                 {logos.map((logo, index) => (

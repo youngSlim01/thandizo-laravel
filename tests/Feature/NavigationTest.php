@@ -23,7 +23,7 @@ class NavigationTest extends TestCase
 
         return [
             'administrador' => [UserRole::SystemAdmin, [...$meal, '/admin/users', '/finance/settlements', '/admin/settings']],
-            'gestor MEAL' => [UserRole::MealManager, [...$meal, '/admin/users']],
+            'gestor MEAL' => [UserRole::MealManager, [...$meal, '/admin/users', '/admin/settings']],
             'oficial MEAL' => [UserRole::MealOfficer, $meal],
             'finanças' => [UserRole::FinanceOfficer, ['/finance', '/finance/settlements', '/finance/transactions', '/finance/reports', '/admin/products']],
             'operador de agrodealer' => [UserRole::AgrodealerOperator, []],

@@ -1716,3 +1716,6 @@ select.input { background: var(--surface); }
   .tl-panel{padding:0 22px}
 }
 @media(prefers-reduced-motion:reduce){.tl-field,.tl-submit{transition:none}}
+
+/* Campo bloqueado (ex.: organização para o gestor MEAL em Configuração) */
+.input:disabled{background:#f1f4f3;color:#6b7774;cursor:not-allowed}
