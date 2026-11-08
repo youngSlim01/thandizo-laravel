@@ -70,6 +70,14 @@ produto.
 O MySQL precisa de `log_bin_trust_function_creators=1` para criar os triggers
 (`SET GLOBAL log_bin_trust_function_creators=1;`).
 
+Em produção (ou numa instalação nova) o primeiro administrador do sistema
+cria-se com um comando, que gera uma palavra-passe temporária a trocar no
+primeiro acesso; os seeders são só para desenvolvimento:
+
+```bash
+php artisan thandizo:create-admin
+```
+
 ## Testes
 
 Os testes correm contra MySQL (base `thandizo_test`), porque as protecções do

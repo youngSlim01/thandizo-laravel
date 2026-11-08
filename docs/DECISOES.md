@@ -9,7 +9,7 @@ A migração técnica (Next.js + Supabase → Laravel + MySQL) está em
 [`MIGRACAO_LARAVEL.md`](MIGRACAO_LARAVEL.md). Este documento fala do sistema
 e do produto.
 
-Última actualização: Novembro de 2026.
+Última actualização: Novembro de 2026 (perfis de administração e criação do administrador).
 
 ---
 
@@ -86,16 +86,20 @@ ecrã, são garantidas pelos Services e, as mais críticas, pela base de dados.
 
 ## 5. Papéis e permissões
 
+Dois perfis de administração, com papéis distintos:
+
 | Papel | O que faz |
 |---|---|
-| **Administrador do sistema** | Tudo, incluindo utilizadores e o **nome da organização** em Configuração. |
-| **Gestor MEAL** | Back office completo, utilizadores, aprovar reconciliações, gerir ciclos, cancelar lotes, substituir cartões; em **Configuração**: programa, frase do cliente e logótipos. |
+| **Administrador do sistema** (administrador técnico) | Acesso global: tudo, incluindo utilizadores, Configuração e o **nome da organização**. |
+| **Gestor MEAL** (administrador operacional) | Back office completo, utilizadores, aprovar reconciliações, gerir ciclos, cancelar lotes, substituir cartões; em **Configuração**: programa, frase do cliente e logótipos. |
 | **Oficial MEAL** | Back office **só da sua província** (beneficiários, cartões, comerciantes, vendas, reconciliações). Sem província não vê nada. |
 | **Oficial de Finanças** | Painel, validar ou devolver reconciliações, transacções, relatórios; vê **produtos e preços sem alterar**. |
 | **Gestor de comerciante** | POS, vendas e o **catálogo** do seu comerciante. |
 | **Operador de comerciante** | POS e as suas vendas. |
 
 - Ninguém altera o seu próprio acesso nem repõe a sua própria palavra-passe pelo ecrã de Utilizadores.
+- **Primeiro administrador de uma instalação**: criado com `php artisan thandizo:create-admin` (nome, e-mail, nome de utilizador). O comando gera uma palavra-passe temporária forte, mostrada uma só vez, a trocar no primeiro acesso, e regista a criação na auditoria. Razão: em produção nunca se usa uma conta conhecida.
+- A conta `admin` / `password` dos seeders é **só para desenvolvimento** e nunca deve existir em produção.
 - Toda a alteração de acessos, cliente e logótipos fica na **auditoria** (quem, quando, antes e depois).
 
 ## 6. POS
@@ -136,6 +140,7 @@ ecrã, são garantidas pelos Services e, as mais críticas, pela base de dados.
 | **Fornecedor de e-mail** | Para a recuperação da palavra-passe. |
 | **Logótipo original em vector** | Substituir o desenho actual pelo ficheiro do designer. |
 | **Deck de apresentação** | Actualizar com o novo logótipo, a nova foto e "comerciante". |
+| **Administrador de produção** | Criar com `php artisan thandizo:create-admin` no ambiente do Laravel Cloud; não correr os seeders em produção. |
 | **Passar para `main`** | Quando o sistema estiver terminado, com código limpo. |
 | **Testes com utilizadores reais** | MEAL, comerciantes e Finanças, repondo os dados. |
 

@@ -79,6 +79,37 @@ class UserAdminService
     }
 
     /**
+     * Cria um administrador do sistema fora do ecrã (comando
+     * thandizo:create-admin), por exemplo o primeiro de uma instalação nova.
+     * Fica activo, com palavra-passe temporária a trocar no primeiro acesso.
+     */
+    public function createSystemAdmin(string $fullName, string $email, ?string $username, string $temporaryPassword): User
+    {
+        return DB::transaction(function () use ($fullName, $email, $username, $temporaryPassword): User {
+            $user = new User([
+                'full_name' => trim($fullName),
+                'email' => mb_strtolower(trim($email)),
+                'username' => $username === null || trim($username) === '' ? null : mb_strtolower(trim($username)),
+                'password' => $temporaryPassword,
+                'role' => UserRole::SystemAdmin,
+                'status' => RecordStatus::Active,
+            ]);
+            $user->must_change_password = true;
+            $user->save();
+
+            AuditLog::query()->create([
+                'actor_id' => null,
+                'action' => 'SYSTEM_ADMIN_CREATED',
+                'entity_type' => 'APP_USER',
+                'entity_id' => $user->id,
+                'metadata' => ['full_name' => $user->full_name, 'email' => $user->email, 'via' => 'console'],
+            ]);
+
+            return $user;
+        });
+    }
+
+    /**
      * Repõe a palavra-passe de outra pessoa sem saber a antiga. A conta fica
      * obrigada a escolher uma nova no próximo acesso.
      */
