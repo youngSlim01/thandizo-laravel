@@ -31,19 +31,10 @@ class NavigationService
             ]);
         }
 
-        if ($user->role === UserRole::SystemAdmin) {
-            return $this->allowed($user, [
-                ['href' => '/system/dashboard', 'label' => 'Dashboard', 'icon' => '▦', 'ability' => ['meal-back-office']],
-                ['href' => '/admin/users', 'label' => 'Utilizadores', 'icon' => '♙', 'ability' => ['viewAny', User::class]],
-                ['href' => '/admin/users', 'label' => 'Perfis e Permissões', 'icon' => '◇', 'ability' => ['viewAny', User::class]],
-                ['href' => '/admin/dashboard', 'label' => 'MEAL', 'icon' => '▣', 'ability' => ['meal-back-office']],
-                ['href' => '/admin/cycles', 'label' => 'Programas / Ciclos', 'icon' => '▤', 'ability' => ['meal-back-office']],
-                ['href' => '/admin/settings', 'label' => 'Configurações', 'icon' => '⚙', 'ability' => ['configure-programme']],
-                ['href' => '/admin/reports', 'label' => 'Relatórios do Sistema', 'icon' => '◫', 'ability' => ['meal-back-office']],
-            ]);
-        }
-
+        // O administrador do sistema entra no painel técnico e vê todas as
+        // secções: é quem resolve problemas em qualquer área.
         return $this->allowed($user, [
+            ['href' => '/system/dashboard', 'label' => 'Painel técnico', 'icon' => '⌁', 'ability' => ['configure-installation']],
             ['href' => '/admin/dashboard', 'label' => 'Painel MEAL', 'icon' => '▦', 'ability' => ['meal-back-office']],
             ['href' => '/admin/households', 'label' => 'Beneficiários', 'icon' => '♙', 'ability' => ['viewAny', Household::class]],
             ['href' => '/admin/cards', 'label' => 'Cartões e distribuição', 'icon' => '▣', 'ability' => ['meal-back-office']],

@@ -131,7 +131,7 @@ Dois perfis de administração, com papéis distintos:
 
 | Papel | O que faz |
 |---|---|
-| **Administrador do sistema** (administrador técnico) | Acesso global: tudo, incluindo utilizadores, Configuração e o **nome da organização**. |
+| **Administrador do sistema** (administrador técnico) | Acesso global: tudo, incluindo utilizadores, Configuração e o **nome da organização**. Entra no **painel técnico** (utilizadores, actividade, saúde do sistema) e o menu mostra **todas as secções** (decidido a 8/11/2026: é quem resolve problemas em qualquer área). |
 | **Gestor MEAL** (administrador operacional) | Back office completo, utilizadores, aprovar reconciliações, gerir ciclos, cancelar lotes, substituir cartões; em **Configuração**: programa, frase do cliente, escalões do voucher e logótipos. |
 | **Oficial MEAL** | Back office **só da sua província** (beneficiários, cartões, comerciantes, vendas, reconciliações). Sem província não vê nada. |
 | **Oficial de Finanças** | Painel, validar ou devolver reconciliações, transacções, relatórios; vê **produtos e preços sem alterar**. |

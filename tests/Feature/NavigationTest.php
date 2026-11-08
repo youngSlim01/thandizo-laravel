@@ -22,7 +22,7 @@ class NavigationTest extends TestCase
         $meal = ['/admin/dashboard', '/admin/households', '/admin/cards', '/admin/cycles', '/admin/transactions', '/admin/settlements', '/admin/reports', '/admin/comerciantes', '/admin/products'];
 
         return [
-            'administrador' => [UserRole::SystemAdmin, [...$meal, '/admin/users', '/finance/settlements', '/admin/settings']],
+            'administrador' => [UserRole::SystemAdmin, ['/system/dashboard', ...$meal, '/admin/users', '/finance/settlements', '/admin/settings']],
             'gestor MEAL' => [UserRole::MealManager, [...$meal, '/admin/users', '/admin/settings']],
             'oficial MEAL' => [UserRole::MealOfficer, $meal],
             'finanças' => [UserRole::FinanceOfficer, ['/finance', '/finance/settlements', '/finance/transactions', '/finance/reports', '/admin/products']],
@@ -43,6 +43,11 @@ class NavigationTest extends TestCase
         $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create())
             ->get('/')
             ->assertRedirect('/admin/dashboard');
+    }
+
+    public function test_the_system_administrator_opens_the_technical_dashboard(): void
+    {
+        $this->actingAs(User::factory()->role(UserRole::SystemAdmin)->create())->get('/')->assertRedirect('/system/dashboard');
     }
 
     public function test_finance_opens_its_area_and_sellers_the_pos(): void
