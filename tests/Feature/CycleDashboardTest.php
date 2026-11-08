@@ -89,4 +89,22 @@ class CycleDashboardTest extends TestCase
             ->where('dashboard.cycle.code', 'CIC-01')->where('dashboard.cycle.status', 'CLOSED'));
         $this->actingAs($this->admin)->get('/admin/dashboard?cycle=abc')->assertSessionHasErrors('cycle');
     }
+
+    public function test_the_first_steps_tick_themselves_and_only_who_sets_up_the_programme_sees_them(): void
+    {
+        $manager = User::factory()->role(UserRole::MealManager)->create();
+        $done = fn () => collect($this->actingAs($manager)->get('/admin/dashboard')->viewData('page')['props']['setup'])->pluck('done', 'key')->all();
+
+        $this->assertSame([
+            'settings' => false, 'products' => true, 'merchants' => true, 'merchant_users' => true,
+            'households' => false, 'cycle' => true, 'cards' => false,
+        ], $done());
+
+        $this->householdWithCard();
+        $this->actingAs($manager)->put('/admin/settings/client', ['programme' => 'Projecto LINK GCF']);
+        $this->assertNotContains(false, $done());
+
+        $officer = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $this->district->province_id]);
+        $this->actingAs($officer)->get('/admin/dashboard')->assertInertia(fn (Assert $page) => $page->where('setup', []));
+    }
 }

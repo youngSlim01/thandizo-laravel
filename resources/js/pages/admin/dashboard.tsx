@@ -54,9 +54,39 @@ function UsageChart({ usage, totalDays }: { usage: NonNullable<Dashboard['usage'
   );
 }
 
+type SetupStep = { key: string; title: string; text: string; href: string; done: boolean };
+
+// Primeiros passos para montar o programa: cada um marca-se sozinho quando os
+// dados existem; a lista desaparece quando todos estão feitos.
+function SetupSteps({ steps }: { steps: SetupStep[] }) {
+  const done = steps.filter((s) => s.done).length;
+  const next = steps.find((s) => !s.done);
+  return (
+    <section className="cd-panel cd-setup">
+      <div className="cd-panel-head">
+        <span className="cd-badge cd-badge-green"><Icon name="list" /></span>
+        <h2>Primeiros passos para montar o programa</h2>
+        <span className="cd-setup-count">{done} de {steps.length} feitos</span>
+      </div>
+      <Bar value={steps.length ? done / steps.length : 0} />
+      <ol className="cd-setup-list">
+        {steps.map((s, i) => (
+          <li key={s.key} className={s.done ? 'is-done' : s === next ? 'is-next' : ''}>
+            <b aria-hidden="true">{s.done ? '✓' : i + 1}</b>
+            <div><strong>{s.title}</strong><span>{s.text}</span></div>
+            {s === next
+              ? <Link href={s.href} className="primary-button cd-setup-go">Fazer agora →</Link>
+              : <Link href={s.href} className="cd-link">{s.done ? 'Rever' : 'Abrir'}</Link>}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 // Painel MEAL do dia-a-dia, por ciclo (CycleDashboardService). Mudar de ciclo
 // volta a pedir só o painel.
-export default function MealDashboard({ dashboard: data }: { dashboard: Dashboard }) {
+export default function MealDashboard({ dashboard: data, setup }: { dashboard: Dashboard; setup: SetupStep[] }) {
   const user = usePage<SharedProps>().props.auth.user;
   const [loading, setLoading] = useState(false);
   const chooseCycle = (cycle: string) => router.get('/admin/dashboard', { cycle }, {
@@ -92,8 +122,9 @@ export default function MealDashboard({ dashboard: data }: { dashboard: Dashboar
         </div>
 
         {loading && <div className="meal-loading">A carregar o painel…</div>}
-        {!loading && !cycle && (
-          <div className="info-box">Ainda não há nenhum ciclo. Abra o primeiro ciclo em <Link href="/admin/cycles">Ciclos</Link>.</div>
+        {!loading && setup.some((s) => !s.done) && <SetupSteps steps={setup} />}
+        {!loading && !cycle && setup.length === 0 && (
+          <div className="info-box">Ainda não há nenhum ciclo. O gestor MEAL abre o ciclo depois de montar o programa.</div>
         )}
 
         {!loading && cycle && k && (

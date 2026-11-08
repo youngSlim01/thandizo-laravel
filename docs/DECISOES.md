@@ -125,6 +125,9 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 | O **Oficial MEAL** vê o mesmo painel só com a sua província. | Âmbito igual ao resto do back office. |
 | Desenho a partir das referências dadas (cartões de indicadores com ícone, painéis de alerta, tabelas com barra e estado, demografia). | Pedido do projecto. |
 
+**Primeiros passos** (8/11/2026)
+- Enquanto o programa não está montado, o painel MEAL mostra ao **gestor MEAL e ao administrador** os 7 primeiros passos, por ordem: configurar o programa (cliente e programa na Configuração), produtos e preços, comerciantes (catálogo e terminal POS), utilizadores dos comerciantes, beneficiários, abrir o ciclo, gerar e distribuir os cartões. Cada passo marca-se sozinho quando os dados existem; o seguinte tem o botão "Fazer agora". A lista desaparece quando todos estão feitos. Razão: no primeiro dia, abrir o ciclo não é o primeiro passo, e o gestor precisa de ver o caminho.
+
 **Painel das Finanças** (decidido a 8/11/2026)
 
 | Decisão | Razão |

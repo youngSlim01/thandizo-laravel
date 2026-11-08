@@ -1600,3 +1600,19 @@ select.input { background: var(--surface); }
 
 /* Shared typography: light, restrained and consistent across THANDIZO modules */
 h1,h2,h3{font-weight:450;letter-spacing:-.025em}
+
+/* Primeiros passos (painel MEAL) */
+.cd-setup-count{font-size:13px;font-weight:700;color:var(--muted)}
+.cd-setup-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.cd-setup-list li{display:flex;align-items:center;gap:14px;padding:12px 4px;border-bottom:1px solid var(--border-soft)}
+.cd-setup-list li:last-child{border-bottom:0}
+.cd-setup-list li>b{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:99px;border:1.5px solid var(--border);color:var(--muted);font-size:13px}
+.cd-setup-list li>div{flex:1;min-width:0}
+.cd-setup-list strong{display:block;font-size:15px;color:var(--text)}
+.cd-setup-list span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.cd-setup-list li.is-done>b{background:var(--brand);border-color:var(--brand);color:#fff}
+.cd-setup-list li.is-done strong{color:var(--muted)}
+.cd-setup-list li.is-next{background:var(--brand-soft);border-radius:var(--radius-sm);padding:14px 12px}
+.cd-setup-list li.is-next>b{border-color:var(--brand);color:var(--brand);font-weight:800}
+.cd-setup-go{width:auto;flex:none;margin:0;min-height:40px;padding:0 16px;display:inline-flex;align-items:center;text-decoration:none;white-space:nowrap}
+@media(max-width:600px){.cd-setup-list li{flex-wrap:wrap}.cd-setup-go{width:100%;justify-content:center}}
