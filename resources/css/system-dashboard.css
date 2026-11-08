@@ -17,3 +17,44 @@
 @media(max-width:1250px){.sys-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.sys-alert-grid{grid-template-columns:1fr 1fr}.sys-alert-grid .health{grid-column:1/-1}.sys-heading>p{display:none}}
 @media(max-width:900px){.system-dashboard .sys-topbar{left:0;padding:0 12px}.sys-main{margin-left:0;padding:76px 14px 24px}.sys-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.sys-alert-grid,.sys-analysis-grid,.sys-bottom-grid{grid-template-columns:1fr}.sys-alert-grid .health{grid-column:auto}.sys-search{width:auto;flex:1}.sys-search span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sys-date{display:none}.sys-heading h1{font-size:23px}.sys-heading-sub{font-size:13px}.sys-user-menu .user-menu-text{display:none}}
 @media(max-width:520px){.sys-metrics{grid-template-columns:1fr 1fr;gap:8px}.sys-metric{padding:10px;gap:8px}.sys-metric-icon{width:38px;height:38px;flex-basis:38px;font-size:21px}.sys-metric strong{font-size:20px}.sys-metric>div span{font-size:10px;white-space:normal}.sys-heading-sub{flex-wrap:wrap}.sys-banner-art{display:none}.sys-banner-copy{padding:22px}.sys-panel{padding:12px}}
+
+
+/* THANDIZO minimal visual language shared with the public landing */
+.system-dashboard{background:var(--th-bg,#fbfdfc);color:var(--th-ink,#263f40);font-weight:400}
+.system-dashboard .sys-topbar{background:rgba(255,255,255,.96);border-color:var(--th-border,#dce6e2);box-shadow:none}
+.system-dashboard .sys-main{padding:82px 28px 36px}
+.system-dashboard .sys-heading h1{font-size:25px;font-weight:400;color:#285044;letter-spacing:-.035em}
+.system-dashboard .sys-heading-sub{font-size:14px;color:#536267;font-weight:400}
+.system-dashboard .sys-heading-sub em{background:#eef7f1;color:#176b4d;font-weight:500;border-radius:5px}
+.system-dashboard .sys-heading>p{font-size:13px;color:#78888a;font-weight:400}
+.system-dashboard .sys-metrics{gap:14px;margin-bottom:20px}
+.system-dashboard .sys-metric{min-height:70px;padding:12px 14px;border:1px solid #dce6e2;border-radius:8px;background:#fff;box-shadow:none}
+.system-dashboard .sys-metric-icon{height:38px;width:38px;flex-basis:38px;border-radius:7px;background:#f1f7f3!important;color:#176b4d!important;font-size:21px;font-weight:400}
+.system-dashboard .sys-metric strong{font-size:21px;font-weight:500;letter-spacing:-.025em;color:#263f40}
+.system-dashboard .sys-metric>div span{font-size:12px;color:#667579;font-weight:400}
+.system-dashboard .sys-alert-grid,.system-dashboard .sys-analysis-grid,.system-dashboard .sys-bottom-grid{gap:16px;margin-bottom:16px}
+.system-dashboard .sys-panel{padding:18px;border:1px solid #dce6e2;border-radius:9px;background:#fff;box-shadow:none}
+.system-dashboard .sys-panel h2{font-size:15px;font-weight:500;letter-spacing:-.02em;color:#2b4545;margin-bottom:14px}
+.system-dashboard .sys-panel h2>span{font-size:18px;color:#397b58;font-weight:400}
+.system-dashboard .sys-alert-row,.system-dashboard .critical .sys-alert-row,.system-dashboard .attention .sys-alert-row{background:#fbfcfb;border-color:#edf1ef;color:#536267;font-size:12px;padding:10px 12px}
+.system-dashboard .critical .sys-alert-row strong{color:#b94a42;font-weight:500}
+.system-dashboard .attention .sys-alert-row strong{color:#a77a28;font-weight:500}
+.system-dashboard .sys-health-row{font-size:12px;color:#536267;border-color:#edf1ef;padding:9px 0}
+.system-dashboard .sys-health-row b{font-weight:400}
+.system-dashboard .sys-table{font-size:12px;color:#536267}
+.system-dashboard .sys-table th{background:#f5f8f6;color:#536267;font-weight:500}
+.system-dashboard .sys-table td{border-color:#edf1ef}
+.system-dashboard .sys-table tfoot td{background:#f0f7f2;font-weight:500;color:#315a47}
+.system-dashboard .sys-chart-lines{background:repeating-linear-gradient(to bottom,transparent 0,transparent 37px,#edf2ef 38px,#edf2ef 39px);border-color:#dce6e2}
+.system-dashboard .sys-chart-placeholder{color:#8a9894;font-weight:400}
+.system-dashboard .sys-panel-link,.system-dashboard .sys-see-all{color:#397b58;font-size:12px;font-weight:400}
+.system-dashboard .sys-activity{border-color:#edf1ef;padding:10px 0}
+.system-dashboard .sys-activity strong{font-size:12px;font-weight:450;color:#344b4b}
+.system-dashboard .sys-activity small{font-size:11px;color:#7b8989}
+.system-dashboard .sys-activity em{font-size:10px;font-weight:400;color:#778783;background:#f5f8f6}
+.system-dashboard .sys-banner{border:1px solid #dce6e2;border-radius:9px;box-shadow:none;background:#f0f7f2}
+.system-dashboard .sys-banner-copy strong{font-weight:450;font-size:22px;color:#2d5d46}
+.system-dashboard .sys-banner-copy p{font-size:14px;font-weight:400;color:#536267}
+.system-dashboard .sys-banner-copy a{border:1px solid #b7d2c2;border-radius:5px;background:#fff;color:#176b4d;font-weight:400}
+.system-dashboard .sys-footnote{font-size:11px;color:#87938f;font-weight:400}
+@media(max-width:900px){.system-dashboard .sys-main{padding:78px 16px 24px}}
