@@ -22,7 +22,7 @@ function niceStep(max: number) {
   return Math.max(1, Math.round(nice));
 }
 
-export function MozambiqueMap({ figures, withoutProvince }: { figures: ProvinceFigure[]; withoutProvince: number }) {
+export function MozambiqueMap({ figures, withoutProvince, period = 'no mês' }: { figures: ProvinceFigure[]; withoutProvince: number; period?: string }) {
   const [hover, setHover] = useState<string | null>(null);
 
   const { byMap, outside, step } = useMemo(() => {
@@ -78,7 +78,7 @@ export function MozambiqueMap({ figures, withoutProvince }: { figures: ProvinceF
             <strong>{shown.province}</strong>
             <span>{shown.households.toLocaleString('pt-PT')} beneficiários</span>
             <span>{shown.with_card.toLocaleString('pt-PT')} com cartão entregue</span>
-            <span>{shown.transactions.toLocaleString('pt-PT')} compras no mês · {formatMT(shown.total_amount)}</span>
+            <span>{shown.transactions.toLocaleString('pt-PT')} compras {period} · {formatMT(shown.total_amount)}</span>
           </div>
         )}
       </div>

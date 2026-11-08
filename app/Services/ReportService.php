@@ -7,7 +7,6 @@ use App\Models\User;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -207,110 +206,6 @@ class ReportService
                 'r.total_amount', 'r.voucher_amount', 'r.copayment_amount']);
 
         return $this->scope->apply($query, $viewer, 'r.province_id')->get()->map(fn ($r) => (array) $r)->all();
-    }
-
-    /**
-     * Painel MEAL de um mês (AAAA-MM): indicadores, valores, actividade diária,
-     * províncias, agrodealers, categorias e últimas vendas.
-     *
-     * @return array<string, mixed>
-     */
-    public function mealDashboard(User $viewer, ?string $month): array
-    {
-        $this->requireCentral($viewer, 'DASHBOARD_NOT_ALLOWED');
-        $today = CarbonImmutable::now(self::TIMEZONE)->startOfDay();
-        $start = $this->monthStart($month, $today);
-        $end = $start->addMonth();
-        $prev = $start->subMonth();
-        $local = fn (?string $utc): ?string => $utc === null ? null : CarbonImmutable::parse($utc, 'UTC')->setTimezone(self::TIMEZONE)->toDateString();
-        $in = fn (?string $day, CarbonImmutable $a, CarbonImmutable $b): bool => $day !== null && $day >= $a->toDateString() && $day < $b->toDateString();
-
-        $households = app(HouseholdSearchService::class)->baseQuery($viewer)->where('h.status', 'ACTIVE')
-            ->get(['h.id', 'h.created_at', 'p.id as province_id', 'p.name as province'])
-            ->map(function ($h) use ($local) {
-                $h->day = $local($h->created_at);
-
-                return $h;
-            });
-        $cards = DB::table('vouchers as v')->whereNotIn('v.status', ['PENDING', 'CANCELLED'])->whereRaw('coalesce(v.distributed_at, v.issued_at) is not null')
-            ->whereIn('v.household_id', $viewer->isProvinceScoped() ? $households->pluck('id') : DB::table('households')->select('id'))
-            ->get(['v.household_id', DB::raw('coalesce(v.distributed_at, v.issued_at) as at')])
-            ->map(function ($c) use ($local) {
-                $c->day = $local($c->at);
-
-                return $c;
-            });
-        $salesQuery = DB::table('transactions as t')->join('agrodealers as a', 'a.id', '=', 't.agrodealer_id')
-            ->leftJoin('districts as ad', 'ad.id', '=', 'a.district_id')->where('t.status', 'CONFIRMED')->whereNotNull('t.confirmed_at');
-        $this->scope->apply($salesQuery, $viewer, DB::raw('coalesce(a.province_id, ad.province_id)'));
-        $sales = $salesQuery->get(['t.id', 't.transaction_code', 't.household_id', 't.agrodealer_id', 'a.name as agrodealer', 't.total_amount', 't.voucher_amount', 't.copayment_amount', 't.confirmed_at'])
-            ->map(function ($s) use ($local) {
-                $s->day = $local($s->confirmed_at);
-
-                return $s;
-            });
-        $monthSales = $sales->filter(fn ($s) => $in($s->day, $start, $end));
-        $prevSales = $sales->filter(fn ($s) => $in($s->day, $prev, $start));
-        $sum = fn (Collection $rows, string $f): float => round($rows->sum(fn ($r) => (float) $r->{$f}), 2);
-
-        $firstDay = collect([$households->min('day'), $sales->min('day'), $today->toDateString()])->filter()->min();
-        $months = collect(CarbonPeriod::create(CarbonImmutable::parse($firstDay, $today->timezone)->startOfMonth(), '1 month', $today->startOfMonth()))
-            ->map(fn ($m) => $m->format('Y-m'))->reverse()->values()->all();
-
-        $cardHouseholds = $cards->pluck('household_id')->flip();
-        $salesByHousehold = $monthSales->groupBy('household_id');
-        $agrodealersQuery = DB::table('agrodealers as a')->leftJoin('districts as ad', 'ad.id', '=', 'a.district_id')->where('a.status', 'ACTIVE');
-        $this->scope->apply($agrodealersQuery, $viewer, DB::raw('coalesce(a.province_id, ad.province_id)'));
-        $categories = DB::table('transaction_items as i')->join('products as p', 'p.id', '=', 'i.product_id')
-            ->whereIn('i.transaction_id', $monthSales->pluck('id'))
-            ->groupByRaw("coalesce(nullif(trim(p.category), ''), 'Outros')")
-            ->selectRaw("coalesce(nullif(trim(p.category), ''), 'Outros') as category, sum(i.line_total) as total_amount")
-            ->orderByDesc('total_amount')->get()->map(fn ($c) => ['category' => $c->category, 'total_amount' => (float) $c->total_amount])->all();
-        $householdProvince = $households->keyBy('id');
-
-        return [
-            'month' => $start->format('Y-m'),
-            'current_month' => $today->format('Y-m'),
-            'months' => $months,
-            'kpis' => [
-                'households' => $households->count(),
-                'households_new' => $households->filter(fn ($h) => $in($h->day, $start, $end))->count(),
-                'households_new_prev' => $households->filter(fn ($h) => $in($h->day, $prev, $start))->count(),
-                'vouchers' => $cards->filter(fn ($c) => $in($c->day, $start, $end))->count(),
-                'vouchers_prev' => $cards->filter(fn ($c) => $in($c->day, $prev, $start))->count(),
-                'transactions' => $monthSales->count(),
-                'transactions_prev' => $prevSales->count(),
-                'agrodealers' => $agrodealersQuery->count(),
-            ],
-            'values' => [
-                'voucher_amount' => $sum($monthSales, 'voucher_amount'), 'copayment_amount' => $sum($monthSales, 'copayment_amount'),
-                'total_amount' => $sum($monthSales, 'total_amount'), 'voucher_amount_prev' => $sum($prevSales, 'voucher_amount'),
-                'copayment_amount_prev' => $sum($prevSales, 'copayment_amount'), 'total_amount_prev' => $sum($prevSales, 'total_amount'),
-            ],
-            'daily' => collect(CarbonPeriod::create($start, '1 day', $end->subDay()))->map(fn ($day) => [
-                'day' => $day->toDateString(),
-                'vouchers' => $cards->where('day', $day->toDateString())->count(),
-                'transactions' => $monthSales->where('day', $day->toDateString())->count(),
-            ])->values()->all(),
-            'by_province' => $households->whereNotNull('province_id')->groupBy('province_id')->map(fn (Collection $g) => [
-                'province' => $g->first()->province,
-                'households' => $g->count(),
-                'with_card' => $g->filter(fn ($h) => $cardHouseholds->has($h->id))->count(),
-                'transactions' => $g->sum(fn ($h) => $salesByHousehold->get($h->id, collect())->count()),
-                'total_amount' => round($g->sum(fn ($h) => $salesByHousehold->get($h->id, collect())->sum(fn ($s) => (float) $s->total_amount)), 2),
-            ])->sortBy([['households', 'desc'], ['province', 'asc']])->values()->all(),
-            'households_without_province' => $households->whereNull('province_id')->count(),
-            'by_agrodealer' => $monthSales->groupBy('agrodealer_id')->map(fn (Collection $g) => [
-                'name' => $g->first()->agrodealer, 'transactions' => $g->count(), 'total_amount' => $sum($g, 'total_amount'),
-            ])->sortBy([['transactions', 'desc'], ['name', 'asc']])->values()->all(),
-            'by_category' => $categories,
-            'latest' => $sales->sortByDesc('confirmed_at')->take(5)->map(fn ($s) => [
-                'transaction_id' => $s->id, 'transaction_code' => $s->transaction_code, 'confirmed_at' => $s->confirmed_at,
-                'representative_name' => DB::table('households')->where('id', $s->household_id)->value('representative_name'),
-                'agrodealer' => $s->agrodealer, 'province' => $householdProvince->get($s->household_id)?->province,
-                'total_amount' => (float) $s->total_amount, 'voucher_amount' => (float) $s->voucher_amount, 'copayment_amount' => (float) $s->copayment_amount,
-            ])->values()->all(),
-        ];
     }
 
     /**

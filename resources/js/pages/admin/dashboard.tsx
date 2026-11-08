@@ -1,166 +1,285 @@
-
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
+import { type ReactElement, useState } from 'react';
 import { AdminHeader, UserMenu } from '@/components/admin-layout';
 import { MozambiqueMap, type ProvinceFigure } from '@/components/mozambique-map';
 import { formatDateTime, formatMT } from '@/lib/format';
 import type { SharedProps } from '@/types';
 
-type DashboardData = {
-  month: string;
-  current_month: string;
-  months: string[];
-  kpis: {
-    households: number; households_new: number; households_new_prev: number;
-    vouchers: number; vouchers_prev: number; transactions: number; transactions_prev: number; agrodealers: number;
+type Alert = { key: string; label: string; value: number; href: string; money?: boolean };
+type UsagePoint = { day: number; share: number };
+type Dashboard = {
+  cycles: { id: string; code: string; name: string; status: 'OPEN' | 'CLOSED' }[];
+  province: string | null;
+  alerts: { critical: Alert[]; attention: Alert[] };
+  activity: { action: string; text: string; at: string; actor: string | null }[];
+  cycle: null | {
+    id: string; code: string; name: string; status: 'OPEN' | 'CLOSED'; starts_on: string | null; ends_on: string | null;
+    closed_at: string | null; day: number; total_days: number | null; days_left: number | null; time_share: number | null;
   };
-  values: {
-    voucher_amount: number; copayment_amount: number; total_amount: number;
-    voucher_amount_prev: number; copayment_amount_prev: number; total_amount_prev: number;
+  kpis?: {
+    households: number; active_cards: number; allocated: number; used: number; used_share: number; unused: number;
+    not_bought: number; not_bought_value: number; unpaid: number; copayment: number; transactions: number;
   };
-  daily: { day: string; vouchers: number; transactions: number }[];
-  by_province: ProvinceFigure[];
-  households_without_province: number;
-  by_agrodealer: { name: string; transactions: number; total_amount: number }[];
-  by_category: { category: string; total_amount: number }[];
-  latest: {
-    transaction_id: string; transaction_code: string; confirmed_at: string;
-    representative_name: string | null; agrodealer: string | null; province: string | null;
-    total_amount: number; voucher_amount: number; copayment_amount: number;
-  }[];
+  usage?: { days: UsagePoint[]; previous: { code: string; days: UsagePoint[] } | null };
+  by_tier?: { tier: string; amount: number; households: number; bought: number; generated_codes: number; allocated: number; used: number }[];
+  by_sex?: { sex: 'F' | 'M'; households: number; bought: number; average_spent: number }[];
+  substitutes?: number;
+  by_province?: ProvinceFigure[];
+  not_bought_by_community?: { community: string; district: string | null; households: number; not_bought: number; unused: number }[];
+  by_agrodealer?: { name: string; code: string; transactions: number; voucher_amount: number; to_reconcile: number; in_approval: number; validated: number }[];
 };
 
-function monthLabel(key: string) {
-  return new Date(key + '-01T12:00:00').toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' }).replace(/^./, x => x.toUpperCase());
-}
-function pct(current: number, previous: number) {
-  if (!previous) return current ? 100 : 0;
-  return Math.round(((current - previous) / previous) * 100);
-}
-function shortDay(day: string) { return day.slice(8, 10); }
+type IconName = 'users' | 'wallet' | 'clock' | 'store' | 'alert' | 'flag' | 'people' | 'map' | 'list' | 'chart' | 'layers' | 'calendar';
 
-function Icon({ name }: { name: 'calendar' | 'users' | 'wallet' | 'cart' | 'store' | 'coins' | 'info' }) {
-  const common = { width: 22, height: 22, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-  const paths = {
-    calendar: <><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M7 2v4M17 2v4M3 9h18"/></>,
-    users: <><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20a6 6 0 0 1 12 0M14 17a5 5 0 0 1 7 3"/></>,
-    wallet: <><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H20v14H5.5A2.5 2.5 0 0 1 3 16.5v-9Z"/><path d="M3 8h17"/><path d="M16 12h5v4h-5a2 2 0 1 1 0-4Z"/></>,
-    cart: <><circle cx="9" cy="19" r="1.5"/><circle cx="18" cy="19" r="1.5"/><path d="M3 4h2l2.2 10.5h10.9L21 7H6"/></>,
-    store: <><path d="M4 10v10h16V10"/><path d="M3 10 5 4h14l2 6"/><path d="M3 10a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M9 20v-5h6v5"/></>,
-    coins: <><ellipse cx="8" cy="7" rx="5" ry="2.5"/><path d="M3 7v5c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V7"/><path d="M13 9.5c2.8 0 5 1.1 5 2.5v5c0 1.4-2.2 2.5-5 2.5s-5-1.1-5-2.5v-2.5"/></>,
-    info: <><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></>,
+function Icon({ name }: { name: IconName }) {
+  const paths: Record<IconName, ReactElement> = {
+    users: <><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.4" /><path d="M3 20a6 6 0 0 1 12 0M14 17a5 5 0 0 1 7 3" /></>,
+    wallet: <><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H20v14H5.5A2.5 2.5 0 0 1 3 16.5v-9Z" /><path d="M16 12h5v4h-5a2 2 0 1 1 0-4Z" /></>,
+    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+    store: <><path d="M4 10v10h16V10" /><path d="M3 10 5 4h14l2 6" /><path d="M9 20v-5h6v5" /></>,
+    alert: <><path d="M12 3 2 20h20L12 3Z" /><path d="M12 10v4M12 17h.01" /></>,
+    flag: <><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16h.01" /></>,
+    people: <><circle cx="8" cy="8" r="3" /><circle cx="16" cy="8" r="3" /><path d="M2 20a6 6 0 0 1 12 0M10 20a6 6 0 0 1 12 0" /></>,
+    map: <><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z" /><circle cx="12" cy="10" r="2.5" /></>,
+    list: <><path d="M9 6h12M9 12h12M9 18h12" /><path d="M4 6h.01M4 12h.01M4 18h.01" /></>,
+    chart: <><path d="M4 20V10M10 20V4M16 20v-7M22 20H2" /></>,
+    layers: <><path d="m12 3 9 5-9 5-9-5 9-5Z" /><path d="m3 13 9 5 9-5" /></>,
+    calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M7 2v4M17 2v4M3 9h18" /></>,
   };
-  return <svg {...common}>{paths[name]}</svg>;
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {paths[name]}
+    </svg>
+  );
 }
 
-// Daily chart: grid lines, axis labels and points share one scale (0 at the
-// bottom line, the top tick at the top line). Points are drawn as round caps,
-// so they stay round however wide the card is.
-function DailyChart({ days, label }: { days: { day: string; value: number }[]; label: string }) {
-  const top = Math.max(4, Math.ceil(Math.max(0, ...days.map((d) => d.value)) / 4) * 4);
-  const ticks = [0, top / 4, top / 2, (top * 3) / 4, top];
-  const n = Math.max(days.length - 1, 1);
-  const pts = days.map((d, i) => [(i / n) * 100, 100 - (d.value / top) * 100] as const);
-  const line = pts.map((p) => p.join(',')).join(' ');
-  const every = Math.max(1, Math.ceil(days.length / 8));
+const pct = (share: number) => `${Math.round(share * 100)}%`;
+const share = (part: number, whole: number) => (whole > 0 ? part / whole : 0);
+const number = (n: number) => n.toLocaleString('pt-PT');
+
+function Bar({ value, tone = 'green' }: { value: number; tone?: 'green' | 'amber' | 'grey' }) {
+  return <div className={`cd-bar cd-bar-${tone}`}><i style={{ width: `${Math.min(100, Math.round(value * 100))}%` }} /></div>;
+}
+
+// Ritmo do ciclo: valor usado acumulado (% do atribuído), dia a dia, e o
+// ciclo anterior nos mesmos dias.
+function UsageChart({ usage, totalDays }: { usage: NonNullable<Dashboard['usage']>; totalDays: number | null }) {
+  const days = Math.max(totalDays ?? 0, usage.days.length, usage.previous?.days.length ?? 0, 2);
+  const top = Math.max(1, ...usage.days.map((d) => d.share), ...(usage.previous?.days.map((d) => d.share) ?? []));
+  const x = (day: number) => ((day - 1) / (days - 1)) * 100;
+  const y = (s: number) => 100 - (s / top) * 100;
+  const line = (points: UsagePoint[]) => points.map((p) => `${x(p.day)},${y(p.share)}`).join(' ');
+  const last = usage.days[usage.days.length - 1];
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => t * top);
   return (
-    <div className="daily-chart" role="img" aria-label={label}>
-      <div className="daily-chart-plot">
-        {ticks.map((t) => <div key={t} className="daily-chart-grid" style={{ top: `${100 - (t / top) * 100}%` }}><span>{t}</span></div>)}
+    <div className="cd-chart" role="img" aria-label={`Valor usado: ${pct(last?.share ?? 0)} no dia ${last?.day ?? 0}`}>
+      <div className="cd-chart-plot">
+        {ticks.map((t) => <div key={t} className="cd-chart-grid" style={{ top: `${y(t)}%` }}><span>{pct(t)}</span></div>)}
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <polygon points={`0,100 ${line} 100,100`} className="daily-chart-area" />
-          <polyline points={line} className="daily-chart-line" />
-          {pts.map(([x, y], i) => days[i].value > 0 && (
-            <line key={days[i].day} x1={x} y1={y} x2={x} y2={y} className="daily-chart-dot"><title>{`${shortDay(days[i].day)}: ${days[i].value}`}</title></line>
-          ))}
+          {usage.previous && <polyline points={line(usage.previous.days)} className="cd-chart-previous" />}
+          <polyline points={line(usage.days)} className="cd-chart-current" />
         </svg>
+        {last && <span className="cd-chart-pill" style={{ left: `${x(last.day)}%`, top: `${y(last.share)}%` }}>{pct(last.share)}</span>}
       </div>
-      <div className="daily-chart-x">
-        {days.map((d, i) => i % every === 0 && <span key={d.day} style={{ left: `${(i / n) * 100}%` }}>{shortDay(d.day)}</span>)}
-      </div>
+      <div className="cd-chart-x"><span>dia 1</span><span>dia {days}</span></div>
     </div>
   );
 }
 
+function AlertPanel({ title, tone, icon, alerts }: { title: string; tone: 'red' | 'amber'; icon: IconName; alerts: Alert[] }) {
+  return (
+    <section className="cd-panel">
+      <div className="cd-panel-head"><span className={`cd-badge cd-badge-${tone}`}><Icon name={icon} /></span><h2>{title}</h2></div>
+      <div className={`cd-alert-list cd-alert-${tone}`}>
+        {alerts.map((a) => (
+          <Link key={a.key} href={a.href} className={a.value > 0 ? '' : 'cd-zero'}>
+            <span>{a.label}</span><strong>{a.money ? formatMT(a.value) : number(a.value)}</strong>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
-
-// Painel MEAL de um mês. Os números vêm calculados do servidor
-// (ReportService::mealDashboard); mudar de mês volta a pedir só o painel.
-export default function MealDashboard({ dashboard: data }: { dashboard: DashboardData }) {
+// Painel MEAL do dia-a-dia, por ciclo (CycleDashboardService). Mudar de ciclo
+// volta a pedir só o painel.
+export default function MealDashboard({ dashboard: data }: { dashboard: Dashboard }) {
   const user = usePage<SharedProps>().props.auth.user;
   const [loading, setLoading] = useState(false);
-  const setSelectedMonth = (month: string) => router.get('/admin/dashboard', { month }, {
+  const chooseCycle = (cycle: string) => router.get('/admin/dashboard', { cycle }, {
     only: ['dashboard'], preserveState: true, preserveScroll: true, replace: true,
     onStart: () => setLoading(true), onFinish: () => setLoading(false),
   });
-  // Per-province figures come computed from the database (active households,
-  // cards delivered, sales of the month); never count 20,000 rows here.
-  const mapFigures: ProvinceFigure[] = data?.by_province ?? [];
+  const cycle = data.cycle;
+  const k = data.kpis;
+  const firstName = (user?.full_name ?? '').split(' ')[0];
+  const timeShare = cycle?.time_share ?? null;
+  const ahead = k && timeShare !== null ? k.used_share >= timeShare - 0.05 : null;
 
-  const categoryData = useMemo(() => {
-    const total = (data?.by_category ?? []).reduce((sum, item) => sum + Number(item.total_amount || 0), 0);
-    let cursor = 0;
-    return (data?.by_category ?? []).map((item, i) => {
-      const value = Number(item.total_amount || 0);
-      const share = total ? value / total * 100 : 0;
-      const itemData = { name: item.category, value, pct: Math.round(share), start: cursor, color: ['#17815b','#f5b51b','#2089df','#9b7bd4','#e87955'][i % 5] };
-      cursor += share;
-      return itemData;
-    });
-  }, [data]);
-  const dealerData = data?.by_agrodealer ?? [];
-  const maxDealer = Math.max(...dealerData.map(x => x.transactions), 1);
-  const kpis = [
-    { label: 'Beneficiários registados', value: (data?.kpis.households ?? 0).toLocaleString('pt-PT'), change: pct(data?.kpis.households_new ?? 0, data?.kpis.households_new_prev ?? 0), tone: 'green', icon: 'users' as const, caption: 'novos registos ' },
-    { label: 'Cartões entregues', value: (data?.kpis.vouchers ?? 0).toLocaleString('pt-PT'), change: pct(data?.kpis.vouchers ?? 0, data?.kpis.vouchers_prev ?? 0), tone: 'blue', icon: 'wallet' as const, caption: '' },
-    { label: 'Transações confirmadas', value: (data?.kpis.transactions ?? 0).toLocaleString('pt-PT'), change: pct(data?.kpis.transactions ?? 0, data?.kpis.transactions_prev ?? 0), tone: 'gold', icon: 'cart' as const, caption: '' },
-    { label: 'Comerciantes activos', value: (data?.kpis.agrodealers ?? 0).toLocaleString('pt-PT'), change: null, tone: 'purple', icon: 'store' as const, caption: '' },
-  ];
-  const daily = data?.daily ?? [];
-  const totalVoucher = Number(data?.values.voucher_amount ?? 0);
-  const totalCopay = Number(data?.values.copayment_amount ?? 0);
-  const totalValue = Number(data?.values.total_amount ?? 0);
-  const previousVoucherValue = Number(data?.values.voucher_amount_prev ?? 0);
-  const previousCopayValue = Number(data?.values.copayment_amount_prev ?? 0);
-  const previousTotalValue = Number(data?.values.total_amount_prev ?? 0);
-  const month = data.month;
-
-  return <div className="meal-dashboard-app">
-    <Head title="Painel MEAL" />
-    <AdminHeader topbar={false}/>
-    <main className="meal-dashboard-main">
-      <div className="meal-dashboard-heading">
-        <div><h1>Olá, {user?.full_name ?? ''}</h1><p>{user?.province ? `Visão geral da província de ${user.province}` : 'Visão geral da implementação do e-voucher'}</p></div>
-        <div className="meal-dashboard-user">
-          <div className="meal-month-select"><Icon name="calendar"/><select value={month} onChange={e=>setSelectedMonth(e.target.value)} aria-label="Mês do dashboard">
-            {(data?.months ?? []).map(m=><option key={m} value={m}>{monthLabel(m)}</option>)}
-          </select></div>
-          <UserMenu />
-        </div>
-      </div>
-      {loading ? <div className="meal-loading">A carregar dashboard...</div> : data && <>
-        <section className="meal-top-kpis">
-          {kpis.map(k=><div key={k.label} className={'meal-top-kpi '+k.tone}><div className="meal-kpi-icon"><Icon name={k.icon}/></div><div><span>{k.label}</span><strong>{k.value}</strong>{k.change!==null&&<small className={k.change>0?'up':k.change<0?'down':'flat'}>{k.change>0?'↑':k.change<0?'↓':'='} {Math.abs(k.change)}% <em>{k.caption}vs. mês anterior</em></small>}</div></div>)}
-        </section>
-        <section className="meal-middle-grid meal-middle-grid-2">
-          <div className="meal-processed-panel"><div className="meal-panel-title">Valor processado (MT) <Icon name="info"/></div><div className="meal-processed-cards">
-            <div><Icon name="wallet"/><span>Valor voucher</span><strong>{formatMT(totalVoucher)}</strong><small className={pct(totalVoucher,previousVoucherValue)>=0?'up':'down'}>{pct(totalVoucher,previousVoucherValue)>0?'↑':pct(totalVoucher,previousVoucherValue)<0?'↓':'='} {Math.abs(pct(totalVoucher,previousVoucherValue))}%</small></div>
-            <div><Icon name="coins"/><span>Copagamento</span><strong>{formatMT(totalCopay)}</strong><small className={pct(totalCopay,previousCopayValue)>=0?'up':'down'}>{pct(totalCopay,previousCopayValue)>0?'↑':pct(totalCopay,previousCopayValue)<0?'↓':'='} {Math.abs(pct(totalCopay,previousCopayValue))}%</small></div>
-            <div><Icon name="wallet"/><span>Valor total</span><strong>{formatMT(totalValue)}</strong><small className={pct(totalValue,previousTotalValue)>=0?'up':'down'}>{pct(totalValue,previousTotalValue)>0?'↑':pct(totalValue,previousTotalValue)<0?'↓':'='} {Math.abs(pct(totalValue,previousTotalValue))}%</small></div>
-          </div></div>
-          <div className="meal-daily-panel meal-daily-wide"><div className="meal-panel-title">Transações (diário)</div><DailyChart days={daily.map((x) => ({ day: x.day, value: Number(x.transactions) }))} label="Transações confirmadas por dia" /></div>
-        </section>
-        <section className="meal-lower-grid">
-          <div className="meal-panel"><h2>Beneficiários por província</h2><p className="meal-panel-subtitle">Agregados ativos. O mapa destaca apenas as províncias com beneficiários.</p>
-            <MozambiqueMap figures={mapFigures} withoutProvince={data.households_without_province}/>
+  return (
+    <div className="meal-dashboard-app">
+      <Head title="Painel MEAL" />
+      <AdminHeader topbar={false} />
+      <main className="meal-dashboard-main cd">
+        <div className="cd-heading">
+          <div>
+            <h1>Bem-vindo, {firstName}!</h1>
+            <p>{data.province ? `Província de ${data.province} · ` : ''}{cycle ? `${cycle.name} (${cycle.code})` : 'Ainda não há ciclos'}</p>
           </div>
-          <div className="meal-panel"><h2>Vendas por categoria de insumo</h2><div className="meal-donut-wrap">
-            {categoryData.length ? <><div className="meal-donut-ring"><svg className="meal-donut" viewBox="0 0 42 42"><circle cx="21" cy="21" r="15.5" fill="none" stroke="#eef1f3" strokeWidth="7"/>{categoryData.map(x=><circle key={x.name} cx="21" cy="21" r="15.5" fill="none" stroke={x.color} strokeWidth="7" pathLength="100" strokeDasharray={(x.value/(categoryData.reduce((s,y)=>s+y.value,0)||1)*100)+' '+(100-(x.value/(categoryData.reduce((s,y)=>s+y.value,0)||1)*100))} strokeDashoffset={-x.start} transform="rotate(-90 21 21)"/>)}</svg><div className="meal-donut-center"><strong>{formatMT(totalValue)}</strong><span>Vendas do mês</span></div></div><div className="meal-donut-legend">{categoryData.map(x=><div key={x.name}><i style={{background:x.color}}/><span>{x.name}</span><strong>{x.pct}%</strong></div>)}</div></> : <div className="meal-empty">Sem vendas por categoria no período.</div>}
-          </div></div>
-          <div className="meal-panel"><h2>Transações por comerciante</h2><div className="meal-bars">{dealerData.map(d=><div className="meal-bar-row" key={d.name}><span>{d.name}</span><div><i style={{width:(d.transactions/maxDealer*100)+'%'}}/></div><strong>{d.transactions}</strong></div>)}{dealerData.length===0&&<div className="meal-empty">Sem transações no período.</div>}</div></div>
-        </section>
-        <section className="meal-latest"><div className="meal-latest-head"><h2>Últimas transações registadas</h2><Link href="/admin/transactions">Ver todas →</Link></div><div className="meal-table-wrap"><table><thead><tr><th>Data/Hora</th><th>Referência</th><th>Beneficiário</th><th>Comerciante</th><th>Província</th><th>Valor total (MT)</th><th>Voucher (MT)</th><th>Copagamento (MT)</th><th>Estado</th></tr></thead><tbody>{data.latest.map(t=><tr key={t.transaction_id}><td>{formatDateTime(t.confirmed_at)}</td><td>{t.transaction_code}</td><td>{t.representative_name||'Beneficiário'}</td><td>{t.agrodealer||'—'}</td><td>{t.province||'—'}</td><td>{formatMT(t.total_amount)}</td><td>{formatMT(t.voucher_amount)}</td><td>{formatMT(t.copayment_amount)}</td><td><span className="meal-confirmed">Confirmada</span></td></tr>)}</tbody></table>{data.latest.length===0&&<div className="meal-empty">Ainda não existem transações confirmadas.</div>}</div></section>
-      </>}
-    </main>
-  </div>;
+          <div className="cd-heading-tools">
+            {data.cycles.length > 0 && (
+              <label className="cd-cycle-select"><Icon name="calendar" />
+                <select value={cycle?.id ?? ''} onChange={(e) => chooseCycle(e.target.value)} aria-label="Ciclo do painel">
+                  {data.cycles.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.status === 'OPEN' ? 'em curso' : 'fechado'}</option>)}
+                </select>
+              </label>
+            )}
+            <UserMenu />
+          </div>
+        </div>
+
+        {loading && <div className="meal-loading">A carregar o painel…</div>}
+        {!loading && !cycle && (
+          <div className="info-box">Ainda não há nenhum ciclo. Abra o primeiro ciclo em <Link href="/admin/cycles">Ciclos</Link>.</div>
+        )}
+
+        {!loading && cycle && k && (
+          <>
+            <section className="cd-kpis">
+              <div className="cd-kpi cd-green"><Icon name="users" /><div><strong>{number(k.households)}</strong><span>Agregados no ciclo</span><small>{number(k.active_cards)} com cartão ativo</small></div></div>
+              <div className="cd-kpi cd-green"><Icon name="wallet" /><div><strong>{formatMT(k.used)}</strong><span>Usado pelo voucher</span><small>{pct(k.used_share)} de {formatMT(k.allocated)}</small></div></div>
+              <div className="cd-kpi cd-amber"><Icon name="clock" /><div><strong>{number(k.not_bought)}</strong><span>Ainda não compraram</span><small>{pct(share(k.not_bought, k.households))} · {formatMT(k.not_bought_value)} parados</small></div></div>
+              <div className="cd-kpi cd-blue"><Icon name="store" /><div><strong>{formatMT(k.unpaid)}</strong><span>Por pagar aos comerciantes</span><small>ainda não validado pelas Finanças</small></div></div>
+            </section>
+            <section className="cd-grid cd-grid-wide">
+              <div className="cd-panel">
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="chart" /></span><h2>Ritmo de utilização</h2></div>
+                <div className="cd-pace">
+                  {cycle.total_days !== null && timeShare !== null && (
+                    <div className="cd-pace-row"><span>Tempo · dia {cycle.day} de {cycle.total_days}</span><Bar value={timeShare} tone="grey" /><strong>{pct(timeShare)}</strong></div>
+                  )}
+                  <div className="cd-pace-row"><span>Valor usado</span><Bar value={k.used_share} /><strong>{pct(k.used_share)}</strong></div>
+                  <p className="cd-note">
+                    {ahead === null ? `Dia ${cycle.day} do ciclo. Defina a data de fim do ciclo para comparar com o tempo.`
+                      : ahead ? 'O dinheiro está a ser usado ao ritmo do tempo do ciclo, ou mais depressa.'
+                        : 'O uso está atrás do tempo do ciclo: veja quem ainda não comprou.'}
+                  </p>
+                </div>
+                {data.usage && <UsageChart usage={data.usage} totalDays={cycle.total_days} />}
+                <div className="cd-legend">
+                  <span><i className="cd-dot-green" /> {cycle.code}</span>
+                  {data.usage?.previous && <span><i className="cd-dot-grey" /> {data.usage.previous.code} nos mesmos dias</span>}
+                </div>
+              </div>
+              <div className="cd-panel">
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="map" /></span><h2>Cobertura geográfica</h2></div>
+                <MozambiqueMap figures={data.by_province ?? []} withoutProvince={0} period="no ciclo" />
+              </div>
+            </section>
+
+            <section className="cd-grid cd-grid-3">
+              <AlertPanel title="Alertas" tone="red" icon="alert" alerts={data.alerts.critical} />
+              <AlertPanel title="Atenção" tone="amber" icon="flag" alerts={data.alerts.attention} />
+              <div className="cd-panel">
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-blue"><Icon name="people" /></span><h2>Por sexo do representante</h2></div>
+                <div className="cd-demo">
+                  {(data.by_sex ?? []).map((s) => (
+                    <div key={s.sex} className={`cd-demo-card ${s.sex === 'F' ? 'cd-demo-f' : 'cd-demo-m'}`}>
+                      <div><strong>{s.sex === 'F' ? 'Mulheres' : 'Homens'}</strong><span>{number(s.bought)} de {number(s.households)} compraram · gasto médio {formatMT(s.average_spent)}</span></div>
+                      <b>{pct(share(s.bought, s.households))}</b>
+                    </div>
+                  ))}
+                  <p className="cd-note">{number(data.substitutes ?? 0)} cartões entregues a substituto do representante.</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="cd-panel">
+              <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="layers" /></span><h2>Utilização por escalão</h2></div>
+              <div className="cd-table">
+                <table>
+                  <thead><tr><th>Escalão</th><th>Agregados</th><th>Compraram</th><th>Atribuído</th><th>Usado</th><th>Utilização</th>{timeShare !== null && <th>Estado</th>}</tr></thead>
+                  <tbody>
+                    {(data.by_tier ?? []).map((t) => {
+                      const used = share(t.used, t.allocated);
+                      const onPace = timeShare === null || used >= timeShare - 0.05;
+                      return (
+                        <tr key={t.tier}>
+                          <td><strong>{t.tier}</strong><small>{formatMT(t.amount)}{t.generated_codes > 0 ? ` · ${t.generated_codes} sem AF` : ''}</small></td>
+                          <td>{number(t.households)}</td>
+                          <td>{number(t.bought)} ({pct(share(t.bought, t.households))})</td>
+                          <td>{formatMT(t.allocated)}</td>
+                          <td>{formatMT(t.used)}</td>
+                          <td><div className="cd-bar-cell"><Bar value={used} tone={onPace ? 'green' : 'amber'} /><span>{pct(used)}</span></div></td>
+                          {timeShare !== null && <td><span className={onPace ? 'cd-status-ok' : 'cd-status-late'}>{onPace ? 'NO RITMO' : 'ATRASADO'}</span></td>}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="cd-grid cd-grid-wide">
+              <div className="cd-panel" id="sem-compras">
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-amber"><Icon name="clock" /></span><h2>Quem ainda não comprou, por bairro</h2>
+                  <Link href="/admin/households" className="cd-link">Listas para mobilização →</Link></div>
+                <div className="cd-table">
+                  <table>
+                    <thead><tr><th>Bairro</th><th>Sem compras</th><th>% do bairro</th><th>Saldo por usar</th></tr></thead>
+                    <tbody>
+                      {(data.not_bought_by_community ?? []).map((c) => {
+                        const s = share(c.not_bought, c.households);
+                        return (
+                          <tr key={`${c.community}-${c.district}`}>
+                            <td><strong>{c.community}</strong><small>{c.district ?? ''}</small></td>
+                            <td>{number(c.not_bought)} de {number(c.households)}</td>
+                            <td className={s >= 0.3 ? 'cd-late' : ''}>{pct(s)}</td>
+                            <td>{formatMT(c.unused)}</td>
+                          </tr>
+                        );
+                      })}
+                      {(data.not_bought_by_community ?? []).length === 0 && <tr><td colSpan={4} className="cd-note">Todos os agregados do ciclo já compraram.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="cd-panel">
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="list" /></span><h2>Últimas actividades</h2></div>
+                <ul className="cd-activity">
+                  {data.activity.map((a, i) => (
+                    <li key={i}><strong>{a.text}</strong><span>{formatDateTime(a.at)}{a.actor ? ` · ${a.actor}` : ''}</span></li>
+                  ))}
+                  {data.activity.length === 0 && <li className="cd-note">Ainda não há actividade.</li>}
+                </ul>
+              </div>
+            </section>
+
+            <section className="cd-panel">
+              <div className="cd-panel-head"><span className="cd-badge cd-badge-blue"><Icon name="store" /></span><h2>Comerciantes no ciclo</h2>
+                <Link href="/admin/settlements" className="cd-link">Reconciliações →</Link></div>
+              <div className="cd-table">
+                <table>
+                  <thead><tr><th>Comerciante</th><th>Compras</th><th>Valor do voucher</th><th>Por reconciliar</th><th>Em aprovação</th><th>Validado</th></tr></thead>
+                  <tbody>
+                    {(data.by_agrodealer ?? []).map((a) => (
+                      <tr key={a.code}>
+                        <td><strong>{a.name}</strong><small>{a.code}</small></td>
+                        <td>{number(a.transactions)}</td>
+                        <td>{formatMT(a.voucher_amount)}</td>
+                        <td className={a.to_reconcile > 0 ? 'cd-late' : ''}>{formatMT(a.to_reconcile)}</td>
+                        <td>{formatMT(a.in_approval)}</td>
+                        <td>{formatMT(a.validated)}</td>
+                      </tr>
+                    ))}
+                    {(data.by_agrodealer ?? []).length === 0 && <tr><td colSpan={6} className="cd-note">Ainda não há compras neste ciclo.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        )}
+      </main>
+    </div>
+  );
 }

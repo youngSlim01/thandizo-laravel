@@ -9,7 +9,7 @@ A migração técnica (Next.js + Supabase → Laravel + MySQL) está em
 [`MIGRACAO_LARAVEL.md`](MIGRACAO_LARAVEL.md). Este documento fala do sistema
 e do produto.
 
-Última actualização: 8 de Novembro de 2026 (escalões do voucher e CODIGO AF gerado).
+Última actualização: 8 de Novembro de 2026 (escalões do voucher, CODIGO AF gerado e painel MEAL por ciclo).
 
 ---
 
@@ -111,6 +111,18 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 - Uma reconciliação criada pelo gestor MEAL segue directamente para as Finanças.
 - Devolver **liberta as vendas** para uma nova reconciliação.
 - Paga-se ao comerciante a **parte do voucher**; o copagamento já foi recebido por ele ao balcão.
+
+**Painel MEAL** (decidido a 8/11/2026)
+
+| Decisão | Razão |
+|---|---|
+| O painel é para o **dia-a-dia do MEAL** e organiza-se **por ciclo** (o aberto por omissão; escolhe-se outro no topo), não por mês. | O programa funciona por ciclos; a pergunta diária é "o que faço hoje?". |
+| Sem comparações com o mês anterior. O **ritmo** compara o valor usado com o **tempo do ciclo** (dia N de M) e, no gráfico, com o **ciclo anterior nos mesmos dias**. | As comparações mensais davam "↑100%" quando o mês anterior era zero; uma linha recta até ao fecho engana quando as compras se concentram no início. |
+| **Alertas** (cartões impressos por entregar, reconciliações devolvidas, ciclo a fechar em 7 dias com saldo) e **Atenção** (quem não comprou, bairros com 30% ou mais sem compras, agregados sem cartão, lotes por imprimir, reconciliações à espera do gestor); cada linha leva ao ecrã onde se resolve. | Mostrar o que precisa de acção em vez de só números. |
+| Utilização **por escalão** (com estado "no ritmo" / "atrasado"), por sexo, cobertura no mapa, quem não comprou por bairro, últimas actividades e o que falta pagar a cada comerciante (por reconciliar, em aprovação, validado). | Indicadores pedidos para acompanhar o ciclo. |
+| **Produtos** saem do painel (ficam no relatório do ciclo). | Sem categoria preenchida, o gráfico mostrava "Outros 100%". |
+| O **Oficial MEAL** vê o mesmo painel só com a sua província. | Âmbito igual ao resto do back office. |
+| Desenho a partir das referências dadas (cartões de indicadores com ícone, painéis de alerta, tabelas com barra e estado, demografia). | Pedido do projecto. |
 
 ## 5. Papéis e permissões
 

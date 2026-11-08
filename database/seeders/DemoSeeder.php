@@ -81,7 +81,7 @@ class DemoSeeder extends Seeder
         Household::query()->whereIn('id', $codes->take(6))->update(['voucher_tier_id' => $tierA->id]);
         Household::query()->whereIn('id', $codes->take(-4))->update(['voucher_tier_id' => $tierC->id]);
 
-        app(CycleService::class)->open($admin, 'Ciclo 1 — demonstração', null, null);
+        app(CycleService::class)->open($admin, 'Ciclo 1 — demonstração', now()->toDateString(), now()->addDays(75)->toDateString());
 
         $cards = app(CardService::class);
         $batch = $cards->generateBatch($admin, $community->id);

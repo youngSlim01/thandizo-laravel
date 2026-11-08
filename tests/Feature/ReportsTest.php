@@ -61,18 +61,6 @@ class ReportsTest extends TestCase
             ->component('admin/reports')->where('prints.0.agrodealer', $this->agrodealer->name)->where('prints.0.printed_by_role', 'Administrador do sistema'));
     }
 
-    public function test_meal_dashboard_of_a_month(): void
-    {
-        $this->actingAs($this->admin)->get('/admin/dashboard?month=2026-10')->assertInertia(fn (Assert $page) => $page
-            ->component('admin/dashboard')
-            ->where('dashboard.kpis.transactions', 2)
-            ->where('dashboard.values.total_amount', 3000)
-            ->where('dashboard.by_agrodealer.0.transactions', 2)
-            ->has('dashboard.daily', 31)
-            ->where('dashboard.months.0', now('Africa/Maputo')->format('Y-m')));
-        $this->actingAs($this->admin)->get('/admin/dashboard?month=2026-13')->assertSessionHasErrors('month');
-    }
-
     public function test_finance_dashboard_is_not_for_a_meal_officer(): void
     {
         $this->actingAs(User::factory()->role(UserRole::FinanceOfficer)->create())->get('/finance?month=2026-10')
