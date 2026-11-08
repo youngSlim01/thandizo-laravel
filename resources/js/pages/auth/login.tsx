@@ -9,7 +9,8 @@ import { ThandizoMark } from '@/components/thandizo-mark';
 // A diferença: o formulário é enviado ao Laravel (POST /login), que valida a
 // palavra-passe e abre a sessão. Os erros voltam em form.errors.
 export default function Login() {
-    const { flash } = usePage<SharedProps>().props;
+    const { flash, brand } = usePage<SharedProps>().props;
+    const client = [brand.client, brand.programme].filter(Boolean).join(' · ');
     const form = useForm({ email: '', password: '', remember: true });
     const [showPassword, setShowPassword] = useState(false);
 
@@ -53,6 +54,12 @@ export default function Login() {
                             <strong>THANDIZO</strong>
                             <p>{PRODUCT_TAGLINE}</p>
                         </div>
+                        {client && (
+                            <div className="thandizo-login-client">
+                                <span>{client}</span>
+                                {brand.tagline && <small>{brand.tagline}</small>}
+                            </div>
+                        )}
                         <header className="thandizo-login-heading">
                             <h2>Entrar na plataforma</h2>
                             <p>Aceda à sua conta para continuar.</p>

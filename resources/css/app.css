@@ -1752,3 +1752,9 @@ select.input { background: var(--surface); }
 @media(max-width:850px){.thandizo-login-minimal{padding:16px}.thandizo-login-shell{max-width:580px;grid-template-columns:1fr}.thandizo-login-photo{min-height:300px;padding:23px 26px}.thandizo-photo-brand{font-size:22px}.thandizo-login-photo .thandizo-brand-icon{width:39px;height:39px}.thandizo-photo-message{padding-bottom:20px;margin-top:65px}.thandizo-photo-message h1{font-size:28px}.thandizo-photo-message p{font-size:13px}.thandizo-photo-wave{height:55px}.thandizo-login-form-panel{padding:38px 30px}.thandizo-form-brand{margin-bottom:35px}.thandizo-login-heading h2{font-size:29px}.thandizo-login-heading p{margin-bottom:30px}.thandizo-login-legal{margin-top:40px}}
 @media(max-width:460px){.thandizo-login-minimal{padding:0;background:#fff}.thandizo-login-shell{min-height:100vh;border:0;border-radius:0;box-shadow:none}.thandizo-login-photo{min-height:255px;padding:20px 22px}.thandizo-photo-message{margin-top:42px}.thandizo-login-form-panel{padding:32px 23px}.thandizo-minimal-options{align-items:flex-start;flex-direction:column}.thandizo-recovery-link{text-align:left}.thandizo-login-legal{margin-top:34px}}
 @media(prefers-reduced-motion:reduce){.thandizo-minimal-submit,.thandizo-minimal-field{transition:none}}
+
+/* Cliente da instalação no login (Configuração): discreto, alinhado com a frase do produto */
+.thandizo-login-client{margin:-40px 0 36px 53px;display:grid;gap:3px}
+.thandizo-login-client span{color:#087b45;font-size:12px;font-weight:700;letter-spacing:.02em}
+.thandizo-login-client small{color:#7a8582;font-size:12px;font-style:italic}
+@media(max-width:850px){.thandizo-login-client{margin:-22px 0 26px 53px}}
