@@ -1,14 +1,14 @@
 <?php
 
-namespace App\\Http\\Controllers;
+namespace App\Http\Controllers;
 
-use App\\Enums\\RecordStatus;
-use App\\Enums\\UserRole;
-use App\\Models\\User;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\DB;
-use Inertia\\Inertia;
-use Inertia\\Response;
+use App\Enums\RecordStatus;
+use App\Enums\UserRole;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class SystemAdminDashboardController extends Controller
 {
@@ -16,22 +16,18 @@ class SystemAdminDashboardController extends Controller
     {
         abort_unless($request->user()->role === UserRole::SystemAdmin, 403);
 
-        $users = User::query();
-        $activeUsers = (clone $users)->where('status', RecordStatus::Active->value)->count();
-        $pendingUsers = (clone $users)->where('status', RecordStatus::Inactive->value)->count();
-        $roles = UserRole::cases();
-        $roleCounts = collect($roles)->map(fn ($role) => [
+        $activeUsers = User::where('status', RecordStatus::Active->value)->count();
+        $pendingUsers = User::where('status', RecordStatus::Inactive->value)->count();
+        $roleCounts = collect(UserRole::cases())->map(fn ($role) => [
             'label' => $role->label(),
             'count' => User::where('role', $role->value)->count(),
         ])->values();
 
         $cycles = DB::table('cycles')->count();
-
-        $transactions = DB::table('transactions');
-        $transactionCount = (clone $transactions)->count();
-        $transactionValue = (float) (clone $transactions)->where('status', 'CONFIRMED')->sum('total_amount');
-        $rejected = (clone $transactions)->where('status', 'REJECTED')->where('created_at', '>=', now()->subDay())->count();
-        $pendingTransactions = (clone $transactions)->where('status', 'PENDING')->count();
+        $transactionCount = DB::table('transactions')->count();
+        $transactionValue = (float) DB::table('transactions')->where('status', 'CONFIRMED')->sum('total_amount');
+        $rejected = DB::table('transactions')->where('status', 'REJECTED')->where('created_at', '>=', now()->subDay())->count();
+        $pendingTransactions = DB::table('transactions')->where('status', 'PENDING')->count();
         $agrodealers = DB::table('agrodealers')->count();
 
         $recentUsers = User::query()->latest()->limit(5)->get(['id', 'full_name', 'username', 'role', 'created_at']);
@@ -44,20 +40,12 @@ class SystemAdminDashboardController extends Controller
             'detail' => $t->status, 'date' => $t->created_at?->toISOString(),
         ]))->sortByDesc('date')->take(6)->values();
 
-        return Inertia::render('system/dashboard', [
-            'dashboard' => [
-                'users_active' => $activeUsers,
-                'users_pending' => $pendingUsers,
-                'cycles_total' => $cycles,
-                'transactions_total' => $transactionCount,
-                'transactions_value' => $transactionValue,
-                'agrodealers_total' => $agrodealers,
-                'transactions_rejected_24h' => $rejected,
-                'transactions_pending' => $pendingTransactions,
-                'roles' => $roleCounts,
-                'recent_activity' => $activity,
-                'programmes' => [],
-            ],
-        ]);
+        return Inertia::render('system/dashboard', ['dashboard' => [
+            'users_active' => $activeUsers, 'users_pending' => $pendingUsers,
+            'cycles_total' => $cycles, 'transactions_total' => $transactionCount,
+            'transactions_value' => $transactionValue, 'agrodealers_total' => $agrodealers,
+            'transactions_rejected_24h' => $rejected, 'transactions_pending' => $pendingTransactions,
+            'roles' => $roleCounts, 'recent_activity' => $activity,
+        ]]);
     }
 }
