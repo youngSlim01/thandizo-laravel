@@ -33,12 +33,33 @@ class CycleController extends Controller
         Gate::authorize('meal-manager');
         $data = $request->validate([
             'name' => ['nullable', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:255'],
             'starts_on' => ['nullable', 'date'],
             'ends_on' => ['nullable', 'date'],
         ]);
-        $cycle = $this->cycles->open($request->user(), $data['name'] ?? null, $data['starts_on'] ?? null, $data['ends_on'] ?? null);
+        $cycle = $this->cycles->open($request->user(), $data['name'] ?? null, $data['starts_on'] ?? null, $data['ends_on'] ?? null, $data['description'] ?? null);
 
         return back()->with('success', "Ciclo {$cycle['code']} aberto. Escolha agora os agregados a recarregar.");
+    }
+
+    /**
+     * Nome, descrição e datas do ciclo.
+     */
+    public function update(Request $request, string $cycle): RedirectResponse
+    {
+        Gate::authorize('meal-manager');
+        $data = $request->validate([
+            'name' => ['nullable', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'starts_on' => ['nullable', 'date'],
+            'ends_on' => ['nullable', 'date'],
+        ], [
+            'name.max' => 'O nome do ciclo tem no máximo 100 caracteres.',
+            'description.max' => 'A descrição tem no máximo 255 caracteres.',
+        ]);
+        $result = $this->cycles->update($request->user(), $cycle, $data);
+
+        return back()->with('success', $result['changed'] ? 'Dados do ciclo guardados.' : 'Nada mudou.');
     }
 
     /**

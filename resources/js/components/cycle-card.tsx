@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, type ChangeEvent } from 'react';
+import { useForm } from '@inertiajs/react';
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { GeoFilter, geoTitle, useGeography, type GeoValue } from '@/components/geo-filter';
 import { useAction } from '@/lib/action';
 import { exportCycleReport, period, printCycleReport, type CycleSummary } from '@/lib/cycle-report';
@@ -10,7 +11,7 @@ import { errorText, requestJson } from '@/lib/http';
 // Finanças só lêem.
 
 export type Cycle = {
-    cycle_id: string; code: string; name: string; status: 'OPEN' | 'CLOSED'; starts_on: string | null;
+    cycle_id: string; code: string; name: string; description: string | null; status: 'OPEN' | 'CLOSED'; starts_on: string | null;
     ends_on: string | null; opened_at: string; closed_at: string | null; households: number; allocated: number;
 };
 type Preview = {
@@ -171,9 +172,55 @@ function CloseCycle({ cycle, onClose }: { cycle: Cycle; onClose: () => void }) {
     );
 }
 
+// Nome (a identificação, ex.: "AA - Janela 1"), descrição e datas. Num ciclo
+// fechado as datas já não mudam.
+function EditCycle({ cycle, onClose }: { cycle: Cycle; onClose: () => void }) {
+    const form = useForm({ name: cycle.name, description: cycle.description ?? '', starts_on: cycle.starts_on ?? '', ends_on: cycle.ends_on ?? '' });
+    const open = cycle.status === 'OPEN';
+
+    function save(event: FormEvent) {
+        event.preventDefault();
+        form.put(`/admin/cycles/${cycle.cycle_id}`, { preserveScroll: true, onSuccess: onClose });
+    }
+
+    const error = form.errors.name ?? form.errors.description ?? form.errors.starts_on ?? form.errors.ends_on ?? (form.errors as Record<string, string>).rule;
+
+    return (
+        <form className="admin-form" onSubmit={save}>
+            <div className="row-between"><strong>Editar {cycle.code}</strong><button type="button" className="quick-link" onClick={onClose}>Cancelar</button></div>
+            <CycleFields form={form} datesDisabled={!open} idPrefix={`edit-${cycle.cycle_id}`} />
+            {!open && <div className="muted-text small-note">Ciclo fechado: as datas ficam como foram.</div>}
+            {error && <div className="error-box">{error}</div>}
+            <button className="primary-button" disabled={form.processing || !form.isDirty}>{form.processing ? 'A GUARDAR…' : 'GUARDAR CICLO'}</button>
+        </form>
+    );
+}
+
+type CycleForm = { data: { name: string; description: string; starts_on: string; ends_on: string }; setData: (key: 'name' | 'description' | 'starts_on' | 'ends_on', value: string) => void };
+
+// Campos de um ciclo, iguais ao abrir e ao editar.
+export function CycleFields({ form, datesDisabled = false, idPrefix }: { form: CycleForm; datesDisabled?: boolean; idPrefix: string }) {
+    return (
+        <div className="form-grid-2">
+            <div><label className="form-label" htmlFor={`${idPrefix}-name`}>Nome do ciclo</label>
+                <input id={`${idPrefix}-name`} className="input" maxLength={100} placeholder="Ex.: AA - Janela 1" value={form.data.name}
+                    onChange={(e) => form.setData('name', e.target.value)} /></div>
+            <div><label className="form-label" htmlFor={`${idPrefix}-description`}>Âmbito (opcional)</label>
+                <input id={`${idPrefix}-description`} className="input" maxLength={255} placeholder="Ex.: Acções antecipadas à seca, Out–Dez" value={form.data.description}
+                    onChange={(e) => form.setData('description', e.target.value)} /></div>
+            <div><label className="form-label" htmlFor={`${idPrefix}-start`}>Início</label>
+                <input id={`${idPrefix}-start`} type="date" className="input" disabled={datesDisabled} value={form.data.starts_on}
+                    onChange={(e) => form.setData('starts_on', e.target.value)} /></div>
+            <div><label className="form-label" htmlFor={`${idPrefix}-end`}>Fim previsto</label>
+                <input id={`${idPrefix}-end`} type="date" className="input" disabled={datesDisabled} value={form.data.ends_on}
+                    onChange={(e) => form.setData('ends_on', e.target.value)} /></div>
+        </div>
+    );
+}
+
 export function CycleCard({ cycle, canManage }: { cycle: Cycle; canManage: boolean }) {
     const [summary, setSummary] = useState<CycleSummary | null>(null);
-    const [panel, setPanel] = useState<'none' | 'recharge' | 'close'>('none');
+    const [panel, setPanel] = useState<'none' | 'recharge' | 'close' | 'edit'>('none');
     const [busy, setBusy] = useState<'pdf' | 'xlsx' | null>(null);
     const [error, setError] = useState<string | null>(null);
 
@@ -199,6 +246,7 @@ export function CycleCard({ cycle, canManage }: { cycle: Cycle; canManage: boole
             <div className="row-between">
                 <div>
                     <strong>{cycle.name}</strong> <span className="muted-text">{cycle.code}</span>
+                    {cycle.description && <div className="small-note">{cycle.description}</div>}
                     <div className="muted-text small-note">{summary ? period(summary) : ''} · aberto {formatDateTime(cycle.opened_at)}{cycle.closed_at ? ` · fechado ${formatDateTime(cycle.closed_at)}` : ''}</div>
                 </div>
                 <span className={`badge ${open ? 'badge-active' : ''}`}>{open ? 'Aberto' : 'Fechado'}</span>
@@ -216,6 +264,7 @@ export function CycleCard({ cycle, canManage }: { cycle: Cycle; canManage: boole
             <div className="admin-card-actions">
                 <button className="quick-link" onClick={() => report('pdf')} disabled={!summary || busy !== null}>{busy === 'pdf' ? 'A gerar…' : open ? 'Relatório provisório (PDF)' : 'Relatório do ciclo (PDF)'}</button>
                 <button className="quick-link" onClick={() => report('xlsx')} disabled={!summary || busy !== null}>{busy === 'xlsx' ? 'A gerar…' : 'Excel'}</button>
+                {canManage && <button className="quick-link" onClick={() => setPanel(panel === 'edit' ? 'none' : 'edit')}>Editar ciclo</button>}
                 {open && canManage && <button className="quick-link" onClick={() => setPanel(panel === 'recharge' ? 'none' : 'recharge')}>Recarregar agregados</button>}
                 {open && canManage && <button className="quick-link danger" onClick={() => setPanel(panel === 'close' ? 'none' : 'close')}>Fechar ciclo</button>}
             </div>
@@ -227,6 +276,7 @@ export function CycleCard({ cycle, canManage }: { cycle: Cycle; canManage: boole
             )}
             {panel === 'recharge' && <Recharge cycle={cycle} onClose={() => setPanel('none')} />}
             {panel === 'close' && <CloseCycle cycle={cycle} onClose={() => setPanel('none')} />}
+            {panel === 'edit' && <EditCycle key={`${cycle.name}|${cycle.description}|${cycle.starts_on}|${cycle.ends_on}`} cycle={cycle} onClose={() => setPanel('none')} />}
         </section>
     );
 }

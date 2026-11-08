@@ -13,14 +13,14 @@ type Dashboard = {
   alerts: { critical: Alert[]; attention: Alert[] };
   activity: { action: string; text: string; at: string; actor: string | null }[];
   cycle: null | {
-    id: string; code: string; name: string; status: 'OPEN' | 'CLOSED'; starts_on: string | null; ends_on: string | null;
+    id: string; code: string; name: string; description: string | null; status: 'OPEN' | 'CLOSED'; starts_on: string | null; ends_on: string | null;
     closed_at: string | null; day: number; total_days: number | null; days_left: number | null; time_share: number | null;
   };
   kpis?: {
     households: number; active_cards: number; allocated: number; used: number; used_share: number; unused: number;
     not_bought: number; not_bought_value: number; unpaid: number; copayment: number; transactions: number;
   };
-  usage?: { days: UsagePoint[]; previous: { code: string; days: UsagePoint[] } | null };
+  usage?: { days: UsagePoint[]; previous: { code: string; name: string; days: UsagePoint[] } | null };
   by_tier?: { tier: string; amount: number; households: number; bought: number; generated_codes: number; allocated: number; used: number }[];
   by_sex?: { sex: 'F' | 'M'; households: number; bought: number; average_spent: number }[];
   substitutes?: number;
@@ -124,13 +124,13 @@ export default function MealDashboard({ dashboard: data }: { dashboard: Dashboar
         <div className="cd-heading">
           <div>
             <h1>Bem-vindo, {firstName}!</h1>
-            <p>{data.province ? `Província de ${data.province} · ` : ''}{cycle ? `${cycle.name} (${cycle.code})` : 'Ainda não há ciclos'}</p>
+            <p>{data.province ? `Província de ${data.province} · ` : ''}{cycle ? `${cycle.name}${cycle.description ? ` · ${cycle.description}` : ''}` : 'Ainda não há ciclos'}</p>
           </div>
           <div className="cd-heading-tools">
             {data.cycles.length > 0 && (
               <label className="cd-cycle-select"><Icon name="calendar" />
                 <select value={cycle?.id ?? ''} onChange={(e) => chooseCycle(e.target.value)} aria-label="Ciclo do painel">
-                  {data.cycles.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.status === 'OPEN' ? 'em curso' : 'fechado'}</option>)}
+                  {data.cycles.map((c) => <option key={c.id} value={c.id}>{c.name} · {c.status === 'OPEN' ? 'em curso' : 'fechado'}</option>)}
                 </select>
               </label>
             )}
@@ -167,8 +167,8 @@ export default function MealDashboard({ dashboard: data }: { dashboard: Dashboar
                 </div>
                 {data.usage && <UsageChart usage={data.usage} totalDays={cycle.total_days} />}
                 <div className="cd-legend">
-                  <span><i className="cd-dot-green" /> {cycle.code}</span>
-                  {data.usage?.previous && <span><i className="cd-dot-grey" /> {data.usage.previous.code} nos mesmos dias</span>}
+                  <span><i className="cd-dot-green" /> {cycle.name}</span>
+                  {data.usage?.previous && <span><i className="cd-dot-grey" /> {data.usage.previous.name} nos mesmos dias</span>}
                 </div>
               </div>
               <div className="cd-panel">

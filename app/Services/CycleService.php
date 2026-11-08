@@ -35,9 +35,9 @@ class CycleService
     /**
      * @return array{success: true, cycle_id: string, code: string}
      */
-    public function open(User $actor, ?string $name, ?string $startsOn, ?string $endsOn): array
+    public function open(User $actor, ?string $name, ?string $startsOn, ?string $endsOn, ?string $description = null): array
     {
-        return DB::transaction(function () use ($actor, $name, $startsOn, $endsOn): array {
+        return DB::transaction(function () use ($actor, $name, $startsOn, $endsOn, $description): array {
             DB::table('programme_cycles')->lockForUpdate()->get(['id']);
             if (DB::table('programme_cycles')->where('status', 'OPEN')->exists()) {
                 throw new DomainRuleException('CYCLE_ALREADY_OPEN');
@@ -53,12 +53,57 @@ class CycleService
             DB::table('programme_cycles')->insert([
                 'id' => $id, 'code' => $code,
                 'name' => trim((string) $name) !== '' ? trim((string) $name) : "Ciclo {$n}",
+                'description' => trim((string) $description) !== '' ? trim((string) $description) : null,
                 'starts_on' => $startsOn ?: CarbonImmutable::now(self::TIMEZONE)->toDateString(),
                 'ends_on' => $endsOn ?: null, 'opened_by' => $actor->id, 'opened_at' => now(),
             ]);
             Audit::log($actor->id, 'CYCLE_OPENED', 'CYCLE', $id, ['code' => $code, 'starts_on' => $startsOn, 'ends_on' => $endsOn]);
 
             return ['success' => true, 'cycle_id' => $id, 'code' => $code];
+        });
+    }
+
+    /**
+     * Nome (a identificação do ciclo, ex.: "AA - Janela 1"), descrição e
+     * datas. O código CIC-NN não muda. Num ciclo fechado só o nome e a
+     * descrição mudam: as datas ficam como foram.
+     *
+     * @param  array{name?: string|null, description?: string|null, starts_on?: string|null, ends_on?: string|null}  $data
+     * @return array{changed: bool}
+     */
+    public function update(User $actor, ?string $cycleId, array $data): array
+    {
+        return DB::transaction(function () use ($actor, $cycleId, $data): array {
+            $cycle = DB::table('programme_cycles')->where('id', $cycleId)->lockForUpdate()->first()
+                ?? throw new DomainRuleException('CYCLE_NOT_FOUND');
+            $name = trim((string) ($data['name'] ?? ''));
+            if ($name === '') {
+                throw new DomainRuleException('CYCLE_NAME_REQUIRED');
+            }
+            $new = ['name' => $name, 'description' => trim((string) ($data['description'] ?? '')) ?: null];
+            if ($cycle->status === 'OPEN') {
+                $new['starts_on'] = ($data['starts_on'] ?? null) ?: $cycle->starts_on;
+                $new['ends_on'] = ($data['ends_on'] ?? null) ?: null;
+                if ($new['ends_on'] !== null && $new['ends_on'] < $new['starts_on']) {
+                    throw new DomainRuleException('INVALID_PERIOD');
+                }
+            } elseif (($data['starts_on'] ?? $cycle->starts_on) != $cycle->starts_on || ($data['ends_on'] ?? $cycle->ends_on) != $cycle->ends_on) {
+                throw new DomainRuleException('CYCLE_CLOSED_DATES');
+            }
+
+            $changes = [];
+            foreach ($new as $field => $value) {
+                if ((string) $cycle->{$field} !== (string) $value) {
+                    $changes[$field] = ['old' => $cycle->{$field}, 'new' => $value];
+                }
+            }
+            if ($changes === []) {
+                return ['changed' => false];
+            }
+            DB::table('programme_cycles')->where('id', $cycle->id)->update($new);
+            Audit::log($actor->id, 'CYCLE_UPDATED', 'CYCLE', $cycle->id, ['code' => $cycle->code, 'changes' => $changes]);
+
+            return ['changed' => true];
         });
     }
 
@@ -222,7 +267,7 @@ class CycleService
             $members = $this->scopedMembers($viewer, $cycle->id);
 
             return [
-                'cycle_id' => $cycle->id, 'code' => $cycle->code, 'name' => $cycle->name,
+                'cycle_id' => $cycle->id, 'code' => $cycle->code, 'name' => $cycle->name, 'description' => $cycle->description,
                 'status' => $cycle->status, 'starts_on' => $cycle->starts_on, 'ends_on' => $cycle->ends_on,
                 'opened_at' => $cycle->opened_at, 'closed_at' => $cycle->closed_at,
                 'households' => $members->count(), 'allocated' => round($members->sum(fn ($m) => (float) $m->amount), 2),

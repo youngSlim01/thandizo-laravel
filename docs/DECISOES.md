@@ -74,6 +74,7 @@ ecrã, são garantidas pelos Services e, as mais críticas, pela base de dados.
 
 **Ciclos**
 - **Um ciclo aberto de cada vez** (`CIC-NN`).
+- Cada ciclo tem um **nome que o identifica** (ex.: "AA - Janela 1") e um **âmbito** opcional (ex.: "Acções antecipadas à seca, Out–Dez"), definidos ao abrir e **editáveis** pelo gestor MEAL e pelo administrador. O código `CIC-NN` é interno e não muda (numeração, confirmação do fecho). Num ciclo fechado mudam só o nome e o âmbito; as datas ficam como foram. Cada alteração fica na auditoria. *(8/11/2026: o programa passa a operar por janelas de acções antecipadas.)*
 - **Recarga**: o **valor do escalão** de cada agregado, no **mesmo cartão**, para os agregados escolhidos (por zona ou lista de CODIGO AF). A pré-visualização mostra quanto vai a cada escalão. O ciclo guarda o escalão em que cada agregado estava quando recebeu, para os relatórios.
 - **Fecho**: o saldo que sobra **expira** e fica no relatório como não utilizado. Não se fecha nos **15 minutos** a seguir a uma venda (ainda pode ser anulada).
 

@@ -96,4 +96,28 @@ class CyclesTest extends TestCase
         $this->actingAs($officer)->post("/admin/cycles/{$cycle}/closing")->assertForbidden();
         $this->actingAs($officer)->post('/admin/cycles', ['name' => 'Outro'])->assertForbidden();
     }
+
+    public function test_the_manager_renames_the_cycle_and_sets_its_scope_and_dates(): void
+    {
+        $cycle = $this->openCycleId();
+        $officer = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $this->district->province_id]);
+        $edit = ['name' => 'AA - Janela 1', 'description' => 'Acções antecipadas à seca, Out–Dez', 'starts_on' => '2026-10-01', 'ends_on' => '2026-12-31'];
+
+        $this->actingAs($officer)->put("/admin/cycles/{$cycle}", $edit)->assertForbidden();
+        $this->actingAs($this->admin)->put("/admin/cycles/{$cycle}", $edit)->assertSessionHas('success', 'Dados do ciclo guardados.');
+        $saved = DB::table('programme_cycles')->where('id', $cycle)->first();
+        $this->assertSame(['CIC-01', 'AA - Janela 1', 'Acções antecipadas à seca, Out–Dez', '2026-12-31'], [$saved->code, $saved->name, $saved->description, $saved->ends_on]);
+        $this->assertSame('AA - Janela 1', DB::table('audit_logs')->where('action', 'CYCLE_UPDATED')->value('metadata->changes->name->new'));
+
+        $this->actingAs($this->admin)->put("/admin/cycles/{$cycle}", [...$edit, 'name' => ' '])
+            ->assertSessionHasErrors(['rule' => 'Indique o nome do ciclo (ex.: AA - Janela 1).']);
+        $this->actingAs($this->admin)->put("/admin/cycles/{$cycle}", [...$edit, 'ends_on' => '2026-09-01'])->assertSessionHasErrors('rule');
+
+        app(CycleService::class)->close($this->admin, $cycle, true);
+        $this->actingAs($this->admin)->put("/admin/cycles/{$cycle}", [...$edit, 'ends_on' => '2027-01-31'])
+            ->assertSessionHasErrors(['rule' => 'As datas de um ciclo fechado não mudam. Pode mudar o nome e a descrição.']);
+        $closedEnd = DB::table('programme_cycles')->where('id', $cycle)->value('ends_on');
+        $this->actingAs($this->admin)->put("/admin/cycles/{$cycle}", [...$edit, 'name' => 'AA - Janela 1 (fechada)', 'ends_on' => $closedEnd])->assertSessionHas('success');
+        $this->assertSame('AA - Janela 1 (fechada)', DB::table('programme_cycles')->where('id', $cycle)->value('name'));
+    }
 }

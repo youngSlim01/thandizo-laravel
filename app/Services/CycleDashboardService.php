@@ -41,7 +41,7 @@ class CycleDashboardService
         if (! $viewer->isActive() || ! $viewer->role->canViewAllOperations()) {
             throw new DomainRuleException('DASHBOARD_NOT_ALLOWED');
         }
-        $cycles = DB::table('programme_cycles')->orderByDesc('opened_at')->get(['id', 'code', 'name', 'status', 'starts_on', 'ends_on', 'opened_at', 'closed_at']);
+        $cycles = DB::table('programme_cycles')->orderByDesc('opened_at')->get(['id', 'code', 'name', 'description', 'status', 'starts_on', 'ends_on', 'opened_at', 'closed_at']);
         $cycle = $cycleId
             ? ($cycles->firstWhere('id', $cycleId) ?? throw new DomainRuleException('CYCLE_NOT_FOUND'))
             : ($cycles->firstWhere('status', 'OPEN') ?? $cycles->first());
@@ -87,7 +87,7 @@ class CycleDashboardService
             ...$base,
             'alerts' => $alerts,
             'cycle' => [
-                'id' => $cycle->id, 'code' => $cycle->code, 'name' => $cycle->name, 'status' => $cycle->status,
+                'id' => $cycle->id, 'code' => $cycle->code, 'name' => $cycle->name, 'description' => $cycle->description, 'status' => $cycle->status,
                 'starts_on' => $cycle->starts_on, 'ends_on' => $cycle->ends_on, 'closed_at' => $cycle->closed_at, ...$timeline,
             ],
             'kpis' => [
@@ -229,7 +229,7 @@ class CycleDashboardService
      *
      * @param  Collection<int, object>  $sales
      * @param  Collection<int, object>  $cycles
-     * @return array{days: list<array{day: int, share: float}>, previous: array{code: string, days: list<array{day: int, share: float}>}|null}
+     * @return array{days: list<array{day: int, share: float}>, previous: array{code: string, name: string, days: list<array{day: int, share: float}>}|null}
      */
     private function usage(object $cycle, Collection $sales, float $allocated, Collection $cycles): array
     {
@@ -246,7 +246,7 @@ class CycleDashboardService
         $prevAllocated = (float) DB::table('cycle_households')->where('cycle_id', $previous->id)->sum('amount');
         $prevDays = $this->timeline($previous)['day'];
 
-        return ['days' => $days, 'previous' => ['code' => $previous->code, 'days' => $this->cumulative($previous, $prevSales, $prevAllocated, $prevDays)]];
+        return ['days' => $days, 'previous' => ['code' => $previous->code, 'name' => $previous->name, 'days' => $this->cumulative($previous, $prevSales, $prevAllocated, $prevDays)]];
     }
 
     /**

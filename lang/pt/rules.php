@@ -26,6 +26,8 @@ return [
     'CYCLE_ALREADY_OPEN' => 'Já há um ciclo aberto. Feche-o antes de abrir outro.',
     'CYCLE_CLOSED' => 'Este ciclo já está fechado.',
     'CYCLE_HOUSEHOLDS_REQUIRED' => 'Escolha os agregados a recarregar.',
+    'CYCLE_NAME_REQUIRED' => 'Indique o nome do ciclo (ex.: AA - Janela 1).',
+    'CYCLE_CLOSED_DATES' => 'As datas de um ciclo fechado não mudam. Pode mudar o nome e a descrição.',
     'CYCLE_NOT_FOUND' => 'Ciclo não encontrado.',
     'CYCLE_RECENT_SALES' => 'Houve vendas há menos de 15 minutos (ainda podem ser anuladas). Feche o ciclo depois das :details.',
     'DASHBOARD_NOT_ALLOWED' => 'Não tem permissão para ver o dashboard MEAL.',
