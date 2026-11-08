@@ -50,8 +50,8 @@ const steps = [
 
 const roles = [
     { title: 'Administrador do sistema', text: 'Utilizadores, perfis, configuração e saúde da plataforma.' },
-    { title: 'Gestor de programa', text: 'Ciclos, escalões, aprovações e configuração do programa.' },
-    { title: 'MEAL', text: 'Beneficiários, cartões, monitoria e reconciliações.' },
+    { title: 'Gestor MEAL', text: 'Ciclos, escalões, aprovações e configuração do programa.' },
+    { title: 'Oficial MEAL', text: 'Beneficiários, cartões, monitoria e reconciliações na sua província.' },
     { title: 'Finanças', text: 'Validação das reconciliações e relatórios financeiros.' },
     { title: 'Comerciante', text: 'Vendas com o cartão no POS, recibo e anulação.' },
 ];
