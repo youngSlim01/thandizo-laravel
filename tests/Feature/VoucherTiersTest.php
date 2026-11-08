@@ -181,6 +181,14 @@ class VoucherTiersTest extends TestCase
         $this->assertSame([[2, 'TZ-MUT-000001', 'Nome2 Banda'], [3, 'TZ-MUT-000002', 'Nome3 Banda']],
             array_map(fn ($g) => [$g['row'], $g['household_code'], $g['representative_name']], $done));
 
+        $import([$row(2, '', '7500'), $row(5, '', '7500'), $row(6, '', '7500'), $row(7, '', '7500')], false)
+            ->assertJson(['valid' => true, 'possible_duplicates' => [
+                ['row' => 2, 'representative_name' => 'Nome2 Banda', 'matches' => 'agregado já registado TZ-MUT-000001'],
+            ]]);
+        $sameTwice = $row(9, '', '7500');
+        $import([$sameTwice, [...$sameTwice, 'row' => 10]], false)
+            ->assertJson(['possible_duplicates' => [['row' => 10, 'matches' => 'linha 9 deste ficheiro']]]);
+
         $import([$row(2, 'TZ-MUT-000001', '7500'), $row(3, 'TZ-MUT-000099', '7500')], false)
             ->assertJson(['valid' => false, 'summary' => ['existing_households' => 1], 'errors' => [['row' => 3, 'field' => 'CODIGO AF', 'code' => 'INVALID_HOUSEHOLD_CODE']]]);
     }

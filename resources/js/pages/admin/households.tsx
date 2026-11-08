@@ -31,6 +31,7 @@ type ImportResult = {
   summary: Summary;
   by_tier?: { name: string; amount: number; households: number; generated_codes: number }[];
   generated_codes?: { row: number; household_code: string; representative_name: string }[];
+  possible_duplicates?: { row: number; representative_name: string; matches: string }[];
   existing_codes?: string[];
 };
 type Batch = { id: string; file_name: string | null; row_count: number; created_households: number; existing_households: number; created_at: string };
@@ -209,6 +210,22 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
             </>
           )}
 
+          {!result.committed && (result.possible_duplicates?.length ?? 0) > 0 && (
+            <>
+              <div className="warning-box">
+                {result.possible_duplicates!.length} {result.possible_duplicates!.length === 1 ? 'linha sem CODIGO AF parece' : 'linhas sem CODIGO AF parecem'} ser
+                um agregado já registado (mesmo nome, data de nascimento e bairro). Se for a mesma pessoa, ponha no ficheiro o código que ela já tem;
+                se importar assim, fica registada duas vezes, com dois códigos.
+              </div>
+              <table className="import-errors">
+                <thead><tr><th>Linha</th><th>Representante</th><th>Igual a</th></tr></thead>
+                <tbody>
+                  {result.possible_duplicates!.map((d) => <tr key={d.row}><td>{d.row}</td><td>{d.representative_name}</td><td>{d.matches}</td></tr>)}
+                </tbody>
+              </table>
+            </>
+          )}
+
           {!result.committed && (result.existing_codes?.length ?? 0) > 0 && (
             <div className="muted-text small-note">
               Já registados: {result.existing_codes!.join(', ')}{result.summary.existing_households > result.existing_codes!.length ? '…' : ''}
@@ -218,7 +235,7 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
           {!result.committed && result.valid && rows && (
             result.summary.new_households > 0 ? (
               <button className="primary-button confirm-button" onClick={commit} disabled={busy !== null}>
-                IMPORTAR {result.summary.new_households} AGREGADOS
+                {(result.possible_duplicates?.length ?? 0) > 0 ? 'IMPORTAR MESMO ASSIM' : 'IMPORTAR'} {result.summary.new_households} AGREGADOS
               </button>
             ) : (
               <div className="info-box">Todos os agregados deste ficheiro já estão registados.</div>

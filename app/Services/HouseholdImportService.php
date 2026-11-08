@@ -65,6 +65,7 @@ class HouseholdImportService
         $errors = $this->validate($actor, $rows, $existingCodes);
         $summary = $this->summary($rows, $existingCodes);
         $byTier = $this->byTier($rows, $existingCodes);
+        $duplicates = $this->possibleDuplicates($rows);
 
         if ($errors !== [] || ! $commit) {
             return [
@@ -74,6 +75,7 @@ class HouseholdImportService
                 'errors' => array_slice($errors, 0, self::MAX_ERRORS_SHOWN),
                 'summary' => $summary,
                 'by_tier' => $byTier,
+                'possible_duplicates' => $duplicates,
                 'existing_codes' => array_slice(array_values($existingCodes), 0, 50),
             ];
         }
@@ -210,6 +212,48 @@ class HouseholdImportService
                 'generates_code' => $row['household_code'] === '' && $tier !== null && ! $tier->requires_household_code,
             ];
         }, $rows);
+    }
+
+    /**
+     * Linhas sem CODIGO AF (vão receber um código gerado) que parecem ser um
+     * agregado já registado, ou outra linha do ficheiro: mesmo nome, apelido,
+     * data de nascimento e bairro. É um aviso, não um erro: o MEAL decide.
+     * Evita criar a mesma pessoa duas vezes quando uma lista é reimportada
+     * sem os códigos gerados.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array{row: int, representative_name: string, matches: string}>
+     */
+    private function possibleDuplicates(array $rows): array
+    {
+        $person = fn (array $r): string => implode('|', array_map($this->key(...), [$r['first_name'], $r['last_name'], $r['birth_date'], $r['community']]));
+        $candidates = array_filter($rows, fn (array $r): bool => $r['generates_code'] && $r['birth_date'] !== null);
+        if ($candidates === []) {
+            return [];
+        }
+
+        $registered = [];
+        foreach (array_chunk(array_values(array_unique(array_column($candidates, 'birth_date'))), 500) as $dates) {
+            DB::table('households as h')->join('communities as c', 'c.id', '=', 'h.community_id')
+                ->whereIn('h.representative_birth_date', $dates)
+                ->get(['h.household_code', 'h.representative_first_name as first_name', 'h.representative_last_name as last_name', 'h.representative_birth_date as birth_date', 'c.name as community'])
+                ->each(function (object $h) use (&$registered, $person): void {
+                    $registered[$person((array) $h)] ??= $h->household_code;
+                });
+        }
+
+        $inFile = [];
+        $found = [];
+        foreach ($candidates as $row) {
+            $key = $person($row);
+            $match = isset($registered[$key]) ? "agregado já registado {$registered[$key]}" : (isset($inFile[$key]) ? "linha {$inFile[$key]} deste ficheiro" : null);
+            $inFile[$key] ??= $row['row'];
+            if ($match !== null) {
+                $found[] = ['row' => $row['row'], 'representative_name' => "{$row['first_name']} {$row['last_name']}", 'matches' => $match];
+            }
+        }
+
+        return $found;
     }
 
     /**

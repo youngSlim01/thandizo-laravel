@@ -103,6 +103,7 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 | O código gerado é **definitivo**: nunca é substituído pelo oficial. Fica marcado como gerado (aparece na ficha do agregado). | Decisão do projecto: o CODIGO AF identifica o agregado para sempre. |
 | **Registo manual**: a caixa "Não tem CODIGO AF" só aparece nos escalões que não o exigem. Sem ela, o campo vazio é erro. | Um registo apressado não cria um código definitivo para quem já tinha um. |
 | **Importação**: a célula CODIGO AF pode ficar vazia só nos escalões que não o exigem. A pré-visualização mostra quantos códigos vão ser gerados (por escalão) e pede confirmação; no fim, descarrega-se a lista dos códigos gerados (linha, código, representante). | O MEAL confirma antes de gravar e actualiza o seu ficheiro, para a próxima importação reconhecer os agregados (um código gerado reimportado só é aceite se já existir). |
+| **Aviso de possível duplicado** na pré-visualização: uma linha sem CODIGO AF com o mesmo nome, apelido, data de nascimento e bairro de um agregado já registado (ou de outra linha do ficheiro). É um **aviso, não um erro**: o MEAL decide, e o botão passa a "Importar mesmo assim". | Se a lista for reimportada sem os códigos gerados, a mesma pessoa ficaria registada duas vezes, com dois códigos definitivos. Não é erro porque duas pessoas diferentes podem ter os mesmos dados. |
 
 **Reconciliação (pagamento ao comerciante)**
 - Só **dias já fechados** (até ontem, hora de Moçambique) e só vendas confirmadas ainda não reconciliadas.
