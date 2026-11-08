@@ -17,12 +17,12 @@ class SystemAdminDashboardController extends Controller
         abort_unless($request->user()->role === UserRole::SystemAdmin, 403);
 
         $users = User::query();
-        $activeUsers = (clone $users)->where('status', RecordStatus::Active)->count();
-        $pendingUsers = (clone $users)->where('status', RecordStatus::Inactive)->count();
+        $activeUsers = (clone $users)->where('status', RecordStatus::Active->value)->count();
+        $pendingUsers = (clone $users)->where('status', RecordStatus::Inactive->value)->count();
         $roles = UserRole::cases();
         $roleCounts = collect($roles)->map(fn ($role) => [
             'label' => $role->label(),
-            'count' => User::where('role', $role)->count(),
+            'count' => User::where('role', $role->value)->count(),
         ])->values();
 
         $cycles = DB::table('cycles')->count();
