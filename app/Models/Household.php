@@ -12,10 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Agregado familiar (beneficiário), identificado pelo CODIGO AF da lista MEAL
- * (1234AF000001), que nunca muda.
+ * (1234AF000001), que nunca muda. Num escalão que não exige CODIGO AF, o
+ * agregado sem código recebe um gerado pelo sistema (TZ-MUT-000001).
  */
 #[Fillable([
-    'household_code', 'representative_name', 'representative_first_name', 'representative_last_name',
+    'household_code', 'household_code_generated', 'representative_name', 'representative_first_name', 'representative_last_name',
     'representative_sex', 'representative_birth_date', 'representative_relationship',
     'province_id', 'district_id', 'administrative_post_id', 'locality_id', 'community_id', 'voucher_tier_id',
     'status', 'status_reason', 'status_changed_at', 'status_changed_by', 'import_batch_id',
@@ -31,6 +32,7 @@ class Household extends Model
             'representative_birth_date' => 'date:Y-m-d',
             'status' => RecordStatus::class,
             'status_changed_at' => 'datetime',
+            'household_code_generated' => 'boolean',
         ];
     }
 

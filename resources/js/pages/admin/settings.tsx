@@ -7,11 +7,14 @@ import type { SharedProps } from '@/types';
 
 type Logo = { id: string; position: number; name: string; url: string };
 type Client = { client: string | null; programme: string | null; tagline: string | null };
-type Tier = { id: string; name: string; amount: number; description: string | null; is_default: boolean; status: 'ACTIVE' | 'INACTIVE'; households: number };
+type Tier = { id: string; name: string; amount: number; description: string | null; is_default: boolean; requires_household_code: boolean; status: 'ACTIVE' | 'INACTIVE'; households: number };
 type Props = { client: Client; canEditOrganization: boolean; logos: Logo[]; maxLogos: number; tiers: Tier[] };
 
 function TierForm({ tier, onDone }: { tier: Tier | null; onDone: () => void }) {
-    const form = useForm({ name: tier?.name ?? '', amount: tier ? String(tier.amount) : '', description: tier?.description ?? '' });
+    const form = useForm({
+        name: tier?.name ?? '', amount: tier ? String(tier.amount) : '', description: tier?.description ?? '',
+        requires_household_code: tier?.requires_household_code ?? true,
+    });
     const options = { preserveScroll: true, onSuccess: () => { form.reset(); onDone(); } };
 
     function save(event: FormEvent) {
@@ -37,6 +40,16 @@ function TierForm({ tier, onDone }: { tier: Tier | null; onDone: () => void }) {
             <label className="form-label" htmlFor="tier-description">Quem fica neste escalão (opcional)</label>
             <input id="tier-description" className="input" maxLength={255} placeholder="Ex.: agregados chefiados por mulheres com mais de 5 membros"
                 value={form.data.description} onChange={(e) => form.setData('description', e.target.value)} />
+            <label className="checkbox-row">
+                <input type="checkbox" checked={form.data.requires_household_code}
+                    onChange={(e) => form.setData('requires_household_code', e.target.checked)} />
+                Exige CODIGO AF
+            </label>
+            {!form.data.requires_household_code && (
+                <div className="muted-text small-note">
+                    Os agregados deste escalão podem não ter CODIGO AF: o sistema gera um (ex.: TZ-MUT-000001), que é definitivo.
+                </div>
+            )}
             {changingAmount && tier.households > 0 && (
                 <div className="warning-box">
                     O novo valor vale para as próximas ativações e recargas dos {tier.households} agregados deste escalão. O que já está nos cartões não muda.
@@ -61,16 +74,18 @@ function Tiers({ tiers, onAction }: { tiers: Tier[]; onAction: (method: 'put', u
             <p className="muted-text">
                 Cada agregado pertence a um escalão e recebe o valor desse escalão quando o cartão é ativado e em cada recarga do ciclo.
                 Na importação, a coluna VALOR escolhe o escalão; sem ela, o agregado fica no escalão padrão. Dois escalões ativos não podem ter o mesmo valor.
+                Num escalão que não exige CODIGO AF, o agregado sem código recebe um gerado pelo sistema.
             </p>
             <div className="tier-table">
                 <table className="import-errors">
-                    <thead><tr><th>Escalão</th><th>Valor</th><th>Agregados ativos</th><th>Estado</th><th /></tr></thead>
+                    <thead><tr><th>Escalão</th><th>Valor</th><th>CODIGO AF</th><th>Agregados ativos</th><th>Estado</th><th /></tr></thead>
                     <tbody>
                         {tiers.map((tier) => (
                             <tr key={tier.id} className={tier.status === 'ACTIVE' ? undefined : 'muted-row'}>
                                 <td><strong>{tier.name}</strong>{tier.is_default && <span className="badge tier-default">padrão</span>}
                                     {tier.description && <div className="muted-text small-note">{tier.description}</div>}</td>
                                 <td>{formatMT(tier.amount)}</td>
+                                <td>{tier.requires_household_code ? 'Obrigatório' : 'Gerado se faltar'}</td>
                                 <td>{tier.households}</td>
                                 <td>{tier.status === 'ACTIVE' ? 'Ativo' : 'Desativado'}</td>
                                 <td className="batch-actions">

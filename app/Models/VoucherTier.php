@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Escalão do voucher: o valor que cada agregado do escalão recebe na
  * activação do cartão e em cada recarga. Ver VoucherTierService.
  */
-#[Fillable(['name', 'amount', 'description', 'is_default', 'status', 'created_by'])]
+#[Fillable(['name', 'amount', 'description', 'is_default', 'requires_household_code', 'status', 'created_by'])]
 class VoucherTier extends Model
 {
     use HasUuids;
@@ -22,6 +22,7 @@ class VoucherTier extends Model
         return [
             'amount' => 'decimal:2',
             'is_default' => 'boolean',
+            'requires_household_code' => 'boolean',
             'status' => RecordStatus::class,
         ];
     }

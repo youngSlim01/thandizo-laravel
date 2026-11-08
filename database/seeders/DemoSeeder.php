@@ -75,8 +75,8 @@ class DemoSeeder extends Seeder
 
         // Escalões: 6 agregados a 7 500 MT, 10 no padrão (6 000 MT) e 4 a 3 000 MT.
         $tiers = app(VoucherTierService::class);
-        $tierA = $tiers->create($admin, ['name' => 'Grupo A — muito vulnerável', 'amount' => 7500, 'description' => 'Chefiados por mulheres ou com mais de 6 membros']);
-        $tierC = $tiers->create($admin, ['name' => 'Grupo C — apoio parcial', 'amount' => 3000, 'description' => 'Com outra fonte de rendimento']);
+        $tierA = $tiers->create($admin, ['name' => 'Grupo A — muito vulnerável', 'amount' => 7500, 'description' => 'Chefiados por mulheres ou com mais de 6 membros', 'requires_household_code' => false]);
+        $tierC = $tiers->create($admin, ['name' => 'Grupo C — apoio parcial', 'amount' => 3000, 'description' => 'Com outra fonte de rendimento', 'requires_household_code' => false]);
         $codes = Household::query()->orderBy('household_code')->pluck('id');
         Household::query()->whereIn('id', $codes->take(6))->update(['voucher_tier_id' => $tierA->id]);
         Household::query()->whereIn('id', $codes->take(-4))->update(['voucher_tier_id' => $tierC->id]);

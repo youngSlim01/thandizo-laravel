@@ -16,7 +16,7 @@ export type EditableHousehold = {
 };
 
 // Escalões ativos, enviados pela página dos beneficiários.
-export type TierOption = { id: string; name: string; amount: number; is_default: boolean };
+export type TierOption = { id: string; name: string; amount: number; is_default: boolean; requires_household_code: boolean };
 
 function useTiers(): TierOption[] {
   return usePage<{ tiers?: TierOption[] }>().props.tiers ?? [];
@@ -128,6 +128,9 @@ export function NewHousehold({ onSaved, onCancel }: { onSaved: (m: string, id: s
   const [place, setPlace] = useState<GeoValue>({});
   const tiers = useTiers();
   const [tier, setTier] = useState(() => tiers.find((t) => t.is_default)?.id ?? tiers[0]?.id ?? '');
+  const codeOptional = tiers.find((t) => t.id === tier)?.requires_household_code === false;
+  const [withoutCode, setWithoutCode] = useState(false);
+  const generate = codeOptional && withoutCode;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -136,7 +139,7 @@ export function NewHousehold({ onSaved, onCancel }: { onSaved: (m: string, id: s
     setBusy(true); setError(null);
     try {
       const r = await requestJson<{ household_id: string; household_code: string }>('POST', '/admin/households', {
-        household_code: code, ...fields, community_id: place.community_id, voucher_tier_id: tier,
+        household_code: generate ? '' : code, without_household_code: generate, ...fields, community_id: place.community_id, voucher_tier_id: tier,
       });
       onSaved(`Agregado ${r.household_code} registado.`, r.household_id);
     } catch (err) { setError(errorText(err)); }
@@ -146,17 +149,24 @@ export function NewHousehold({ onSaved, onCancel }: { onSaved: (m: string, id: s
   return (
     <form className="admin-form household-edit" onSubmit={save}>
       <strong>Novo agregado familiar</strong>
-      <label className="form-label" htmlFor="new-code">CODIGO AF</label>
-      <input id="new-code" className="input" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ex.: 1234AF000001" />
-      <PersonFields value={fields} onChange={setFields} idPrefix="new" />
       <TierSelect id="new-tier" value={tier} onChange={setTier} />
+      <label className="form-label" htmlFor="new-code">CODIGO AF</label>
+      <input id="new-code" className="input" value={generate ? '' : code} disabled={generate} onChange={(e) => setCode(e.target.value)}
+        placeholder={generate ? 'Gerado pelo sistema ao registar' : 'Ex.: 1234AF000001'} />
+      {codeOptional && (
+        <label className="checkbox-row">
+          <input type="checkbox" checked={withoutCode} onChange={(e) => setWithoutCode(e.target.checked)} />
+          Não tem CODIGO AF — o sistema gera um (definitivo)
+        </label>
+      )}
+      <PersonFields value={fields} onChange={setFields} idPrefix="new" />
       <div className="form-label">Bairro / povoação</div>
       <GeoFilter geo={geo} value={place} onChange={setPlace} hideEmpty={false} idPrefix="new-geo" />
       <div className="muted-text small-note">Para muitos agregados use a importação de Excel. Um bairro novo entra pela importação.</div>
       {error && <div className="error-box">{error}</div>}
       <div className="admin-form-actions">
         <button type="button" className="secondary-button" onClick={onCancel} disabled={busy}>CANCELAR</button>
-        <button type="submit" className="primary-button" disabled={busy || !place.community_id || !code.trim()}>{busy ? 'A GUARDAR…' : 'REGISTAR AGREGADO'}</button>
+        <button type="submit" className="primary-button" disabled={busy || !place.community_id || (!generate && !code.trim())}>{busy ? 'A GUARDAR…' : 'REGISTAR AGREGADO'}</button>
       </div>
     </form>
   );

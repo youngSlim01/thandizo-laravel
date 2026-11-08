@@ -43,6 +43,7 @@ class SettingsController extends Controller
                 'amount' => (float) $tier->amount,
                 'description' => $tier->description,
                 'is_default' => $tier->is_default,
+                'requires_household_code' => $tier->requires_household_code,
                 'status' => $tier->status->value,
                 'households' => $tier->households_count,
             ]),

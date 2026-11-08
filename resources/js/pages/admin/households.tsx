@@ -13,6 +13,7 @@ import { errorText, requestJson } from '@/lib/http';
 type ImportError = { row: number; field: string; code: string };
 type Summary = {
   rows: number;
+  generated_codes: number;
   new_households: number;
   existing_households: number;
   new_provinces: number;
@@ -28,7 +29,8 @@ type ImportResult = {
   error_count: number;
   errors: ImportError[];
   summary: Summary;
-  by_tier?: { name: string; amount: number; households: number }[];
+  by_tier?: { name: string; amount: number; households: number; generated_codes: number }[];
+  generated_codes?: { row: number; household_code: string; representative_name: string }[];
   existing_codes?: string[];
 };
 type Batch = { id: string; file_name: string | null; row_count: number; created_households: number; existing_households: number; created_at: string };
@@ -45,6 +47,17 @@ const CODE_LABELS: Record<string, string> = {
   NO_TIER_FOR_AMOUNT: 'não há escalão ativo com este valor (crie-o na Configuração)',
 };
 
+// Lista dos códigos gerados, para o MEAL completar o seu ficheiro.
+function downloadGeneratedCodes(codes: { row: number; household_code: string; representative_name: string }[], fileName: string | null) {
+  const quote = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+  const csv = ['LINHA;CODIGO AF;REPRESENTANTE', ...codes.map((c) => [c.row, c.household_code, c.representative_name].map(quote).join(';'))].join('\r\n');
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+  link.download = `codigos-gerados-${(fileName ?? 'importacao').replace(/\.[^.]+$/, '')}.csv`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
 function SummaryView({ summary, committed }: { summary: Summary; committed: boolean }) {
   const geo = [
     ['Províncias', summary.new_provinces],
@@ -59,7 +72,14 @@ function SummaryView({ summary, committed }: { summary: Summary; committed: bool
         <div><span>Linhas</span><strong>{summary.rows}</strong></div>
         <div><span>{committed ? 'Agregados criados' : 'Agregados novos'}</span><strong>{summary.new_households}</strong></div>
         <div><span>Já registados (ignorados)</span><strong>{summary.existing_households}</strong></div>
+        {summary.generated_codes > 0 && <div><span>{committed ? 'CODIGO AF gerados' : 'CODIGO AF a gerar'}</span><strong>{summary.generated_codes}</strong></div>}
       </div>
+      {!committed && summary.generated_codes > 0 && (
+        <div className="warning-box">
+          {summary.generated_codes} {summary.generated_codes === 1 ? 'agregado não tem' : 'agregados não têm'} CODIGO AF: o sistema gera um código definitivo para cada.
+          Confirme que não têm mesmo código oficial: um código gerado nunca é substituído.
+        </div>
+      )}
       {geo.some(([, n]) => n > 0) && (
         <div className="info-box">
           {committed ? 'Geografia criada' : 'Geografia nova a criar'}:{' '}
@@ -130,6 +150,7 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
         Importe a lista do MEAL em <strong>.xlsx</strong> ou <strong>.csv</strong>. Cada linha é o representante de um agregado.
         Colunas: {REQUIRED_HEADERS.map((h) => h.label).join(', ')}. Coluna opcional: {OPTIONAL_HEADERS.map((h) => h.label).join(', ')}, o valor
         do voucher de cada agregado, que o coloca no escalão com esse valor; sem ela, ficam no escalão padrão.
+        O CODIGO AF pode ficar vazio só nos escalões que não o exigem: o sistema gera um código definitivo.
         A lista é validada antes de gravar; se houver um erro, nada é gravado. Agregados cujo CODIGO AF já existe ficam como estão.
       </div>
 
@@ -148,6 +169,13 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
           <button className="quick-link inline-link" onClick={onShowList}>Ver na lista →</button>
         </div>
       )}
+      {result && result.committed && (result.generated_codes?.length ?? 0) > 0 && (
+        <div className="info-box">
+          {result.generated_codes!.length} CODIGO AF gerados. Descarregue a lista e actualize o ficheiro do MEAL com estes códigos,
+          para a próxima importação os reconhecer.{' '}
+          <button className="quick-link inline-link" onClick={() => downloadGeneratedCodes(result.generated_codes!, fileName)}>Descarregar códigos gerados (.csv)</button>
+        </div>
+      )}
 
       {result && (
         <>
@@ -155,10 +183,10 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
           <SummaryView summary={result.summary} committed={result.committed} />
           {(result.by_tier?.length ?? 0) > 0 && (
             <table className="import-errors">
-              <thead><tr><th>Escalão</th><th>Valor</th><th>{result.committed ? 'Agregados criados' : 'Agregados novos'}</th><th>Total por ativação</th></tr></thead>
+              <thead><tr><th>Escalão</th><th>Valor</th><th>{result.committed ? 'Agregados criados' : 'Agregados novos'}</th><th>Sem CODIGO AF</th><th>Total por ativação</th></tr></thead>
               <tbody>
                 {result.by_tier!.map((t) => (
-                  <tr key={t.name}><td>{t.name}</td><td>{formatMT(t.amount)}</td><td>{t.households}</td><td>{formatMT(t.amount * t.households)}</td></tr>
+                  <tr key={t.name}><td>{t.name}</td><td>{formatMT(t.amount)}</td><td>{t.households}</td><td>{t.generated_codes}</td><td>{formatMT(t.amount * t.households)}</td></tr>
                 ))}
               </tbody>
             </table>

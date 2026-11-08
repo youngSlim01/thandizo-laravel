@@ -134,4 +134,66 @@ class VoucherTiersTest extends TestCase
             'changes' => ['voucher_tier_id' => $inactive->id], 'reason' => 'Teste',
         ])->assertUnprocessable()->assertJson(['code' => 'TIER_INACTIVE']);
     }
+
+    private function newHousehold(VoucherTier $tier, array $overrides = []): array
+    {
+        return [
+            'first_name' => 'Ana', 'last_name' => 'Banda', 'sex' => 'F', 'birth_date' => '1985-06-15', 'relationship' => 'Chefe',
+            'community_id' => $this->community->id, 'voucher_tier_id' => $tier->id, ...$overrides,
+        ];
+    }
+
+    public function test_only_a_tier_that_does_not_require_it_registers_a_household_without_code_and_the_code_is_generated(): void
+    {
+        $optional = $this->tiers()->create($this->admin, ['name' => 'Grupo A', 'amount' => 7500, 'requires_household_code' => false]);
+
+        $this->actingAs($this->admin)->postJson('/admin/households', $this->newHousehold($optional, ['without_household_code' => true]))
+            ->assertOk()->assertJson(['household_code' => 'TZ-MUT-000001']);
+        $this->actingAs($this->admin)->postJson('/admin/households', $this->newHousehold($optional, ['without_household_code' => true]))
+            ->assertOk()->assertJson(['household_code' => 'TZ-MUT-000002']);
+        $this->assertTrue(Household::query()->where('household_code', 'TZ-MUT-000001')->value('household_code_generated'));
+
+        $this->actingAs($this->admin)->postJson('/admin/households', $this->newHousehold($this->standard(), ['without_household_code' => true]))
+            ->assertJsonValidationErrors(['message' => 'O escalão Padrão exige CODIGO AF.']);
+        $this->actingAs($this->admin)->postJson('/admin/households', $this->newHousehold($optional, ['household_code' => '']))
+            ->assertJsonValidationErrors(['message' => 'O CODIGO AF tem o formato 1234AF000001.']);
+        $this->assertSame(2, Household::query()->count());
+    }
+
+    public function test_the_import_generates_codes_only_where_the_tier_allows_and_recognises_them_next_time(): void
+    {
+        $this->tiers()->create($this->admin, ['name' => 'Grupo A', 'amount' => 7500, 'requires_household_code' => false]);
+        $row = fn (int $n, string $code, string $amount) => [
+            'row' => $n, 'province' => $this->district->province->name, 'district' => 'Mutarara', 'administrative_post' => 'Posto',
+            'locality' => 'Sede', 'community' => 'Bairro', 'household_code' => $code, 'first_name' => "Nome{$n}", 'last_name' => 'Banda',
+            'gender' => 'F', 'birth_date' => '15/06/1985', 'relationship' => 'Chefe', 'amount' => $amount,
+        ];
+        $import = fn (array $rows, bool $commit) => $this->actingAs($this->admin)
+            ->postJson('/admin/households/import', ['rows' => $rows, 'file_name' => 'lista.xlsx', 'commit' => $commit]);
+
+        $import([$row(2, '', '7500'), $row(3, '', '6000')], false)
+            ->assertJson(['valid' => false, 'errors' => [['row' => 3, 'field' => 'CODIGO AF', 'code' => 'REQUIRED']]]);
+
+        $done = $import([$row(2, '', '7500'), $row(3, '', '7500'), $row(4, '2026AF000001', '6000')], true)
+            ->assertJson(['committed' => true, 'summary' => ['generated_codes' => 2], 'by_tier' => [
+                ['name' => 'Grupo A', 'households' => 2, 'generated_codes' => 2], ['name' => 'Padrão', 'households' => 1, 'generated_codes' => 0],
+            ]])->json('generated_codes');
+        $this->assertSame([[2, 'TZ-MUT-000001', 'Nome2 Banda'], [3, 'TZ-MUT-000002', 'Nome3 Banda']],
+            array_map(fn ($g) => [$g['row'], $g['household_code'], $g['representative_name']], $done));
+
+        $import([$row(2, 'TZ-MUT-000001', '7500'), $row(3, 'TZ-MUT-000099', '7500')], false)
+            ->assertJson(['valid' => false, 'summary' => ['existing_households' => 1], 'errors' => [['row' => 3, 'field' => 'CODIGO AF', 'code' => 'INVALID_HOUSEHOLD_CODE']]]);
+    }
+
+    public function test_whether_a_tier_requires_the_code_is_changed_in_the_settings(): void
+    {
+        $tier = $this->tier('Grupo A', 7500);
+        $this->assertTrue($tier->requires_household_code);
+
+        $this->actingAs($this->admin)->put("/admin/settings/tiers/{$tier->id}", ['name' => 'Grupo A', 'amount' => 7500, 'requires_household_code' => false])
+            ->assertSessionHas('success');
+        $this->assertFalse($tier->fresh()->requires_household_code);
+        $this->actingAs($this->admin)->get('/admin/settings')
+            ->assertInertia(fn ($page) => $page->where('tiers.0.requires_household_code', false));
+    }
 }

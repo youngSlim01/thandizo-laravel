@@ -32,8 +32,11 @@ class HouseholdController extends Controller
         return Inertia::render('admin/households', [
             'canManage' => $request->user()->can('create', Household::class),
             'tiers' => VoucherTier::query()->where('status', RecordStatus::Active)->orderByDesc('amount')
-                ->get(['id', 'name', 'amount', 'is_default'])
-                ->map(fn (VoucherTier $tier): array => ['id' => $tier->id, 'name' => $tier->name, 'amount' => (float) $tier->amount, 'is_default' => $tier->is_default]),
+                ->get(['id', 'name', 'amount', 'is_default', 'requires_household_code'])
+                ->map(fn (VoucherTier $tier): array => [
+                    'id' => $tier->id, 'name' => $tier->name, 'amount' => (float) $tier->amount,
+                    'is_default' => $tier->is_default, 'requires_household_code' => $tier->requires_household_code,
+                ]),
         ]);
     }
 
@@ -89,6 +92,7 @@ class HouseholdController extends Controller
             'relationship' => ['nullable', 'string', 'max:255'],
             'community_id' => ['nullable', 'string'],
             'voucher_tier_id' => ['nullable', 'string'],
+            'without_household_code' => ['nullable', 'boolean'],
         ]);
 
         return $this->respond(function () use ($request, $households, $data): array {

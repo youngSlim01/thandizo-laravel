@@ -34,6 +34,7 @@ type Summary = { active: number; inactive: number; women: number; men: number; w
 
 type Detail = {
   household_code: string;
+  household_code_generated: boolean;
   representative_name: string;
   first_name: string | null;
   last_name: string | null;
@@ -184,6 +185,7 @@ function HouseholdDetail({ row, onClose, onChanged, onDeleted }: {
           <h2>{detail?.representative_name ?? '…'}</h2>
           <div className="muted-text">
             {detail?.household_code}
+            {detail?.household_code_generated && <span className="badge tier-default">gerado pelo sistema</span>}
             {detail && detail.status !== 'ACTIVE' && <span className="badge badge-inativo household-inactive">Inativo</span>}
           </div>
         </div>

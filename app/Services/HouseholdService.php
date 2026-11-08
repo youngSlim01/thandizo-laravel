@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\RecordStatus;
 use App\Models\AuditLog;
 use App\Models\Community;
+use App\Models\District;
 use App\Models\Household;
 use App\Models\User;
 use App\Models\VoucherTier;
@@ -35,21 +36,32 @@ class HouseholdService
         'administrative_post_id', 'district_id', 'province_id', 'voucher_tier_id',
     ];
 
-    public function __construct(private VoucherTierService $tiers) {}
+    public function __construct(private VoucherTierService $tiers, private HouseholdCodeGenerator $codes) {}
 
     /**
-     * Sem escalão, o agregado fica no escalão padrão.
+     * Sem escalão, o agregado fica no escalão padrão. Com
+     * without_household_code, num escalão que não exige CODIGO AF, o sistema
+     * gera o código (definitivo).
      *
-     * @param  array<string, mixed>  $data  household_code, first_name, last_name, sex, birth_date, relationship, community_id, voucher_tier_id
+     * @param  array<string, mixed>  $data  household_code, without_household_code, first_name, last_name, sex, birth_date, relationship, community_id, voucher_tier_id
      */
     public function create(User $actor, array $data): Household
     {
-        $code = HouseholdInput::householdCode($data['household_code'] ?? '');
-        if (! HouseholdInput::isValidHouseholdCode($code)) {
-            throw new InvalidArgumentException('O CODIGO AF tem o formato 1234AF000001.');
-        }
-        if (Household::query()->where('household_code', $code)->exists()) {
-            throw new InvalidArgumentException('Já existe um agregado com este CODIGO AF.');
+        $tier = $this->tiers->assignable($data['voucher_tier_id'] ?? null);
+        $generate = (bool) ($data['without_household_code'] ?? false);
+        $code = null;
+        if ($generate) {
+            if ($tier->requires_household_code) {
+                throw new InvalidArgumentException("O escalão {$tier->name} exige CODIGO AF.");
+            }
+        } else {
+            $code = HouseholdInput::householdCode($data['household_code'] ?? '');
+            if (! HouseholdInput::isValidHouseholdCode($code)) {
+                throw new InvalidArgumentException('O CODIGO AF tem o formato 1234AF000001.');
+            }
+            if (Household::query()->where('household_code', $code)->exists()) {
+                throw new InvalidArgumentException('Já existe um agregado com este CODIGO AF.');
+            }
         }
         $first = HouseholdInput::clean($data['first_name'] ?? null);
         $last = HouseholdInput::clean($data['last_name'] ?? null);
@@ -58,24 +70,27 @@ class HouseholdService
             throw new InvalidArgumentException('Preencha nome, apelido e grau de parentesco.');
         }
 
-        $tier = $this->tiers->assignable($data['voucher_tier_id'] ?? null);
-
         return DB::transaction(function () use ($actor, $data, $code, $first, $last, $relationship, $tier): Household {
+            $location = $this->location($data['community_id'] ?? null);
+            $generated = $code === null;
+            $code ??= $this->codes->next((string) District::query()->whereKey($location['district_id'])->value('name'));
             $household = Household::query()->create([
                 'household_code' => $code,
+                'household_code_generated' => $generated,
                 'representative_name' => "{$first} {$last}",
                 'representative_first_name' => $first,
                 'representative_last_name' => $last,
                 'representative_sex' => $this->gender($data['sex'] ?? null),
                 'representative_birth_date' => $this->birthDate($data['birth_date'] ?? null),
                 'representative_relationship' => $relationship,
-                ...$this->location($data['community_id'] ?? null),
+                ...$location,
                 'voucher_tier_id' => $tier->id,
                 'status' => RecordStatus::Active,
             ]);
 
             $this->audit($actor, 'HOUSEHOLD_CREATED', $household->id, [
                 'household_code' => $code,
+                'household_code_generated' => $generated,
                 'representative_name' => $household->representative_name,
                 'community_id' => $household->community_id,
                 'voucher_tier' => $tier->name,
@@ -234,6 +249,7 @@ class HouseholdService
         return [
             'household_id' => $row->id,
             'household_code' => $row->household_code,
+            'household_code_generated' => (bool) $row->household_code_generated,
             'representative_name' => $row->representative_name,
             'first_name' => $row->representative_first_name,
             'last_name' => $row->representative_last_name,

@@ -9,7 +9,7 @@ A migração técnica (Next.js + Supabase → Laravel + MySQL) está em
 [`MIGRACAO_LARAVEL.md`](MIGRACAO_LARAVEL.md). Este documento fala do sistema
 e do produto.
 
-Última actualização: 8 de Novembro de 2026 (escalões do voucher; CODIGO AF gerado decidido, por implementar).
+Última actualização: 8 de Novembro de 2026 (escalões do voucher e CODIGO AF gerado).
 
 ---
 
@@ -87,15 +87,22 @@ Os beneficiários recebem valores diferentes (ex.: 7 500, 6 000 ou 3 000 MT) con
 | Os escalões são geridos pelo **gestor MEAL e pelo administrador do sistema**, na Configuração. | Decisão do projecto: são regras do programa. |
 | O valor **congela-se no momento** da activação ou da recarga (fica no ledger e no cartão). Mudar o valor de um escalão, ou o escalão de um agregado, só conta para as **próximas** activações e recargas. | O dinheiro já entregue nunca muda por uma alteração de configuração. |
 | Na **importação**, a coluna opcional **VALOR** escolhe o escalão activo com esse valor; sem a coluna, ou com a célula vazia, o agregado fica no **escalão padrão**. Um valor sem escalão activo é um **erro**: nada é gravado. | Os valores vêm da fonte de dados (lista do MEAL). O escalão cria-se primeiro na Configuração, para que um engano no ficheiro (750 em vez de 7500) nunca crie dinheiro. |
-| **Dois escalões activos não podem ter o mesmo valor.** | A importação encontra o escalão pelo valor; dois escalões com o mesmo valor tornariam isso ambíguo. *A rever se for preciso distinguir categorias com o mesmo valor (aí a importação passaria a ter uma coluna ESCALAO).* |
+| **Dois escalões activos não podem ter o mesmo valor.** | A importação encontra o escalão pelo valor; dois escalões com o mesmo valor tornariam isso ambíguo. Confirmado: no programa, grupos diferentes nunca recebem o mesmo valor, por isso a divisão fica só por valor. |
 | Os escalões **nunca se apagam**, desactivam-se, e só quando já não têm agregados activos. Há sempre um **escalão padrão** activo (de início "Padrão", 6 000 MT), que não pode ser desactivado. | Os relatórios antigos continuam a apontar para o escalão; nenhum agregado fica sem valor. |
 | A mudança de escalão de um agregado faz-se em "Editar dados", com motivo, e fica no histórico (escalão antigo → novo). | Auditoria igual à dos outros dados do agregado. |
 | O cartão impresso **não mostra o valor**. | O cartão serve vários ciclos e o escalão pode mudar. |
 
-**CODIGO AF gerado pelo sistema** (decidido a 8/11/2026, por implementar)
-- Alguns beneficiários não têm CODIGO AF: o sistema gera um, com **formato próprio** (ex.: `TZ-MUT-000123`), que nunca se confunde nem colide com um código oficial.
-- O código gerado é **definitivo**: nunca é substituído pelo oficial.
-- Só se gera com **pedido explícito** ("Não tem CODIGO AF" no registo; valor próprio na importação, com a contagem na pré-visualização). Um campo vazio continua a ser erro, para um registo apressado não criar um código definitivo para quem já tinha um.
+**CODIGO AF gerado pelo sistema** (decidido a 8/11/2026)
+
+No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outros escalões alguns não têm.
+
+| Decisão | Razão |
+|---|---|
+| Cada escalão tem a opção **"Exige CODIGO AF"** (o Padrão exige; os outros escalões podem não exigir). | A regra acompanha o escalão e não um valor escrito no código: se o padrão passar de 6 000 para 6 500 MT, continua a funcionar. |
+| Num escalão que não exige CODIGO AF, o agregado sem código recebe um **gerado pelo sistema**, com **formato próprio** `TZ-<DIS>-NNNNNN` (ex.: `TZ-MUT-000123`), numeração única para todo o programa. | Nunca se confunde nem colide com um código oficial (`1234AF000001`). |
+| O código gerado é **definitivo**: nunca é substituído pelo oficial. Fica marcado como gerado (aparece na ficha do agregado). | Decisão do projecto: o CODIGO AF identifica o agregado para sempre. |
+| **Registo manual**: a caixa "Não tem CODIGO AF" só aparece nos escalões que não o exigem. Sem ela, o campo vazio é erro. | Um registo apressado não cria um código definitivo para quem já tinha um. |
+| **Importação**: a célula CODIGO AF pode ficar vazia só nos escalões que não o exigem. A pré-visualização mostra quantos códigos vão ser gerados (por escalão) e pede confirmação; no fim, descarrega-se a lista dos códigos gerados (linha, código, representante). | O MEAL confirma antes de gravar e actualiza o seu ficheiro, para a próxima importação reconhecer os agregados (um código gerado reimportado só é aceite se já existir). |
 
 **Reconciliação (pagamento ao comerciante)**
 - Só **dias já fechados** (até ontem, hora de Moçambique) e só vendas confirmadas ainda não reconciliadas.

@@ -1727,3 +1727,5 @@ select.input { background: var(--surface); }
 .muted-row { opacity: .55; }
 .tier-form { margin-top: 12px; }
 .tier-table .small-note { font-size: 12px; }
+.checkbox-row { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.checkbox-row input { width: 18px; height: 18px; accent-color: var(--primary, #007716); }

@@ -27,6 +27,10 @@ use InvalidArgumentException;
  * agregado fica no escalão activo com esse valor. Sem valor, fica no escalão
  * padrão. Um valor sem escalão é um erro: os escalões criam-se primeiro na
  * Configuração, para um engano no ficheiro não criar dinheiro.
+ *
+ * Um CODIGO AF vazio só é aceite num escalão que não exige CODIGO AF: ao
+ * gravar, o sistema gera o código (TZ-MUT-000001, definitivo) e devolve a
+ * lista dos códigos gerados, para o MEAL actualizar a sua lista.
  */
 class HouseholdImportService
 {
@@ -36,7 +40,11 @@ class HouseholdImportService
 
     private const PLACE_LEVELS = ['province', 'district', 'administrative_post', 'locality', 'community'];
 
-    public function __construct(private GeographyService $geography, private VoucherTierService $tiers) {}
+    public function __construct(
+        private GeographyService $geography,
+        private VoucherTierService $tiers,
+        private HouseholdCodeGenerator $codes,
+    ) {}
 
     /**
      * @param  list<array<string, mixed>>  $rawRows
@@ -53,8 +61,8 @@ class HouseholdImportService
 
         $rows = array_map($this->parseRow(...), $rawRows, array_keys($rawRows));
         $rows = $this->assignTiers($rows);
-        $errors = $this->validate($actor, $rows);
         $existingCodes = $this->existingCodes(array_column($rows, 'household_code'));
+        $errors = $this->validate($actor, $rows, $existingCodes);
         $summary = $this->summary($rows, $existingCodes);
         $byTier = $this->byTier($rows, $existingCodes);
 
@@ -82,6 +90,7 @@ class HouseholdImportService
             $communities = [];
             $now = now();
             $inserts = [];
+            $generated = [];
             foreach ($rows as $row) {
                 if (isset($existingCodes[$row['household_code']])) {
                     continue;
@@ -90,10 +99,16 @@ class HouseholdImportService
                 $communities[$key] ??= $this->geography->resolveCommunity(array_intersect_key($row, array_flip(self::PLACE_LEVELS)))
                     ->load('locality', 'district');
                 $community = $communities[$key];
+                $code = $row['household_code'];
+                if ($code === '') {
+                    $code = $this->codes->next($community->district->name);
+                    $generated[] = ['row' => $row['row'], 'household_code' => $code, 'representative_name' => "{$row['first_name']} {$row['last_name']}"];
+                }
 
                 $inserts[] = [
                     'id' => (string) Str::uuid7(),
-                    'household_code' => $row['household_code'],
+                    'household_code' => $code,
+                    'household_code_generated' => $row['household_code'] === '',
                     'representative_name' => "{$row['first_name']} {$row['last_name']}",
                     'representative_first_name' => $row['first_name'],
                     'representative_last_name' => $row['last_name'],
@@ -123,7 +138,10 @@ class HouseholdImportService
                 'action' => 'HOUSEHOLDS_IMPORTED',
                 'entity_type' => 'HOUSEHOLD_IMPORT_BATCH',
                 'entity_id' => $batch->id,
-                'metadata' => ['file_name' => $fileName, 'summary' => $summary, 'by_tier' => $byTier, 'created' => $created],
+                'metadata' => [
+                    'file_name' => $fileName, 'summary' => $summary, 'by_tier' => $byTier, 'created' => $created,
+                    'generated_codes' => array_column($generated, 'household_code'),
+                ],
             ]);
 
             return [
@@ -134,6 +152,7 @@ class HouseholdImportService
                 'errors' => [],
                 'summary' => [...$summary, 'new_households' => $created],
                 'by_tier' => $byTier,
+                'generated_codes' => $generated,
             ];
         });
     }
@@ -185,7 +204,11 @@ class HouseholdImportService
         return array_map(function (array $row) use ($default, $byAmount): array {
             $tier = $row['amount_text'] === null ? $default : ($row['amount'] === null ? null : ($byAmount[number_format($row['amount'], 2, '.', '')] ?? null));
 
-            return [...$row, 'voucher_tier_id' => $tier?->id, 'voucher_tier' => $tier?->name, 'voucher_amount' => $tier === null ? null : (float) $tier->amount];
+            return [
+                ...$row, 'voucher_tier_id' => $tier?->id, 'voucher_tier' => $tier?->name,
+                'voucher_amount' => $tier === null ? null : (float) $tier->amount,
+                'generates_code' => $row['household_code'] === '' && $tier !== null && ! $tier->requires_household_code,
+            ];
         }, $rows);
     }
 
@@ -194,7 +217,7 @@ class HouseholdImportService
      *
      * @param  list<array<string, mixed>>  $rows
      * @param  array<string, string>  $existingCodes
-     * @return list<array{name: string, amount: float, households: int}>
+     * @return list<array{name: string, amount: float, households: int, generated_codes: int}>
      */
     private function byTier(array $rows, array $existingCodes): array
     {
@@ -203,8 +226,9 @@ class HouseholdImportService
             if ($row['voucher_tier_id'] === null || isset($existingCodes[$row['household_code']])) {
                 continue;
             }
-            $groups[$row['voucher_tier_id']] ??= ['name' => $row['voucher_tier'], 'amount' => $row['voucher_amount'], 'households' => 0];
+            $groups[$row['voucher_tier_id']] ??= ['name' => $row['voucher_tier'], 'amount' => $row['voucher_amount'], 'households' => 0, 'generated_codes' => 0];
             $groups[$row['voucher_tier_id']]['households']++;
+            $groups[$row['voucher_tier_id']]['generated_codes'] += $row['generates_code'] ? 1 : 0;
         }
         usort($groups, fn (array $a, array $b): int => $b['amount'] <=> $a['amount']);
 
@@ -216,9 +240,10 @@ class HouseholdImportService
      * ecrã traduz).
      *
      * @param  list<array<string, mixed>>  $rows
+     * @param  array<string, string>  $existingCodes
      * @return list<array{row: int, field: string, code: string}>
      */
-    private function validate(User $actor, array $rows): array
+    private function validate(User $actor, array $rows, array $existingCodes): array
     {
         $required = [
             'province' => 'PROVINCIA', 'district' => 'DISTRITO', 'administrative_post' => 'P. ADMINISTRATIVO',
@@ -240,10 +265,12 @@ class HouseholdImportService
                     $add($label, 'REQUIRED');
                 }
             }
+            // Um código gerado só aparece numa lista reimportada: tem de existir.
             $code = $row['household_code'];
-            if ($code === '') {
+            if ($code === '' && ! $row['generates_code'] && $row['voucher_tier_id'] !== null) {
                 $add('CODIGO AF', 'REQUIRED');
-            } elseif (! HouseholdInput::isValidHouseholdCode($code)) {
+            } elseif ($code !== '' && ! HouseholdInput::isValidHouseholdCode($code)
+                && ! (HouseholdCodeGenerator::isGenerated($code) && isset($existingCodes[$code]))) {
                 $add('CODIGO AF', 'INVALID_HOUSEHOLD_CODE');
             }
             if ($code !== '' && $copies[$code] > 1) {
@@ -302,6 +329,7 @@ class HouseholdImportService
             'rows' => count($rows),
             'new_households' => count($rows) - count($existingCodes),
             'existing_households' => count($existingCodes),
+            'generated_codes' => count(array_filter(array_column($rows, 'generates_code'))),
         ];
 
         $models = [

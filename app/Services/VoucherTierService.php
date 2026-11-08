@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\DB;
  * Regras: dois escalões activos nunca têm o mesmo valor (a importação
  * encontra o escalão pelo valor da coluna VALOR); um escalão nunca se apaga,
  * desactiva-se, e só quando já não tem agregados activos; há sempre um
- * escalão padrão, activo, para os registos sem valor. Mudar o valor só
+ * escalão padrão, activo, para os registos sem valor. Um escalão que não
+ * exige CODIGO AF aceita agregados sem código: o sistema gera-lhes um. Mudar o valor só
  * afecta as próximas activações e recargas: o que já está nos cartões fica.
  */
 class VoucherTierService
@@ -65,7 +66,7 @@ class VoucherTierService
     }
 
     /**
-     * @param  array{name?: string|null, amount?: mixed, description?: string|null}  $data
+     * @param  array{name?: string|null, amount?: mixed, description?: string|null, requires_household_code?: bool|null}  $data
      */
     public function create(User $actor, array $data): VoucherTier
     {
@@ -78,18 +79,22 @@ class VoucherTierService
 
             $tier = VoucherTier::query()->create([
                 'name' => $name, 'amount' => $amount, 'description' => $this->description($data['description'] ?? null),
+                'requires_household_code' => (bool) ($data['requires_household_code'] ?? true),
                 'status' => RecordStatus::Active, 'created_by' => $actor->id,
             ]);
-            Audit::log($actor->id, 'VOUCHER_TIER_CREATED', 'VOUCHER_TIER', $tier->id, ['name' => $name, 'amount' => $amount]);
+            Audit::log($actor->id, 'VOUCHER_TIER_CREATED', 'VOUCHER_TIER', $tier->id, [
+                'name' => $name, 'amount' => $amount, 'requires_household_code' => $tier->requires_household_code,
+            ]);
 
             return $tier;
         });
     }
 
     /**
-     * Nome, valor e descrição. Fica na auditoria o antes e o depois.
+     * Nome, valor, descrição e se exige CODIGO AF. Fica na auditoria o antes
+     * e o depois. Os códigos já gerados ficam (são definitivos).
      *
-     * @param  array{name?: string|null, amount?: mixed, description?: string|null}  $data
+     * @param  array{name?: string|null, amount?: mixed, description?: string|null, requires_household_code?: bool|null}  $data
      */
     public function update(User $actor, VoucherTier $tier, array $data): VoucherTier
     {
@@ -103,9 +108,16 @@ class VoucherTierService
                 $this->ensureAmountFree($amount, $tier->id);
             }
 
-            $before = ['name' => $tier->name, 'amount' => (float) $tier->amount, 'description' => $tier->description];
-            $tier->fill(['name' => $name, 'amount' => $amount, 'description' => $this->description($data['description'] ?? null)]);
-            $after = ['name' => $tier->name, 'amount' => (float) $tier->amount, 'description' => $tier->description];
+            $snapshot = fn (): array => [
+                'name' => $tier->name, 'amount' => (float) $tier->amount, 'description' => $tier->description,
+                'requires_household_code' => $tier->requires_household_code,
+            ];
+            $before = $snapshot();
+            $tier->fill([
+                'name' => $name, 'amount' => $amount, 'description' => $this->description($data['description'] ?? null),
+                'requires_household_code' => (bool) ($data['requires_household_code'] ?? $tier->requires_household_code),
+            ]);
+            $after = $snapshot();
             if ($before === $after) {
                 return $tier;
             }

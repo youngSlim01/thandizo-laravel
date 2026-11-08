@@ -48,7 +48,7 @@ class VoucherTierController extends Controller
     }
 
     /**
-     * @return array{name: string|null, amount: mixed, description: string|null}
+     * @return array{name: string|null, amount: mixed, description: string|null, requires_household_code: bool|null}
      */
     private function fields(Request $request): array
     {
@@ -56,11 +56,15 @@ class VoucherTierController extends Controller
             'name' => ['nullable', 'string', 'max:80'],
             'amount' => ['nullable'],
             'description' => ['nullable', 'string', 'max:255'],
+            'requires_household_code' => ['nullable', 'boolean'],
         ], [
             'name.max' => 'O nome do escalão tem no máximo 80 caracteres.',
             'description.max' => 'A descrição tem no máximo 255 caracteres.',
         ]);
 
-        return ['name' => $data['name'] ?? null, 'amount' => $data['amount'] ?? null, 'description' => $data['description'] ?? null];
+        return [
+            'name' => $data['name'] ?? null, 'amount' => $data['amount'] ?? null, 'description' => $data['description'] ?? null,
+            'requires_household_code' => isset($data['requires_household_code']) ? (bool) $data['requires_household_code'] : null,
+        ];
     }
 }
