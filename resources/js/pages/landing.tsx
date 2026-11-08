@@ -128,11 +128,8 @@ export default function Landing() {
             <main>
                 <section className="lp-hero" id="inicio">
                     <div className="lp-hero-copy">
-                        <h1>Uma plataforma integrada para gestão de programas, assistência e monitoria de impacto.</h1>
-                        <p>
-                            Do registo dos beneficiários ao pagamento aos comerciantes: processos, dados e equipas num único sistema,
-                            seguro e orientado a resultados.
-                        </p>
+                        <h1>Cada apoio chega a quem precisa. E fica provado.</h1>
+                        <p>Beneficiários, vouchers e pagamentos aos comerciantes num só sistema, com cada metical registado, aprovado e auditável.</p>
                         <div className="lp-actions">
                             <a className="lp-button" href="#sobre">Conhecer a solução <Icon size={18}>{icons.arrow}</Icon></a>
                             <Link className="lp-button lp-button-outline" href="/login">Entrar no sistema</Link>
