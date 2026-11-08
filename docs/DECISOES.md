@@ -179,6 +179,7 @@ Dois perfis de administração, com papéis distintos:
 |---|---|
 | **Laravel Cloud**: confirmar que o MySQL gerido aceita `log_bin_trust_function_creators` | Necessário para os triggers. Testar num ambiente `staging` a partir deste branch. |
 | **Fornecedor de e-mail** | Para a recuperação da palavra-passe. |
+| **Monitorização no painel técnico** | Sincronização, serviços, backups, saúde da aplicação e histórico de utilização ficam "N/D" / "Não monitorizado" até ao deploy; ligam-se à monitorização do alojamento (Laravel Cloud). Nunca mostrar números inventados. (8/11/2026) |
 | **Logótipo original em vector** | Substituir o desenho actual pelo ficheiro do designer. |
 | **Deck de apresentação** | Actualizar com o novo logótipo, a nova foto e "comerciante". |
 | **Administrador de produção** | Criar com `php artisan thandizo:create-admin` no ambiente do Laravel Cloud; não correr os seeders em produção. |
