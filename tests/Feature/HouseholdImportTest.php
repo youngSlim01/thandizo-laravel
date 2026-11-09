@@ -10,6 +10,7 @@ use App\Models\HouseholdImportBatch;
 use App\Models\Province;
 use App\Models\User;
 use App\Models\VoucherTier;
+use App\Services\VoucherTierService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -42,7 +43,11 @@ class HouseholdImportTest extends TestCase
     private function import(array $rows, bool $commit, ?User $user = null): TestResponse
     {
         return $this->actingAs($user ?? User::factory()->role(UserRole::MealManager)->create())
-            ->postJson('/admin/households/import', ['rows' => $rows, 'file_name' => 'lista.xlsx', 'commit' => $commit]);
+            ->postJson('/admin/households/import', [
+                'rows' => $rows, 'file_name' => 'lista.xlsx', 'commit' => $commit,
+                // As linhas destes testes não têm VALOR: o ecrã pergunta o grupo.
+                'tier_id' => app(VoucherTierService::class)->default()->id,
+            ]);
     }
 
     public function test_an_operator_cannot_import(): void

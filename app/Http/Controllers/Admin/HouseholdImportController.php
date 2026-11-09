@@ -24,10 +24,11 @@ class HouseholdImportController extends Controller
             'rows' => ['present', 'array'],
             'file_name' => ['nullable', 'string', 'max:255'],
             'commit' => ['required', 'boolean'],
+            'tier_id' => ['nullable', 'string'],
         ]);
 
         try {
-            return response()->json($import->import($request->user(), $data['rows'], $data['file_name'] ?? null, (bool) $data['commit']));
+            return response()->json($import->import($request->user(), $data['rows'], $data['file_name'] ?? null, (bool) $data['commit'], $data['tier_id'] ?? null));
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages(['rows' => $exception->getMessage()]);
         }

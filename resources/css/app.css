@@ -1861,3 +1861,7 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 .vc-foot span:first-child{white-space:nowrap}
 .vc-foot span:last-child{max-width:27cqw;padding-left:3cqw;border-left:.3cqw solid #fff}
 .vc-foot b{font-family:"Courier New",monospace;font-size:3.9cqw;text-align:center;padding-left:3cqw;border-left:.3cqw solid #fff;white-space:nowrap}
+/* Importação de beneficiários: grupo dos agregados sem valor */
+.tier-choice{display:grid;gap:8px}
+.tier-choice select{max-width:360px}
+.tier-choice small{color:var(--text-soft)}

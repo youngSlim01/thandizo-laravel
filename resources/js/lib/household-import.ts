@@ -68,7 +68,7 @@ export const REQUIRED_HEADERS: { field: Field; label: string }[] = [
 ];
 
 // Coluna opcional: o valor do voucher do agregado, que escolhe o escalão.
-// Sem ela, os agregados ficam no escalão padrão.
+// Sem ela (ou com a célula vazia), o ecrã pergunta o grupo desses agregados.
 export const OPTIONAL_HEADERS: { field: Field; label: string }[] = [
   { field: 'amount', label: 'VALOR' },
 ];

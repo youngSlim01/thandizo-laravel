@@ -193,6 +193,28 @@ class VoucherTiersTest extends TestCase
             ->assertJson(['valid' => false, 'summary' => ['existing_households' => 1], 'errors' => [['row' => 3, 'field' => 'CODIGO AF', 'code' => 'INVALID_HOUSEHOLD_CODE']]]);
     }
 
+    public function test_rows_without_value_wait_for_the_group_chosen_on_screen_and_rows_with_value_keep_theirs(): void
+    {
+        $groupA = $this->tier('Grupo A', 7500);
+        $groupC = $this->tier('Grupo C', 3000);
+        $row = fn (int $n, ?string $amount) => [
+            'row' => $n, 'province' => $this->district->province->name, 'district' => 'Mutarara', 'administrative_post' => 'Posto',
+            'locality' => 'Sede', 'community' => 'Bairro', 'household_code' => sprintf('2026AF%06d', $n), 'first_name' => "Nome{$n}", 'last_name' => 'Banda',
+            'gender' => 'F', 'birth_date' => '15/06/1985', 'relationship' => 'Chefe', ...($amount === null ? [] : ['amount' => $amount]),
+        ];
+        $rows = [$row(2, '7500'), $row(3, null), $row(4, null)];
+        $import = fn (bool $commit, ?string $tierId) => $this->actingAs($this->admin)
+            ->postJson('/admin/households/import', ['rows' => $rows, 'file_name' => 'lista.xlsx', 'commit' => $commit, 'tier_id' => $tierId]);
+
+        $import(false, null)->assertJson(['valid' => false, 'needs_tier' => true, 'rows_without_amount' => 2, 'error_count' => 0]);
+        $import(true, null)->assertUnprocessable()->assertJsonValidationErrors(['rows' => 'Escolha o grupo dos 2 agregado(s) sem valor no ficheiro.']);
+        $this->assertSame(0, Household::query()->count());
+
+        $import(true, $groupC->id)->assertJson(['committed' => true]);
+        $this->assertSame($groupA->id, Household::query()->where('household_code', '2026AF000002')->value('voucher_tier_id'));
+        $this->assertSame([$groupC->id, $groupC->id], Household::query()->whereIn('household_code', ['2026AF000003', '2026AF000004'])->pluck('voucher_tier_id')->all());
+    }
+
     public function test_whether_a_tier_requires_the_code_is_changed_in_the_settings(): void
     {
         $tier = $this->tier('Grupo A', 7500);

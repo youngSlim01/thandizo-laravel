@@ -11,6 +11,7 @@ use App\Models\HouseholdImportBatch;
 use App\Models\Locality;
 use App\Models\Province;
 use App\Models\User;
+use App\Models\VoucherTier;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -47,10 +48,15 @@ class HouseholdImportService
     ) {}
 
     /**
+     * As linhas com VALOR vão para o escalão activo com esse valor; as linhas
+     * sem valor (sem a coluna, ou com a célula vazia) vão para o escalão
+     * escolhido no ecrã ($tierId). Sem escolha, nada se grava: o ecrã
+     * pergunta o grupo (decidido a 9/11/2026; antes iam para o padrão).
+     *
      * @param  list<array<string, mixed>>  $rawRows
      * @return array<string, mixed> forma da antiga import_households
      */
-    public function import(User $actor, array $rawRows, ?string $fileName, bool $commit): array
+    public function import(User $actor, array $rawRows, ?string $fileName, bool $commit, ?string $tierId = null): array
     {
         if ($rawRows === []) {
             throw new InvalidArgumentException('O ficheiro não tem linhas de agregados.');
@@ -60,7 +66,17 @@ class HouseholdImportService
         }
 
         $rows = array_map($this->parseRow(...), $rawRows, array_keys($rawRows));
-        $rows = $this->assignTiers($rows);
+        $chosen = null;
+        if ($tierId !== null && $tierId !== '') {
+            $chosen = $this->tiers->list()->first(fn ($tier) => $tier->id === $tierId && $tier->status->value === 'ACTIVE')
+                ?? throw new InvalidArgumentException('Escolha um grupo activo.');
+        }
+        $rows = $this->assignTiers($rows, $chosen);
+        $withoutAmount = count(array_filter($rows, fn (array $row): bool => $row['amount_text'] === null));
+        $needsTier = $withoutAmount > 0 && $chosen === null;
+        if ($needsTier && $commit) {
+            throw new InvalidArgumentException("Escolha o grupo dos {$withoutAmount} agregado(s) sem valor no ficheiro.");
+        }
         $existingCodes = $this->existingCodes(array_column($rows, 'household_code'));
         $errors = $this->validate($actor, $rows, $existingCodes);
         $summary = $this->summary($rows, $existingCodes);
@@ -69,7 +85,9 @@ class HouseholdImportService
 
         if ($errors !== [] || ! $commit) {
             return [
-                'valid' => $errors === [],
+                'valid' => $errors === [] && ! $needsTier,
+                'rows_without_amount' => $withoutAmount,
+                'needs_tier' => $needsTier,
                 'committed' => false,
                 'error_count' => count($errors),
                 'errors' => array_slice($errors, 0, self::MAX_ERRORS_SHOWN),
@@ -188,14 +206,13 @@ class HouseholdImportService
 
     /**
      * Escalão de cada linha: o activo com o valor da coluna VALOR, ou o
-     * padrão quando a linha não tem valor.
+     * escolhido no ecrã quando a linha não tem valor (null até se escolher).
      *
      * @param  list<array<string, mixed>>  $rows
      * @return list<array<string, mixed>>
      */
-    private function assignTiers(array $rows): array
+    private function assignTiers(array $rows, ?VoucherTier $chosen): array
     {
-        $default = $this->tiers->default();
         $byAmount = [];
         foreach ($this->tiers->list() as $tier) {
             if ($tier->status->value === 'ACTIVE') {
@@ -203,8 +220,8 @@ class HouseholdImportService
             }
         }
 
-        return array_map(function (array $row) use ($default, $byAmount): array {
-            $tier = $row['amount_text'] === null ? $default : ($row['amount'] === null ? null : ($byAmount[number_format($row['amount'], 2, '.', '')] ?? null));
+        return array_map(function (array $row) use ($chosen, $byAmount): array {
+            $tier = $row['amount_text'] === null ? $chosen : ($row['amount'] === null ? null : ($byAmount[number_format($row['amount'], 2, '.', '')] ?? null));
 
             return [
                 ...$row, 'voucher_tier_id' => $tier?->id, 'voucher_tier' => $tier?->name,
@@ -330,7 +347,7 @@ class HouseholdImportService
             }
             if ($row['amount_text'] !== null && $row['amount'] === null) {
                 $add('VALOR', 'INVALID_AMOUNT');
-            } elseif ($row['voucher_tier_id'] === null) {
+            } elseif ($row['amount_text'] !== null && $row['voucher_tier_id'] === null) {
                 $add('VALOR', 'NO_TIER_FOR_AMOUNT');
             }
             if ($actor->isProvinceScoped() && $row['province'] !== null && $this->key($row['province']) !== $scopeProvince) {

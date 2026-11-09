@@ -9,7 +9,7 @@ A migração técnica (Next.js + Supabase → Laravel + MySQL) está em
 [`MIGRACAO_LARAVEL.md`](MIGRACAO_LARAVEL.md). Este documento fala do sistema
 e do produto.
 
-Última actualização: 9 de Novembro de 2026 (comerciante, terminal e gestor do comerciante).
+Última actualização: 9 de Novembro de 2026 (grupo na importação de beneficiários; cartão do voucher).
 
 ---
 
@@ -87,7 +87,7 @@ Os beneficiários recebem valores diferentes (ex.: 7 500, 6 000 ou 3 000 MT) con
 | O valor mora num **escalão** (nome, valor, descrição); cada agregado pertence a um escalão. Não há valor por agregado nem por ciclo. | Mudar o valor de um grupo é uma só alteração, não centenas; os relatórios por escalão saem directamente. |
 | Os escalões são geridos pelo **gestor MEAL e pelo administrador do sistema**, na Configuração. | Decisão do projecto: são regras do programa. |
 | O valor **congela-se no momento** da activação ou da recarga (fica no ledger e no cartão). Mudar o valor de um escalão, ou o escalão de um agregado, só conta para as **próximas** activações e recargas. | O dinheiro já entregue nunca muda por uma alteração de configuração. |
-| Na **importação**, a coluna opcional **VALOR** escolhe o escalão activo com esse valor; sem a coluna, ou com a célula vazia, o agregado fica no **escalão padrão**. Um valor sem escalão activo é um **erro**: nada é gravado. | Os valores vêm da fonte de dados (lista do MEAL). O escalão cria-se primeiro na Configuração, para que um engano no ficheiro (750 em vez de 7500) nunca crie dinheiro. |
+| Na **importação**, a coluna opcional **VALOR** escolhe o escalão activo com esse valor. Para as linhas **sem valor** (sem a coluna, ou com a célula vazia), o ecrã **pergunta a que grupo pertencem**, sem nenhum pré-seleccionado, e nada se grava sem essa escolha (actualizado a 9/11/2026; antes iam para o escalão padrão). Um valor sem escalão activo é um **erro**: nada é gravado. | Os valores vêm da fonte de dados (lista do MEAL). O escalão cria-se primeiro na Configuração, para que um engano no ficheiro (750 em vez de 7500) nunca crie dinheiro. Ir para o padrão sem perguntar punha uma lista do Grupo A a 6 000 MT sem ninguém dar conta. |
 | **Dois escalões activos não podem ter o mesmo valor.** | A importação encontra o escalão pelo valor; dois escalões com o mesmo valor tornariam isso ambíguo. Confirmado: no programa, grupos diferentes nunca recebem o mesmo valor, por isso a divisão fica só por valor. |
 | Os escalões **nunca se apagam**, desactivam-se, e só quando já não têm agregados activos. Há sempre um **escalão padrão** activo (de início "Padrão", 6 000 MT), que não pode ser desactivado. | Os relatórios antigos continuam a apontar para o escalão; nenhum agregado fica sem valor. |
 | A mudança de escalão de um agregado faz-se em "Editar dados", com motivo, e fica no histórico (escalão antigo → novo). | Auditoria igual à dos outros dados do agregado. |

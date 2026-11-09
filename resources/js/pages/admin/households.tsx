@@ -1,4 +1,4 @@
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { type ChangeEvent, useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '@/components/admin-layout';
 import { HouseholdList } from '@/components/households/household-list';
@@ -22,8 +22,11 @@ type Summary = {
   new_localities: number;
   new_communities: number;
 };
+type Tier = { id: string; name: string; amount: number };
 type ImportResult = {
   valid: boolean;
+  rows_without_amount?: number;
+  needs_tier?: boolean;
   committed: boolean;
   batch_id?: string;
   error_count: number;
@@ -98,6 +101,9 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [batches, setBatches] = useState<Batch[]>([]);
+  // Grupo dos agregados sem VALOR no ficheiro: escolhido a cada ficheiro, sem nenhum pré-seleccionado.
+  const tiers = usePage<{ tiers: Tier[] }>().props.tiers;
+  const [tierId, setTierId] = useState('');
 
   const loadBatches = useCallback(() => {
     requestJson<Batch[]>('GET', '/admin/households/import/batches').then(setBatches).catch(() => setBatches([]));
@@ -109,7 +115,7 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    setFileName(file.name); setRows(null); setResult(null); setError(null);
+    setFileName(file.name); setRows(null); setResult(null); setError(null); setTierId('');
     setBusy('A ler o ficheiro…');
     try {
       const parsed = await readHouseholdFile(file);
@@ -122,7 +128,20 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
       }
       setRows(parsed.rows);
       setBusy(`A validar ${parsed.rows.length} linhas…`);
-      setResult(await requestJson<ImportResult>('POST', '/admin/households/import', { rows: parsed.rows, file_name: file.name, commit: false }));
+      setResult(await requestJson<ImportResult>('POST', '/admin/households/import', { rows: parsed.rows, file_name: file.name, commit: false, tier_id: null }));
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function chooseTier(id: string) {
+    setTierId(id);
+    if (!rows) return;
+    setError(null); setBusy('A validar…');
+    try {
+      setResult(await requestJson<ImportResult>('POST', '/admin/households/import', { rows, file_name: fileName, commit: false, tier_id: id || null }));
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -134,7 +153,7 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
     if (!rows) return;
     setError(null); setBusy('A importar…');
     try {
-      const done = await requestJson<ImportResult>('POST', '/admin/households/import', { rows, file_name: fileName, commit: true });
+      const done = await requestJson<ImportResult>('POST', '/admin/households/import', { rows, file_name: fileName, commit: true, tier_id: tierId || null });
       setResult(done);
       setRows(null);
       loadBatches();
@@ -150,7 +169,7 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
       <div className="info-box">
         Importe a lista do MEAL em <strong>.xlsx</strong> ou <strong>.csv</strong>. Cada linha é o representante de um agregado.
         Colunas: {REQUIRED_HEADERS.map((h) => h.label).join(', ')}. Coluna opcional: {OPTIONAL_HEADERS.map((h) => h.label).join(', ')}, o valor
-        do voucher de cada agregado, que o coloca no escalão com esse valor; sem ela, ficam no escalão padrão.
+        do voucher de cada agregado, que o coloca no escalão com esse valor. Para os agregados sem valor no ficheiro, o sistema pergunta a que grupo pertencem.
         O CODIGO AF pode ficar vazio só nos escalões que não o exigem: o sistema gera um código definitivo.
         A lista é validada antes de gravar; se houver um erro, nada é gravado. Agregados cujo CODIGO AF já existe ficam como estão.
       </div>
@@ -181,6 +200,18 @@ function HouseholdImport({ onShowList }: { onShowList: () => void }) {
       {result && (
         <>
           <h2>{result.committed ? 'Resultado' : 'Pré-visualização'}</h2>
+          {!result.committed && (result.rows_without_amount ?? 0) > 0 && (
+            <div className={tierId ? 'info-box tier-choice' : 'warning-box tier-choice'}>
+              <label htmlFor="import-tier">
+                <strong>{result.rows_without_amount} agregado(s) sem valor no ficheiro.</strong> A que grupo pertencem?
+              </label>
+              <select id="import-tier" className="input" value={tierId} onChange={(e) => chooseTier(e.target.value)} disabled={busy !== null}>
+                <option value="">Escolha o grupo…</option>
+                {tiers.map((t) => <option key={t.id} value={t.id}>{t.name} · {formatMT(t.amount)}</option>)}
+              </select>
+              {(result.rows_without_amount ?? 0) < result.summary.rows && <small>Os restantes ficam no grupo do valor que vem no ficheiro.</small>}
+            </div>
+          )}
           <SummaryView summary={result.summary} committed={result.committed} />
           {(result.by_tier?.length ?? 0) > 0 && (
             <table className="import-errors">
