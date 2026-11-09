@@ -1750,3 +1750,11 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 .md-map .moz-label{display:none}
 .cd-grid-3 .cd-table th,.cd-grid-3 .cd-table td{padding:8px 6px;font-size:13px;white-space:normal}
 .cd-grid-3 .cd-table th{font-size:10.5px}
+
+/* Fix: keep MEAL catalogue actions beside the title, never above it */
+.admin-shell>.admin-page-heading.catalog-heading{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:24px!important;padding-right:0!important;margin:0 0 22px!important}
+.catalog-heading>div:first-child{flex:1;min-width:0}
+.catalog-heading .catalog-actions{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;flex:0 0 auto!important;width:auto!important;max-width:100%!important}
+.catalog-heading .catalog-actions button{display:inline-flex!important;align-items:center;justify-content:center;width:auto!important;min-width:0!important;flex:0 0 auto!important;white-space:nowrap;padding:0 16px!important;min-height:40px!important}
+@media(max-width:900px){.admin-shell>.admin-page-heading.catalog-heading{align-items:flex-start!important;flex-direction:column!important}.catalog-heading .catalog-actions{width:100%!important;justify-content:flex-start!important;flex-wrap:wrap}.catalog-heading .catalog-actions button{flex:1 1 auto!important}}
+@media(max-width:600px){.catalog-heading .catalog-actions{display:grid!important;grid-template-columns:1fr 1fr!important;width:100%!important}.catalog-heading .catalog-actions button:first-child{grid-column:1/-1}}
