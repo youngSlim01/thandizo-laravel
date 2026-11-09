@@ -73,62 +73,72 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
     const x = MARGIN_X + (slot % COLS) * (CARD_W + GAP_X);
     const y = MARGIN_Y + Math.floor(slot / COLS) * (CARD_H + GAP_Y);
 
-    // Cut line
-    doc.setDrawColor(170).setLineWidth(0.2).setLineDashPattern([1.2, 1.2], 0);
+    // Moldura de corte discreta
+    doc.setDrawColor(190).setLineWidth(0.25).setLineDashPattern([1.1, 1.1], 0);
     doc.roundedRect(x, y, CARD_W, CARD_H, 3, 3, 'S');
     doc.setLineDashPattern([], 0);
 
-    // Header band with the logos, or the programme name while there are none
+    // Cabeçalho institucional moderno
     doc.setFillColor(...BRAND);
-    doc.roundedRect(x, y, CARD_W, 12, 3, 3, 'F');
-    doc.rect(x, y + 6, CARD_W, 6, 'F');
+    doc.roundedRect(x, y, CARD_W, 13, 3, 3, 'F');
+    doc.rect(x, y + 7, CARD_W, 6, 'F');
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x + 2, y + 1.5, 20, 9.5, 1.4, 1.4, 'F');
+
     if (logos.length > 0) {
       let lx = x + 3;
-      for (const logo of logos) {
-        const h = 8;
-        const w = Math.min(h * logo.ratio, 26);
-        doc.setFillColor(255, 255, 255);
-        doc.roundedRect(lx - 0.8, y + 1.2, w + 1.6, h + 1.6, 1, 1, 'F');
-        doc.addImage(logo.data, 'PNG', lx, y + 2, w, h);
-        lx += w + 3;
+      for (const logo of logos.slice(0, 2)) {
+        const h = 7.5;
+        const w = Math.min(h * logo.ratio, 17);
+        if (lx + w > x + 23) break;
+        doc.addImage(logo.data, 'PNG', lx, y + 2.5, w, h);
+        lx += w + 1.5;
       }
+    } else {
+      doc.setFont('helvetica', 'bold').setFontSize(5.5).setTextColor(...BRAND);
+      doc.text('LINK GCF', x + 12, y + 7.2, { align: 'center' });
     }
-    doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(255);
-    doc.text('Thandizo', x + CARD_W - 3, y + 5.2, { align: 'right' });
-    doc.setFont('Lato', 'normal').setFontSize(6.5);
-    if (subtitle) doc.text(subtitle.toUpperCase(), x + CARD_W - 3, y + 9, { align: 'right' });
 
-    // Representative and household
+    doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(255);
+    doc.text('THANDIZO', x + CARD_W - 3, y + 5.2, { align: 'right' });
+    doc.setFont('helvetica', 'normal').setFontSize(5.2);
+    if (subtitle) doc.text(subtitle.toUpperCase(), x + CARD_W - 3, y + 9.5, { align: 'right', maxWidth: 38 });
+
+    // Dados do agregado: nome, código AF e localização
     const left = x + 4;
-    const textWidth = CARD_W - 4 - 30;
-    doc.setTextColor(110).setFontSize(6);
-    doc.text('REPRESENTANTE', left, y + 17);
-    doc.setTextColor(20).setFont('helvetica', 'bold').setFontSize(9);
+    const textWidth = CARD_W - 35;
+    doc.setFont('helvetica', 'normal').setTextColor(105).setFontSize(5.2);
+    doc.text('REPRESENTANTE DO AGREGADO', left, y + 17);
+    doc.setFont('helvetica', 'bold').setTextColor(25).setFontSize(8.2);
     const name = doc.splitTextToSize(card.representative_name.toUpperCase(), textWidth).slice(0, 2);
     doc.text(name, left, y + 21);
-    let cursor = y + 21 + (name.length - 1) * 3.8 + 5;
+    const nameBottom = y + 21 + (name.length - 1) * 3.3;
 
-    doc.setFont('helvetica', 'normal').setTextColor(110).setFontSize(6);
-    doc.text('CÓDIGO DO AF', left, cursor);
-    doc.setTextColor(20).setFont('helvetica', 'bold').setFontSize(8.5);
-    doc.text(card.household_code, left, cursor + 3.6);
-    cursor += 8;
+    doc.setFont('helvetica', 'normal').setTextColor(105).setFontSize(5.2);
+    doc.text('CÓDIGO DO AF', left, nameBottom + 4.2);
+    doc.setFont('helvetica', 'bold').setTextColor(25).setFontSize(7.4);
+    doc.text(card.household_code, left, nameBottom + 7.5);
 
     const place = [card.community, card.locality].filter(Boolean).join(', ');
     const region = [card.district, card.province].filter(Boolean).join(' · ');
-    doc.setFont('helvetica', 'normal').setTextColor(60).setFontSize(6.5);
-    doc.text(doc.splitTextToSize(place || '—', textWidth).slice(0, 1), left, cursor);
-    doc.text(doc.splitTextToSize(region || '—', textWidth).slice(0, 1), left, cursor + 3);
+    doc.setFont('helvetica', 'normal').setTextColor(65).setFontSize(5.4);
+    doc.text(doc.splitTextToSize(place || '—', textWidth).slice(0, 1), left, y + 39);
+    doc.text(doc.splitTextToSize(region || '—', textWidth).slice(0, 1), left, y + 42);
 
-    // Voucher code, as typed at the POS
-    doc.setFont('courier', 'bold').setTextColor(...BRAND).setFontSize(11);
-    doc.text(card.voucher_code, left, y + CARD_H - 4);
+    // QR de validação, isolado numa área limpa
+    const qr = await QRCode.toDataURL(card.voucher_code, { errorCorrectionLevel: 'M', margin: 1, width: 320 });
+    doc.setDrawColor(155, 220, 170).setLineWidth(0.35);
+    doc.roundedRect(x + CARD_W - 27, y + 15, 24, 24, 1.8, 1.8, 'S');
+    doc.addImage(qr, 'PNG', x + CARD_W - 25.5, y + 16.5, 21, 21);
+    doc.setFont('helvetica', 'normal').setTextColor(85).setFontSize(4.6);
+    doc.text('VÁLIDO PARA ESTE AGREGADO', x + CARD_W - 15, y + 41, { align: 'center', maxWidth: 25 });
 
-    // QR code with the voucher code
-    const qr = await QRCode.toDataURL(card.voucher_code, { errorCorrectionLevel: 'M', margin: 0, width: 320 });
-    doc.addImage(qr, 'PNG', x + CARD_W - 27, y + 15.5, 23, 23);
-    doc.setFont('helvetica', 'normal').setTextColor(110).setFontSize(5.5);
-    doc.text('Válido apenas para o agregado indicado', x + CARD_W - 15.5, y + 42, { align: 'center', maxWidth: 26 });
+    // Rodapé verde: código único do voucher
+    doc.setFillColor(...BRAND);
+    doc.roundedRect(x, y + CARD_H - 9.5, CARD_W, 9.5, 3, 3, 'F');
+    doc.rect(x, y + CARD_H - 9.5, CARD_W, 3, 'F');
+    doc.setFont('courier', 'bold').setTextColor(255).setFontSize(9.5);
+    doc.text(card.voucher_code, x + CARD_W / 2, y + CARD_H - 3.3, { align: 'center' });
   }
 
   return doc;
