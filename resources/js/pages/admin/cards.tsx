@@ -7,6 +7,7 @@ import { formatDateTime, formatMT } from '@/lib/format';
 import { errorText, requestJson } from '@/lib/http';
 import { RELATIONSHIPS, relationshipLabel } from '@/lib/substitute';
 import { cardSubtitle, useBrand } from '@/lib/brand';
+import { ThandizoMark } from '@/components/thandizo-mark';
 import { downloadCardsPdf, type VoucherCard } from '@/lib/voucher-cards';
 import type { SharedProps } from '@/types';
 
@@ -224,7 +225,7 @@ function VoucherCardFace({ card, logos, subtitle }: { card: VoucherCard; logos: 
             <div className="vc-head">
                 <div className="vc-logos">{logos.slice(0, 3).map((src) => <img key={src} src={src} alt="" />)}</div>
                 <div className="vc-brand">
-                    <svg viewBox="0 0 24 24" className="vc-leaf" aria-hidden="true"><path d="M3 21C4 11 11 4 21 3c-1 10-8 17-18 18Z" fill="currentColor" /><path d="M5 19 17 7" stroke="#005b37" strokeWidth="1.4" /></svg>
+                    <ThandizoMark className="vc-mark" />
                     <div><strong>Thandizo</strong><small>{subtitle.toUpperCase()}</small></div>
                 </div>
             </div>

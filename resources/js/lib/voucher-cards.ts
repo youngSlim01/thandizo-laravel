@@ -55,6 +55,32 @@ async function loadLogo(src: string): Promise<Logo | null> {
   }
 }
 
+// Símbolo oficial do Thandizo (public/thandizo-icon.svg), quadrado, em PNG de
+// 400 px: o SVG não tem tamanho próprio, por isso desenha-se com tamanho fixo.
+async function loadMark(): Promise<Logo | null> {
+  try {
+    const svg = await (await fetch('/thandizo-icon.svg')).text();
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image(400, 400);
+        el.onload = () => resolve(el);
+        el.onerror = reject;
+        el.src = url;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = 400;
+      canvas.height = 400;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, 400, 400);
+      return { data: canvas.toDataURL('image/png'), ratio: 1 };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  } catch {
+    return null;
+  }
+}
+
 type Doc = InstanceType<typeof import('jspdf').jsPDF>;
 type Rgb = [number, number, number];
 
@@ -84,13 +110,6 @@ function pinIcon(doc: Doc, cx: number, cy: number) {
   doc.circle(cx, cy - 0.6, 0.55, 'S');
 }
 
-function leafIcon(doc: Doc, x: number, y: number, size: number) {
-  doc.setFillColor(...ACCENT);
-  doc.lines([[size * 0.15, -size * 0.75, size * 0.7, -size * 0.95, size, -size], [-size * 0.05, size * 0.55, -size * 0.4, size * 0.95, -size, size]], x, y, [1, 1], 'F', true);
-  doc.setDrawColor(...BRAND).setLineWidth(0.25);
-  doc.line(x + size * 0.12, y - size * 0.12, x + size * 0.78, y - size * 0.78);
-}
-
 function tagIcon(doc: Doc, x: number, cy: number) {
   doc.setDrawColor(255, 255, 255).setLineWidth(0.3);
   doc.lines([[2.2, -1.3], [1.3, 0], [0, 2.6], [-1.3, 0], [-2.2, -1.3]], x, cy, [1, 1], 'S', true);
@@ -114,11 +133,11 @@ function miniQrIcon(doc: Doc, x: number, y: number) {
 // logoUrls: logótipos do cliente, da esquerda para a direita (Configuração).
 export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitle: string, logoUrls: string[]) {
   const [{ jsPDF }, QRCode] = await Promise.all([import('jspdf'), import('qrcode')]);
-  const logos = (await Promise.all(logoUrls.map(loadLogo))).filter((l): l is Logo => l !== null);
+  const [mark, ...clientLogos] = await Promise.all([loadMark(), ...logoUrls.map(loadLogo)]);
+  const logos = clientLogos.filter((l): l is Logo => l !== null);
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const perPage = COLS * ROWS;
   const pages = Math.max(1, Math.ceil(cards.length / perPage));
-  const R = 3.2;
 
   for (let i = 0; i < cards.length; i++) {
     const card = cards[i];
@@ -131,9 +150,8 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
     const x = MARGIN_X + (slot % COLS) * (CARD_W + GAP_X);
     const y = MARGIN_Y + Math.floor(slot / COLS) * (CARD_H + GAP_Y);
 
-    // Fundo branco com cantos redondos e ondas suaves.
-    doc.setFillColor(255, 255, 255).setDrawColor(222).setLineWidth(0.2);
-    doc.roundedRect(x, y, CARD_W, CARD_H, R, R, 'FD');
+    // Fundo branco, cantos rectos, e ondas suaves (a borda desenha-se no fim, por cima).
+    doc.setFillColor(255, 255, 255).rect(x, y, CARD_W, CARD_H, 'F');
     doc.setDrawColor(...WAVE).setLineWidth(0.2);
     for (let k = 0; k < 5; k++) {
       doc.lines([[12, -2 - k * 0.3, 28, 2 - k * 0.2, 50, -3 - k * 0.4]], x + 0.5, y + 45.6 - k * 0.6, [1, 1], 'S', false);
@@ -142,8 +160,7 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
     // Cabeçalho: logótipos à esquerda, painel verde inclinado à direita.
     const headH = 11;
     doc.setFillColor(...BRAND);
-    doc.roundedRect(x + 60, y, CARD_W - 60, headH, R, R, 'F');
-    doc.rect(x + 60, y + R, CARD_W - 60, headH - R, 'F');
+    doc.rect(x + 60, y, CARD_W - 60, headH, 'F');
     doc.lines([[5, 0, 5, -headH, 10, -headH], [2.5, 0], [0, headH]], x + 52.5, y + headH, [1, 1], 'F', true);
     doc.setFillColor(...ACCENT).rect(x, y + headH - 0.45, 54.5, 0.45, 'F');
     let lx = x + 4;
@@ -155,11 +172,12 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
       lx += w + 2.2;
       doc.setDrawColor(200).setLineWidth(0.2).line(lx - 1.1, y + 2.4, lx - 1.1, y + 8.2);
     }
-    leafIcon(doc, x + 61.2, y + 7.9, 3.8);
-    doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(255);
-    doc.text('Thandizo', x + 82.5, y + 5.6, { align: 'right' });
-    doc.setFont('helvetica', 'normal').setFontSize(4.8);
-    doc.text((subtitle || 'Projecto LINK GCF').toUpperCase(), x + 82.5, y + 8.7, { align: 'right', maxWidth: 22 });
+    // Logótipo oficial do Thandizo (símbolo e nome), no canto superior direito.
+    if (mark) doc.addImage(mark.data, 'PNG', x + 60.2, y + 2.3, 6.4, 6.4);
+    doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(255);
+    doc.text('Thandizo', x + 67.6, y + 5.5);
+    doc.setFont('helvetica', 'normal').setFontSize(4.1);
+    doc.text((subtitle || 'Projecto LINK GCF').toUpperCase(), x + 67.7, y + 8.5, { maxWidth: 16 });
 
     // Dados do agregado, cada um com o seu ícone.
     const left = x + 13;
@@ -203,9 +221,7 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
 
     // Rodapé verde em três partes: código do voucher ao centro.
     const footY = y + CARD_H - 7.8;
-    doc.setFillColor(...BRAND);
-    doc.roundedRect(x, footY, CARD_W, 7.8, R, R, 'F');
-    doc.rect(x, footY, CARD_W, R, 'F');
+    doc.setFillColor(...BRAND).rect(x, footY, CARD_W, 7.8, 'F');
     const mid = footY + 3.9;
     tagIcon(doc, x + 3.2, mid);
     doc.setFont('helvetica', 'normal').setFontSize(4.2).setTextColor(255);
@@ -216,9 +232,12 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
     doc.setFont('courier', 'bold').setFontSize(8.6);
     doc.text(card.voucher_code, x + 42.75, mid + 1.1, { align: 'center', maxWidth: 32 });
     sproutIcon(doc, x + 62.5, mid);
-    doc.setFont('helvetica', 'normal').setFontSize(4.2);
-    doc.text('Voucher para aquisição de', x + 65.2, mid - 0.3);
-    doc.text('insumos agrícolas', x + 65.2, mid + 1.8);
+    doc.setFont('helvetica', 'normal').setFontSize(3.6);
+    doc.text('Voucher para aquisição de', x + 65.2, mid - 0.2);
+    doc.text('insumos agrícolas', x + 65.2, mid + 1.6);
+
+    // Borda sólida, de cantos rectos, por cima de tudo.
+    doc.setDrawColor(130).setLineWidth(0.3).rect(x, y, CARD_W, CARD_H, 'S');
   }
 
   return doc;

@@ -1832,15 +1832,15 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 .terminal-line{font-size:12px;color:var(--muted)}
 
 /* Cartão do voucher no ecrã: o mesmo desenho do PDF (85 × 54 mm) */
-.vc{container-type:inline-size;width:min(100%,520px);aspect-ratio:85/54;position:relative;display:flex;flex-direction:column;border:1px solid #dedede;border-radius:3.8cqw;overflow:hidden;background:#fff;color:#1c211e;box-shadow:0 5px 18px rgba(16,24,40,.09);font-family:Helvetica,Arial,sans-serif}
+.vc{container-type:inline-size;width:min(100%,520px);aspect-ratio:85/54;position:relative;display:flex;flex-direction:column;border:.25cqw solid #828282;border-radius:0;overflow:hidden;background:#fff;color:#1c211e;box-shadow:0 5px 18px rgba(16,24,40,.09);font-family:Helvetica,Arial,sans-serif}
 .card-preview-modal .vc{width:100%}
 .vc-head{height:20.4%;display:flex;align-items:stretch;justify-content:space-between;border-bottom:.55cqw solid #70be41}
 .vc-logos{display:flex;align-items:center;gap:2.6cqw;padding:0 0 0 4.7cqw}
 .vc-logos img{height:7.3cqw;max-width:17.6cqw;object-fit:contain;padding-right:2.6cqw;border-right:1px solid #c8c8c8}
 .vc-brand{display:flex;align-items:center;gap:1.6cqw;padding:0 3cqw 0 9cqw;background:#005b37;color:#fff;clip-path:polygon(12% 100%,22% 0,100% 0,100% 100%);margin-bottom:-.6cqw}
-.vc-leaf{width:4.6cqw;height:4.6cqw;color:#70be41}
-.vc-brand div{display:grid;justify-items:end}
-.vc-brand strong{font-size:4.6cqw;line-height:1.1}
+.vc-mark{width:8cqw;height:8cqw;flex:none}
+.vc-brand div{display:grid;justify-items:start}
+.vc-brand strong{font-size:4.3cqw;line-height:1.1}
 .vc-brand small{font-size:2.2cqw;letter-spacing:.02em}
 .vc-body{flex:1;display:flex;gap:2cqw;padding:3cqw 2.5cqw 0 4.7cqw;min-height:0}
 .vc-info{flex:1;display:grid;grid-template-columns:7.5cqw 1fr;column-gap:3cqw;row-gap:2.2cqw;align-content:start;padding-right:3cqw;border-right:.25cqw solid #70be41;margin-bottom:5cqw;min-width:0}
@@ -1858,6 +1858,7 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 .vc-valid{width:100%;padding:1.4cqw 2cqw;border-radius:2cqw;background:#e1f5e5;font-size:2.3cqw;line-height:1.3;text-align:center}
 .vc-foot{height:14.4%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:3cqw;padding:0 3.6cqw;background:#005b37;color:#fff}
 .vc-foot span{font-size:2cqw;line-height:1.3}
+.vc-foot span:last-child{font-size:1.7cqw}
 .vc-foot span:first-child{white-space:nowrap}
 .vc-foot span:last-child{max-width:27cqw;padding-left:3cqw;border-left:.3cqw solid #fff}
 .vc-foot b{font-family:"Courier New",monospace;font-size:3.9cqw;text-align:center;padding-left:3cqw;border-left:.3cqw solid #fff;white-space:nowrap}
