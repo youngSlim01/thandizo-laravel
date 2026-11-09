@@ -17,6 +17,7 @@ use App\Services\CardService;
 use App\Services\CycleService;
 use App\Services\PriceService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Cenário de dinheiro para os testes dos níveis 7 a 11: um distrito do
@@ -58,7 +59,20 @@ trait MoneyScenario
         app(PriceService::class)->setPrice($this->admin, $this->product, $this->district, 1000);
         app(CycleService::class)->open($this->admin, 'Ciclo 1', null, null);
         $this->travelBack();
+        // Feira do distrito durante todo o ano: os testes vendem em várias datas.
+        $this->fairAllYear();
         $this->agrodealer->catalogue()->attach($this->product->id);
+    }
+
+    /**
+     * Feira do distrito no ciclo aberto de 1 de Janeiro a 31 de Dezembro.
+     */
+    protected function fairAllYear(): void
+    {
+        DB::table('cycle_districts')->updateOrInsert(
+            ['cycle_id' => DB::table('programme_cycles')->where('status', 'OPEN')->value('id'), 'district_id' => $this->district->id],
+            ['id' => (string) Str::uuid7(), 'fair_starts_on' => now()->startOfYear()->toDateString(), 'fair_ends_on' => now()->endOfYear()->toDateString(), 'created_at' => now(), 'updated_at' => now()],
+        );
     }
 
     protected function household(array $overrides = []): Household

@@ -37,6 +37,7 @@ class PosService
         private LedgerService $ledger,
         private ProvinceScope $scope,
         private HouseholdSearchService $households,
+        private CyclePlanService $plans,
     ) {}
 
     /**
@@ -87,6 +88,7 @@ class PosService
             throw new DomainRuleException('AGRODEALER_NOT_ALLOWED');
         }
         $this->requireAgrodealerAndPos($agrodealerId, $posId);
+        $this->requireFair((string) $agrodealerId);
         $voucher = $this->sellableVoucher($voucherCode, lock: false);
         $quote = $this->quote($voucher, (string) $agrodealerId, $items, $discountType, $discountValue);
 
@@ -320,6 +322,7 @@ class PosService
 
         $voucher = $this->sellableVoucher($voucherCode, lock: true);
         $this->requireAgrodealerAndPos($agrodealerId, $posId);
+        $this->requireFair($agrodealerId);
         $quote = $this->quote($voucher, $agrodealerId, $items, $discountType, $discountValue);
 
         $transactionId = (string) Str::uuid7();
@@ -488,6 +491,14 @@ class PosService
         }
 
         return $voucher;
+    }
+
+    /**
+     * Só se vende nos dias da feira do distrito do comerciante.
+     */
+    private function requireFair(string $agrodealerId): void
+    {
+        $this->plans->requireFairToday(DB::table('agrodealers')->where('id', $agrodealerId)->value('district_id'));
     }
 
     private function requireAgrodealerAndPos(?string $agrodealerId, ?string $posId): void

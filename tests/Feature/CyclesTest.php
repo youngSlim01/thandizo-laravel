@@ -100,6 +100,7 @@ class CyclesTest extends TestCase
     public function test_the_manager_renames_the_cycle_and_sets_its_scope_and_dates(): void
     {
         $cycle = $this->openCycleId();
+        DB::table('cycle_districts')->delete();
         $officer = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $this->district->province_id]);
         $edit = ['name' => 'AA - Janela 1', 'description' => 'Acções antecipadas à seca, Out–Dez', 'starts_on' => '2026-10-01', 'ends_on' => '2026-12-31'];
 

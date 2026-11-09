@@ -1,7 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { PosHeader } from '@/components/pos/pos-header';
 import { changePos, signOut } from '@/components/pos/pos-layout';
-import { formatMT } from '@/lib/format';
+import { formatDate, formatMT } from '@/lib/format';
 import { isToday, type RecentSale } from '@/lib/sales';
 import type { SharedProps } from '@/types';
 
@@ -12,7 +12,20 @@ function greeting(): string {
     return 'Boa noite';
 }
 
-export default function PosHome({ sales }: { sales: RecentSale[] }) {
+type Fair = { district: string | null; status: 'none' | 'planned' | 'ongoing' | 'finished'; starts_on?: string; ends_on?: string };
+
+// Só se vende nos dias da feira do distrito do comerciante.
+function fairText(fair: Fair): string {
+    const where = fair.district ? ` de ${fair.district}` : '';
+    switch (fair.status) {
+        case 'ongoing': return `Feira${where} a decorrer até ${formatDate(fair.ends_on)}.`;
+        case 'planned': return `Feira${where} marcada de ${formatDate(fair.starts_on)} a ${formatDate(fair.ends_on)}. As vendas abrem nesse dia.`;
+        case 'finished': return `A feira${where} terminou a ${formatDate(fair.ends_on)}. As vendas estão fechadas.`;
+        default: return `Ainda não há feira marcada${where}. As vendas estão fechadas.`;
+    }
+}
+
+export default function PosHome({ sales, fair }: { sales: RecentSale[]; fair: Fair }) {
     const user = usePage<SharedProps>().props.auth.user;
     const today = sales.filter((s) => s.status === 'CONFIRMED' && isToday(s.confirmed_at));
     const voucherTotal = today.reduce((sum, s) => sum + Number(s.voucher_amount), 0);
@@ -31,11 +44,20 @@ export default function PosHome({ sales }: { sales: RecentSale[] }) {
                     <div className="online-badge"><span className="online-dot" /> POS online</div>
                 </div>
 
-                <Link href="/pos/voucher" className="new-sale-button link-button home-sale-cta">
-                    <span className="new-sale-icon">+</span>
-                    <span><strong>Nova venda</strong><small>Validar voucher e registar uma compra</small></span>
-                    <span className="new-sale-arrow">›</span>
-                </Link>
+                <div className={fair.status === 'ongoing' ? 'pos-fair pos-fair-open' : 'pos-fair'}>{fairText(fair)}</div>
+
+                {fair.status === 'ongoing' ? (
+                    <Link href="/pos/voucher" className="new-sale-button link-button home-sale-cta">
+                        <span className="new-sale-icon">+</span>
+                        <span><strong>Nova venda</strong><small>Validar voucher e registar uma compra</small></span>
+                        <span className="new-sale-arrow">›</span>
+                    </Link>
+                ) : (
+                    <div className="new-sale-button home-sale-cta pos-sale-closed" aria-disabled="true">
+                        <span className="new-sale-icon">+</span>
+                        <span><strong>Nova venda</strong><small>Só nos dias da feira</small></span>
+                    </div>
+                )}
 
                 <div className="dashboard-grid">
                     <div className="metric-card">

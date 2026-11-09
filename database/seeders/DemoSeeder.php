@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\CardLogoService;
 use App\Services\CardService;
 use App\Services\ClientProfileService;
+use App\Services\CyclePlanService;
 use App\Services\CycleService;
 use App\Services\PosService;
 use App\Services\PriceService;
@@ -59,6 +60,7 @@ class DemoSeeder extends Seeder
         }
 
         // Tudo começa no início do mês passado, para haver vendas já fechadas.
+        $realToday = now('Africa/Maputo')->toDateString();
         Carbon::setTestNow(now()->subMonthNoOverflow()->startOfMonth()->setTime(8, 0));
 
         $prices = app(PriceService::class);
@@ -81,7 +83,12 @@ class DemoSeeder extends Seeder
         Household::query()->whereIn('id', $codes->take(6))->update(['voucher_tier_id' => $tierA->id]);
         Household::query()->whereIn('id', $codes->take(-4))->update(['voucher_tier_id' => $tierC->id]);
 
-        app(CycleService::class)->open($admin, 'AA - Janela 1', now()->toDateString(), now()->addDays(75)->toDateString(), 'Acções antecipadas à seca, Out–Dez');
+        $cycle = app(CycleService::class)->open($admin, 'AA - Janela 1', now()->toDateString(), now()->addDays(75)->toDateString(), 'Acções antecipadas à seca, Out–Dez');
+        // Feira de Mutarara do início do ciclo até depois de amanhã (as vendas de
+        // exemplo e o POS de hoje precisam dela) e meta de 25 agregados.
+        app(CyclePlanService::class)->save($admin, $cycle['cycle_id'], $district->id, [
+            'target_households' => 25, 'fair_starts_on' => now()->toDateString(), 'fair_ends_on' => Carbon::parse($realToday)->addDays(2)->toDateString(),
+        ]);
 
         $cards = app(CardService::class);
         $batch = $cards->generateBatch($admin, $community->id);

@@ -87,6 +87,13 @@ class CycleService
                 if ($new['ends_on'] !== null && $new['ends_on'] < $new['starts_on']) {
                     throw new DomainRuleException('INVALID_PERIOD');
                 }
+                $outside = DB::table('cycle_districts')->where('cycle_id', $cycle->id)->whereNotNull('fair_starts_on')
+                    ->where(fn ($q) => $q->where('fair_starts_on', '<', $new['starts_on'])
+                        ->when($new['ends_on'], fn ($q) => $q->orWhere('fair_ends_on', '>', $new['ends_on'])))
+                    ->exists();
+                if ($outside) {
+                    throw new DomainRuleException('CYCLE_FAIRS_OUTSIDE');
+                }
             } elseif (($data['starts_on'] ?? $cycle->starts_on) != $cycle->starts_on || ($data['ends_on'] ?? $cycle->ends_on) != $cycle->ends_on) {
                 throw new DomainRuleException('CYCLE_CLOSED_DATES');
             }

@@ -1697,3 +1697,21 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 .catalog-empty .primary-button{width:auto;padding:0 16px}
 @media(max-width:900px){.catalog-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-heading{align-items:flex-start;flex-direction:column}.catalog-actions{width:100%}}
 @media(max-width:560px){.catalog-summary{gap:8px}.catalog-stat{padding:12px}.catalog-stat strong{font-size:22px}.catalog-section-head{padding:15px;align-items:flex-start;flex-direction:column}.catalog-toolbar{padding:0 15px 13px;align-items:stretch;flex-direction:column}.catalog-search{max-width:none}.catalog-hint{align-self:flex-end}.catalog-actions button{flex:1}}
+/* Metas e feiras por distrito (Ciclos) */
+.plan-line{display:grid;grid-template-columns:minmax(120px,1.2fr) 1fr 1fr 1fr auto auto;gap:12px;align-items:end;padding:12px 0;border-bottom:1px solid var(--border-soft)}
+.plan-line:last-child{border-bottom:0}
+.plan-line label span{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.plan-district strong{display:block;font-size:15px}
+.plan-district small{color:var(--muted);font-size:12px}
+.plan-status{align-self:center;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;white-space:nowrap;background:var(--surface-muted);color:var(--muted)}
+.plan-planned{background:var(--info-soft);color:var(--info)}
+.plan-ongoing{background:var(--brand);color:#fff}
+.plan-finished{background:var(--warning-soft);color:var(--warning)}
+.plan-reason,.plan-note,.plan-error{grid-column:1/-1}
+.plan-note{color:var(--muted);font-size:12px}
+@media(max-width:900px){.plan-line{grid-template-columns:1fr 1fr}.plan-district{grid-column:1/-1}}
+
+/* Feira no início do POS */
+.pos-fair{margin:0 0 14px;padding:12px 14px;border-radius:12px;font-size:14px;font-weight:600;background:var(--warning-soft);color:var(--warning);border:1px solid var(--warning-border)}
+.pos-fair-open{background:var(--brand-soft);color:var(--brand);border-color:var(--brand-border)}
+.pos-sale-closed{opacity:.5;cursor:not-allowed;filter:grayscale(1)}

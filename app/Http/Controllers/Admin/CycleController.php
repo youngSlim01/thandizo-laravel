@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\CyclePlanService;
 use App\Services\CycleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -20,12 +21,33 @@ class CycleController extends Controller
 {
     public function __construct(private CycleService $cycles) {}
 
-    public function index(Request $request): Response
+    public function index(Request $request, CyclePlanService $plans): Response
     {
+        $cycles = $this->cycles->list($request->user());
+        $open = collect($cycles)->firstWhere('status', 'OPEN');
+
         return Inertia::render('admin/cycles', [
-            'cycles' => $this->cycles->list($request->user()),
+            'cycles' => $cycles,
             'canManage' => Gate::allows('meal-manager'),
+            // Metas e feiras do ciclo aberto, por distrito (os dois perfis MEAL marcam).
+            'plan' => $open ? $plans->forCycle($request->user(), $open['cycle_id']) : [],
         ]);
+    }
+
+    /**
+     * Meta de agregados e datas da feira de um distrito no ciclo aberto.
+     */
+    public function savePlan(Request $request, string $cycle, string $district, CyclePlanService $plans): RedirectResponse
+    {
+        $data = $request->validate([
+            'target_households' => ['nullable'],
+            'fair_starts_on' => ['nullable', 'date'],
+            'fair_ends_on' => ['nullable', 'date'],
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+        $plans->save($request->user(), $cycle, $district, $data);
+
+        return back()->with('success', 'Planeamento do distrito guardado.');
     }
 
     public function store(Request $request): RedirectResponse

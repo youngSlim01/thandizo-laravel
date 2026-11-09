@@ -9,7 +9,7 @@ A migração técnica (Next.js + Supabase → Laravel + MySQL) está em
 [`MIGRACAO_LARAVEL.md`](MIGRACAO_LARAVEL.md). Este documento fala do sistema
 e do produto.
 
-Última actualização: 8 de Novembro de 2026 (escalões do voucher, CODIGO AF gerado e painel MEAL por ciclo).
+Última actualização: 9 de Novembro de 2026 (feiras e metas por distrito).
 
 ---
 
@@ -105,6 +105,18 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 | **Registo manual**: a caixa "Não tem CODIGO AF" só aparece nos escalões que não o exigem. Sem ela, o campo vazio é erro. | Um registo apressado não cria um código definitivo para quem já tinha um. |
 | **Importação**: a célula CODIGO AF pode ficar vazia só nos escalões que não o exigem. A pré-visualização mostra quantos códigos vão ser gerados (por escalão) e pede confirmação; no fim, descarrega-se a lista dos códigos gerados (linha, código, representante). | O MEAL confirma antes de gravar e actualiza o seu ficheiro, para a próxima importação reconhecer os agregados (um código gerado reimportado só é aceite se já existir). |
 | **Aviso de possível duplicado** na pré-visualização: uma linha sem CODIGO AF com o mesmo nome, apelido, data de nascimento e bairro de um agregado já registado (ou de outra linha do ficheiro). É um **aviso, não um erro**: o MEAL decide, e o botão passa a "Importar mesmo assim". | Se a lista for reimportada sem os códigos gerados, a mesma pessoa ficaria registada duas vezes, com dois códigos definitivos. Não é erro porque duas pessoas diferentes podem ter os mesmos dados. |
+
+**Feiras e metas por distrito** (decidido a 9/11/2026)
+
+| Decisão | Razão |
+|---|---|
+| As compras acontecem em **feiras** de poucos dias: **uma feira por distrito em cada ciclo**, com datas marcadas pelo **gestor MEAL ou pelo oficial MEAL** (este só na sua província). | É assim que o programa funciona no terreno. |
+| **Só se vende nos dias da feira** do distrito do comerciante, no ciclo aberto. Fora deles, o POS recusa a venda e diz quando é a feira (ou que terminou). O início do POS avisa antes. | Os comerciantes não vendem fora da feira. |
+| Quando a feira acaba, o distrito fica **travado**: sem vendas, e os saldos **não expiram**; a direcção do programa decide depois o que fazer com o saldo e os faltosos (prolongar ou marcar nova data, ou fechar o ciclo, que faz expirar o saldo). | Decisão da direcção, executada pelo MEAL no sistema. |
+| Mudar as datas de uma feira **que já começou** (prolongar) só o **gestor MEAL** (ou administrador), com **motivo** registado na auditoria. | É executar uma decisão da direcção. |
+| As datas da feira ficam **dentro das datas do ciclo**; mudar as datas do ciclo não pode deixar feiras de fora. | Coerência do ciclo. |
+| Cada ciclo tem uma **meta de agregados por distrito**, no mesmo sítio das feiras ("Metas e feiras por distrito", no ecrã do ciclo). | As metas do programa são por distrito e ciclo; o painel mostra "% da meta". |
+| A internet no local da feira é garantida (Starlink): o POS continua a funcionar só com ligação. | Evita um POS sem rede, muito mais complexo. |
 
 **Reconciliação (pagamento ao comerciante)**
 - Só **dias já fechados** (até ontem, hora de Moçambique) e só vendas confirmadas ainda não reconciliadas.

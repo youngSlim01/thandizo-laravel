@@ -83,6 +83,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/cycles', [CycleController::class, 'index'])->name('cycles.index');
         Route::post('/cycles', [CycleController::class, 'store'])->name('cycles.store');
         Route::put('/cycles/{cycle}', [CycleController::class, 'update'])->whereUuid('cycle')->name('cycles.update');
+        Route::put('/cycles/{cycle}/districts/{district}', [CycleController::class, 'savePlan'])->whereUuid(['cycle', 'district'])->name('cycles.plan');
         Route::post('/cycles/{cycle}/allocation/preview', [CycleController::class, 'previewAllocation'])->whereUuid('cycle')->name('cycles.allocation.preview');
         Route::post('/cycles/{cycle}/allocation', [CycleController::class, 'allocate'])->whereUuid('cycle')->name('cycles.allocation');
         Route::get('/cycles/{cycle}/closing', [CycleController::class, 'previewClose'])->whereUuid('cycle')->name('cycles.closing.preview');

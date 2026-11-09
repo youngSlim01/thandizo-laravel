@@ -6,11 +6,13 @@ use App\Exceptions\DomainRuleException;
 use App\Http\Controllers\Controller;
 use App\Models\AgrodealerPos;
 use App\Services\CatalogueService;
+use App\Services\CyclePlanService;
 use App\Services\PosService;
 use App\Services\PosTerminal;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,11 +27,18 @@ use Inertia\Response;
  */
 class PosController extends Controller
 {
-    public function __construct(private PosService $pos, private PosTerminal $terminal) {}
+    public function __construct(private PosService $pos, private PosTerminal $terminal, private CyclePlanService $plans) {}
 
     public function home(Request $request): Response
     {
-        return Inertia::render('pos/home', ['sales' => $this->pos->recent($request->user(), 50)]);
+        $district = DB::table('agrodealers as a')->leftJoin('districts as d', 'd.id', '=', 'a.district_id')
+            ->where('a.id', $request->user()->agrodealer_id)->first(['a.district_id', 'd.name']);
+
+        return Inertia::render('pos/home', [
+            'sales' => $this->pos->recent($request->user(), 50),
+            // Só se vende nos dias da feira do distrito: o início avisa antes.
+            'fair' => ['district' => $district?->name, ...($this->plans->fairFor($district?->district_id) ?? ['status' => 'none'])],
+        ]);
     }
 
     public function chooseTerminal(Request $request): RedirectResponse
