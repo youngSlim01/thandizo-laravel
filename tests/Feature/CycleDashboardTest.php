@@ -50,7 +50,11 @@ class CycleDashboardTest extends TestCase
             ->where('dashboard.by_sex.1.bought', 0)
             ->where('dashboard.by_agrodealer.0.to_reconcile', 2000)
             ->where('dashboard.not_bought_by_community.0.not_bought', 1)
-            ->where('dashboard.alerts.attention.0.value', 1)
+            ->where('dashboard.live_fairs.0.district', 'Mutarara')
+            ->where('dashboard.live_fairs.0.bought', 1)
+            ->where('dashboard.live_fairs.0.missing', 1)
+            ->where('dashboard.alerts.0.level', 'critical')
+            ->where('dashboard.alerts.0.value', 1)
             ->where('dashboard.activity.0.action', 'CARDS_DISTRIBUTED'));
     }
 
@@ -62,7 +66,7 @@ class CycleDashboardTest extends TestCase
         $cards->markPrinted($this->admin, $batch['batch_id']);
 
         $this->actingAs($this->admin)->get('/admin/dashboard')->assertInertia(fn (Assert $page) => $page
-            ->where('dashboard.alerts.critical.0.key', 'to_deliver')->where('dashboard.alerts.critical.0.value', 1));
+            ->where('dashboard.alerts', fn ($alerts) => collect($alerts)->contains(fn ($a) => $a['key'] === 'to_deliver' && $a['value'] === 1)));
     }
 
     public function test_a_meal_officer_sees_only_the_province(): void
@@ -106,5 +110,21 @@ class CycleDashboardTest extends TestCase
 
         $officer = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $this->district->province_id]);
         $this->actingAs($officer)->get('/admin/dashboard')->assertInertia(fn (Assert $page) => $page->where('setup', []));
+    }
+
+    public function test_targets_and_the_list_of_who_still_has_to_buy(): void
+    {
+        DB::table('cycle_districts')->update(['target_households' => 4]);
+        ['voucher' => $buyer] = $this->householdWithCard();
+        ['household' => $missing] = $this->householdWithCard();
+        $this->saleOn('2026-10-03 10:00', $buyer, 1);
+
+        $this->actingAs($this->admin)->get('/admin/dashboard')->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.kpis.target', 4)->where('dashboard.districts.0.target', 4)->where('dashboard.districts.0.households', 2));
+
+        $csv = $this->actingAs($this->admin)->get('/admin/dashboard/faltosos?cycle='.DB::table('programme_cycles')->value('id').'&district='.$this->district->id)
+            ->assertOk()->streamedContent();
+        $this->assertStringContainsString($missing->household_code, $csv);
+        $this->assertSame(2, substr_count(trim($csv), "\n") + 1);
     }
 }

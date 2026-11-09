@@ -31,7 +31,7 @@ class CycleDashboardService
     /** Dias antes do fim do ciclo em que o saldo por usar vira alerta. */
     public const CLOSING_SOON_DAYS = 7;
 
-    public function __construct(private HouseholdSearchService $households, private ProvinceScope $scope) {}
+    public function __construct(private HouseholdSearchService $households, private ProvinceScope $scope, private CyclePlanService $plans) {}
 
     /**
      * @return array<string, mixed>
@@ -53,7 +53,7 @@ class CycleDashboardService
             'activity' => $this->activity($viewer),
         ];
         if ($cycle === null) {
-            return [...$base, 'cycle' => null];
+            return [...$base, 'alerts' => collect($base['alerts'])->filter(fn ($a) => $a['value'] > 0)->values()->all(), 'cycle' => null];
         }
 
         $members = $this->members($viewer, $cycle->id);
@@ -70,18 +70,31 @@ class CycleDashboardService
         $used = round($sales->sum(fn ($t) => (float) $t->voucher_amount), 2);
         $notBought = $members->reject(fn ($m) => $m->bought);
 
-        $alerts = $base['alerts'];
         $timeline = $this->timeline($cycle);
         $closingIn = $timeline['days_left'];
         $unused = round($members->sum(fn ($m) => $m->unused), 2);
+        $districts = $this->districts($viewer, $cycle, $members);
+        $live = $this->liveFairs($districts, $members, $sales);
+
+        $alerts = $base['alerts'];
+        foreach ($live as $fair) {
+            $when = match ($fair['days_left']) {
+                0 => 'acaba hoje', 1 => 'acaba amanhã', default => "acaba dentro de {$fair['days_left']} dias"
+            };
+            $alerts[] = ['key' => "fair_missing_{$fair['district_id']}", 'level' => 'critical', 'label' => "Agregados de {$fair['district']} que ainda não compraram (a feira {$when})", 'value' => $fair['missing'], 'href' => "/admin/dashboard/faltosos?cycle={$cycle->id}&district={$fair['district_id']}"];
+        }
+        foreach ($districts as $d) {
+            if ($d['fair_status'] === 'finished') {
+                $alerts[] = ['key' => "fair_absent_{$d['district_id']}", 'level' => 'attention', 'label' => "Agregados de {$d['district']} que faltaram à feira", 'value' => $d['missing'], 'href' => "/admin/dashboard/faltosos?cycle={$cycle->id}&district={$d['district_id']}"];
+            }
+        }
         if (! $closed && $closingIn !== null && $closingIn <= self::CLOSING_SOON_DAYS && $unused > 0) {
-            $alerts['critical'][] = ['key' => 'closing', 'label' => "O ciclo fecha em {$closingIn} dia(s) com saldo por usar", 'value' => $unused, 'money' => true, 'href' => '/admin/cycles'];
+            $alerts[] = ['key' => 'closing', 'level' => 'critical', 'label' => "O ciclo fecha em {$closingIn} dia(s) com saldo por usar", 'value' => $unused, 'money' => true, 'href' => '/admin/cycles'];
         }
         $communitiesBehind = $this->byCommunity($members)->filter(fn ($c) => $c['households'] > 0 && $c['not_bought'] / $c['households'] >= self::NOT_BOUGHT_ALERT_SHARE)->count();
-        array_unshift($alerts['attention'],
-            ['key' => 'not_bought', 'label' => 'Agregados que ainda não compraram', 'value' => $notBought->count(), 'href' => '#sem-compras'],
-            ['key' => 'communities_behind', 'label' => 'Bairros com 30% ou mais sem compras', 'value' => $communitiesBehind, 'href' => '#sem-compras'],
-        );
+        $alerts[] = ['key' => 'communities_behind', 'level' => 'attention', 'label' => 'Bairros com 30% ou mais sem compras', 'value' => $communitiesBehind, 'href' => '#sem-compras'];
+        $order = ['critical' => 0, 'attention' => 1, 'info' => 2];
+        $alerts = collect($alerts)->filter(fn ($a) => $a['value'] > 0)->sortBy(fn ($a) => $order[$a['level']])->values()->all();
 
         return [
             ...$base,
@@ -90,7 +103,10 @@ class CycleDashboardService
                 'id' => $cycle->id, 'code' => $cycle->code, 'name' => $cycle->name, 'description' => $cycle->description, 'status' => $cycle->status,
                 'starts_on' => $cycle->starts_on, 'ends_on' => $cycle->ends_on, 'closed_at' => $cycle->closed_at, ...$timeline,
             ],
+            'districts' => $districts,
+            'live_fairs' => $live,
             'kpis' => [
+                'target' => collect($districts)->sum('target') ?: null,
                 'households' => $members->count(),
                 'active_cards' => $balances->count(),
                 'allocated' => $allocated,
@@ -136,6 +152,81 @@ class CycleDashboardService
     }
 
     /**
+     * Metas e feiras por distrito, com os agregados do ciclo e quantos já
+     * compraram.
+     *
+     * @param  Collection<int, object>  $members
+     * @return list<array<string, mixed>>
+     */
+    private function districts(User $viewer, object $cycle, Collection $members): array
+    {
+        $byDistrict = $members->groupBy('district_id');
+
+        return collect($this->plans->forCycle($viewer, $cycle->id))->map(function (array $d) use ($byDistrict) {
+            $g = $byDistrict->get($d['district_id'], collect());
+            $bought = $g->where('bought', true)->count();
+
+            return [
+                'district_id' => $d['district_id'], 'district' => $d['district'], 'province' => $d['province'],
+                'target' => $d['target_households'], 'households' => $g->count(), 'bought' => $bought, 'missing' => $g->count() - $bought,
+                'fair_starts_on' => $d['fair_starts_on'], 'fair_ends_on' => $d['fair_ends_on'], 'fair_status' => $d['fair_status'],
+            ];
+        })->filter(fn ($d) => $d['households'] > 0 || $d['target'] !== null || $d['fair_starts_on'] !== null)->values()->all();
+    }
+
+    /**
+     * Feiras a decorrer hoje: dia da feira, quem já comprou (ontem, hoje) e
+     * compras por hora de hoje (hora de Moçambique).
+     *
+     * @param  list<array<string, mixed>>  $districts
+     * @param  Collection<int, object>  $members
+     * @param  Collection<int, object>  $sales
+     * @return list<array<string, mixed>>
+     */
+    private function liveFairs(array $districts, Collection $members, Collection $sales): array
+    {
+        $today = CarbonImmutable::now(self::TIMEZONE)->startOfDay();
+        $local = fn (object $t) => CarbonImmutable::parse($t->confirmed_at, 'UTC')->setTimezone(self::TIMEZONE);
+
+        return collect($districts)->where('fair_status', 'ongoing')->map(function (array $d) use ($today, $local, $members, $sales) {
+            $ids = $members->where('district_id', $d['district_id'])->pluck('household_id')->flip();
+            $fairSales = $sales->filter(fn ($t) => $ids->has($t->household_id));
+            $todaySales = $fairSales->filter(fn ($t) => $local($t)->isSameDay($today));
+            $start = CarbonImmutable::parse($d['fair_starts_on'], self::TIMEZONE);
+            $end = CarbonImmutable::parse($d['fair_ends_on'], self::TIMEZONE);
+            $hours = array_fill(0, 24, 0);
+            foreach ($todaySales as $t) {
+                $hours[(int) $local($t)->format('G')]++;
+            }
+
+            return [
+                ...$d,
+                'day' => (int) $start->diffInDays($today) + 1,
+                'days' => (int) $start->diffInDays($end) + 1,
+                'days_left' => (int) $today->diffInDays($end),
+                'bought_today' => $todaySales->pluck('household_id')->unique()->count(),
+                'bought_yesterday' => $fairSales->filter(fn ($t) => $local($t)->isSameDay($today->subDay()))->pluck('household_id')->unique()->count(),
+                'hours' => $hours,
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Agregados do ciclo de um distrito que ainda não compraram (para a
+     * mobilização durante a feira, ou quem faltou depois dela).
+     *
+     * @return Collection<int, object>
+     */
+    public function missing(User $viewer, string $cycleId, string $districtId): Collection
+    {
+        $cycle = DB::table('programme_cycles')->where('id', $cycleId)->first() ?? throw new DomainRuleException('CYCLE_NOT_FOUND');
+        $members = $this->members($viewer, $cycle->id)->where('district_id', $districtId);
+        $bought = $this->sales($cycle, $members)->pluck('household_id')->flip();
+
+        return $members->reject(fn ($m) => $bought->has($m->household_id))->sortBy(fn ($m) => $m->community.'|'.$m->household_code)->values();
+    }
+
+    /**
      * Agregados do ciclo visíveis para quem vê, com escalão e localização.
      *
      * @return Collection<int, object>
@@ -145,11 +236,12 @@ class CycleDashboardService
         return $this->households->baseQuery($viewer)
             ->join('cycle_households as ch', 'ch.household_id', '=', 'h.id')
             ->join('voucher_tiers as vt', 'vt.id', '=', DB::raw('coalesce(ch.voucher_tier_id, h.voucher_tier_id)'))
+            ->leftJoin('vouchers as v', 'v.id', '=', 'ch.voucher_id')
             ->where('ch.cycle_id', $cycleId)
             ->get([
                 'ch.household_id', 'ch.amount', 'ch.voucher_id', 'ch.unused_amount', 'h.representative_sex', 'h.household_code_generated',
                 'vt.id as tier_id', 'vt.name as tier', 'vt.amount as tier_amount', 'c.id as community_id', 'c.name as community',
-                'd.name as district', 'p.name as province',
+                'd.id as district_id', 'd.name as district', 'p.name as province', 'h.household_code', 'h.representative_name', 'v.voucher_code',
             ]);
     }
 
@@ -284,7 +376,7 @@ class CycleDashboardService
     /**
      * O que precisa de acção, independentemente do ciclo escolhido.
      *
-     * @return array{critical: list<array<string, mixed>>, attention: list<array<string, mixed>>}
+     * @return list<array<string, mixed>>
      */
     private function alerts(User $viewer): array
     {
@@ -306,15 +398,11 @@ class CycleDashboardService
             ->count();
 
         return [
-            'critical' => [
-                ['key' => 'to_deliver', 'label' => 'Cartões impressos por entregar', 'value' => $toDeliver, 'href' => '/admin/cards'],
-                ['key' => 'returned', 'label' => 'Reconciliações devolvidas para corrigir', 'value' => $returned, 'href' => '/admin/settlements'],
-            ],
-            'attention' => [
-                ['key' => 'without_card', 'label' => 'Agregados ativos sem cartão', 'value' => $withoutCard, 'href' => '/admin/cards'],
-                ['key' => 'not_printed', 'label' => 'Lotes gerados por imprimir', 'value' => $notPrinted, 'href' => '/admin/cards'],
-                ['key' => 'waiting_manager', 'label' => 'Reconciliações à espera do gestor MEAL', 'value' => $waiting, 'href' => '/admin/settlements'],
-            ],
+            ['key' => 'returned', 'level' => 'critical', 'label' => 'Reconciliações devolvidas para corrigir', 'value' => $returned, 'href' => '/admin/settlements'],
+            ['key' => 'to_deliver', 'level' => 'attention', 'label' => 'Cartões impressos por entregar', 'value' => $toDeliver, 'href' => '/admin/cards'],
+            ['key' => 'without_card', 'level' => 'attention', 'label' => 'Agregados activos sem cartão', 'value' => $withoutCard, 'href' => '/admin/cards'],
+            ['key' => 'not_printed', 'level' => 'info', 'label' => 'Lotes gerados por imprimir', 'value' => $notPrinted, 'href' => '/admin/cards'],
+            ['key' => 'waiting_manager', 'level' => 'info', 'label' => 'Reconciliações à espera do gestor MEAL', 'value' => $waiting, 'href' => '/admin/settlements'],
         ];
     }
 
@@ -328,10 +416,10 @@ class CycleDashboardService
     private function activity(User $viewer): array
     {
         $query = DB::table('audit_logs as l')->leftJoin('users as u', 'u.id', '=', 'l.actor_id')
-            ->whereIn('l.action', ['HOUSEHOLDS_IMPORTED', 'CARD_BATCH_GENERATED', 'CARDS_DISTRIBUTED', 'CYCLE_OPENED', 'CYCLE_ALLOCATED', 'CYCLE_CLOSED', 'SETTLEMENT_CREATED', 'SETTLEMENT_APPROVED_BY_MANAGER', 'SETTLEMENT_VALIDATED']);
+            ->whereIn('l.action', ['HOUSEHOLDS_IMPORTED', 'CARD_BATCH_GENERATED', 'CARDS_DISTRIBUTED', 'CYCLE_OPENED', 'CYCLE_ALLOCATED', 'CYCLE_CLOSED', 'SETTLEMENT_CREATED', 'SETTLEMENT_APPROVED_BY_MANAGER', 'SETTLEMENT_VALIDATED', 'CYCLE_PLAN_UPDATED']);
         if ($viewer->isProvinceScoped()) {
             $province = $viewer->province_id;
-            $query->where(fn ($q) => $q->whereIn('l.action', ['CYCLE_OPENED', 'CYCLE_ALLOCATED', 'CYCLE_CLOSED'])
+            $query->where(fn ($q) => $q->whereIn('l.action', ['CYCLE_OPENED', 'CYCLE_ALLOCATED', 'CYCLE_CLOSED', 'CYCLE_PLAN_UPDATED'])
                 ->orWhereIn('l.entity_id', DB::table('card_batches as b')->join('communities as c', 'c.id', '=', 'b.community_id')
                     ->join('districts as d', 'd.id', '=', 'c.district_id')->where('d.province_id', $province)->select('b.id'))
                 ->orWhereIn('l.entity_id', DB::table('settlement_batches as s')->join('agrodealers as a', 'a.id', '=', 's.agrodealer_id')
@@ -352,6 +440,9 @@ class CycleDashboardService
                         'CYCLE_OPENED' => "Ciclo {$m['code']} aberto",
                         'CYCLE_ALLOCATED' => ($m['allocated'] ?? 0)." agregados recarregados ({$m['code']})",
                         'CYCLE_CLOSED' => "Ciclo {$m['code']} fechado",
+                        'CYCLE_PLAN_UPDATED' => isset($m['after']['fair_starts_on']) && $m['after']['fair_starts_on']
+                            ? "Feira de {$m['district']} marcada: ".date('d/m', strtotime($m['after']['fair_starts_on'])).' a '.date('d/m', strtotime($m['after']['fair_ends_on']))
+                            : "Meta de {$m['district']} actualizada",
                         'SETTLEMENT_CREATED' => 'Reconciliação criada'.(isset($m['settlement_code']) ? " ({$m['settlement_code']})" : ''),
                         'SETTLEMENT_APPROVED_BY_MANAGER' => 'Reconciliação aprovada pelo gestor MEAL'.(isset($m['settlement_code']) ? " ({$m['settlement_code']})" : ''),
                         default => 'Reconciliação validada pelas Finanças'.(isset($m['settlement_code']) ? " ({$m['settlement_code']})" : ''),

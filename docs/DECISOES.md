@@ -137,6 +137,11 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 | O **Oficial MEAL** vê o mesmo painel só com a sua província. | Âmbito igual ao resto do back office. |
 | Desenho a partir das referências dadas (cartões de indicadores com ícone, painéis de alerta, tabelas com barra e estado, demografia). | Pedido do projecto. |
 
+**Painel MEAL com feiras e metas** (decidido a 9/11/2026, a partir da referência enviada)
+- Grelha compacta: indicadores com pastilha de contexto ("x% da meta", "x% dos agregados", "faltam N", "x% de … MT"); feira a decorrer (quem já comprou ontem e hoje, compras por hora, **lista de quem falta** em CSV para a mobilização); metas por distrito; feiras do ciclo com estado; sexo em anel; **alertas numa só lista por gravidade, só com o que tem valor** (incluindo "ainda não compraram nesta feira" e "faltaram à feira"); escalões em barras com o mapa; comerciantes com % reconciliado e total; bairros com menos compras; actividades em linha do tempo.
+- Sem seletor de programa nem de período (uma instalação por programa; painel por ciclo). Sem intervalos de valores nos escalões (os escalões são valores fixos).
+- Os painéis MEAL e das Finanças partilham os mesmos componentes (`components/dashboard-ui.tsx`), incluindo a lista de alertas.
+
 **Primeiros passos** (8/11/2026)
 - Enquanto o programa não está montado, o painel MEAL mostra ao **gestor MEAL e ao administrador** os 7 primeiros passos, por ordem: configurar o programa (cliente e programa na Configuração), produtos e preços, comerciantes (catálogo e terminal POS), utilizadores dos comerciantes, beneficiários, abrir o ciclo, gerar e distribuir os cartões. Cada passo marca-se sozinho quando os dados existem; o seguinte tem o botão "Fazer agora". A lista desaparece quando todos estão feitos. Razão: no primeiro dia, abrir o ciclo não é o primeiro passo, e o gestor precisa de ver o caminho.
 

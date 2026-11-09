@@ -90,6 +90,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/cycles/{cycle}/closing', [CycleController::class, 'close'])->whereUuid('cycle')->name('cycles.closing');
 
         Route::get('/dashboard', DashboardController::class)->name('dashboard');
+        Route::get('/dashboard/faltosos', [DashboardController::class, 'missing'])->name('dashboard.missing');
         Route::get('/transactions', [TransactionController::class, 'index'])->defaults('area', 'meal')->name('transactions');
         Route::get('/settlements', [SettlementController::class, 'index'])->name('settlements.index');
         Route::post('/settlements', [SettlementController::class, 'store'])->name('settlements.store');

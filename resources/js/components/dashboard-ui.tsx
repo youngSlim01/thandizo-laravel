@@ -5,7 +5,7 @@ import { formatMT } from '@/lib/format';
 // Peças comuns aos painéis (MEAL, Finanças): ícones, números, barras e
 // painéis de alerta, com as classes cd-* de app.css.
 
-export type Alert = { key: string; label: string; value: number; href: string; money?: boolean };
+export type Alert = { key: string; label: string; value: number; href: string; money?: boolean; level?: 'critical' | 'attention' | 'info' };
 
 export type IconName = 'users' | 'wallet' | 'clock' | 'store' | 'alert' | 'flag' | 'people' | 'map' | 'list' | 'chart' | 'layers' | 'calendar' | 'check' | 'inbox';
 
@@ -41,18 +41,38 @@ export function Bar({ value, tone = 'green' }: { value: number; tone?: 'green' |
   return <div className={`cd-bar cd-bar-${tone}`}><i style={{ width: `${Math.min(100, Math.round(value * 100))}%` }} /></div>;
 }
 
-export function AlertPanel({ title, tone, icon, alerts }: { title: string; tone: 'red' | 'amber'; icon: IconName; alerts: Alert[] }) {
+// Pastilha de percentagem: vermelho abaixo de 50%, âmbar até 70%, verde acima.
+export function Pill({ value, children }: { value: number; children?: string }) {
+  const tone = value < 0.5 ? 'red' : value < 0.7 ? 'amber' : 'green';
+  return <span className={`cd-pill cd-pill-${tone}`}>{children ?? pct(value)}</span>;
+}
+
+// Alertas numa só lista, por gravidade; só o que tem valor.
+export function AlertList({ alerts, empty = 'Nada a assinalar.' }: { alerts: Alert[]; empty?: string }) {
+  const shown = alerts.filter((a) => a.value > 0);
   return (
-    <section className="cd-panel">
-      <div className="cd-panel-head"><span className={`cd-badge cd-badge-${tone}`}><Icon name={icon} /></span><h2>{title}</h2></div>
-      <div className={`cd-alert-list cd-alert-${tone}`}>
-        {alerts.map((a) => (
-          <Link key={a.key} href={a.href} className={a.value > 0 ? '' : 'cd-zero'}>
-            <span>{a.label}</span><strong>{a.money ? formatMT(a.value) : number(a.value)}</strong>
-          </Link>
-        ))}
-      </div>
-    </section>
+    <div className="cd-alerts">
+      {shown.map((a) => (
+        <Link key={a.key} href={a.href} className={`cd-alert-item cd-alert-${a.level ?? 'attention'}`}>
+          <b aria-hidden="true">{a.level === 'info' ? 'i' : '!'}</b>
+          <span><strong>{a.money ? formatMT(a.value) : number(a.value)}</strong> {a.label.charAt(0).toLowerCase() + a.label.slice(1)}</span>
+          <em aria-hidden="true">›</em>
+        </Link>
+      ))}
+      {shown.length === 0 && <p className="cd-note">{empty}</p>}
+    </div>
   );
 }
 
+// Anel com o total ao centro e a parte destacada (0 a 1).
+export function Donut({ part, total, label }: { part: number; total: number; label: string }) {
+  const value = Math.max(0, Math.min(1, part)) * 100;
+  return (
+    <svg viewBox="0 0 42 42" className="cd-donut" role="img" aria-label={`${number(total)} ${label}`}>
+      <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--brand-border)" strokeWidth="6" />
+      <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--brand)" strokeWidth="6" strokeDasharray={`${value} ${100 - value}`} transform="rotate(-90 21 21)" />
+      <text x="21" y="21.5" textAnchor="middle" fontSize="7" fontWeight="800" fill="var(--text)">{number(total)}</text>
+      <text x="21" y="27.5" textAnchor="middle" fontSize="3.6" fill="var(--muted)">{label}</text>
+    </svg>
+  );
+}

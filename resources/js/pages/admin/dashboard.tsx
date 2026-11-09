@@ -1,23 +1,30 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { AdminHeader, UserMenu } from '@/components/admin-layout';
-import { type Alert, AlertPanel, Bar, Icon, number, pct, share } from '@/components/dashboard-ui';
+import { type Alert, AlertList, Bar, Donut, Icon, number, pct, Pill, share } from '@/components/dashboard-ui';
 import { MozambiqueMap, type ProvinceFigure } from '@/components/mozambique-map';
-import { formatDateTime, formatMT } from '@/lib/format';
+import { formatDate, formatDateTime, formatMT } from '@/lib/format';
 import type { SharedProps } from '@/types';
 
 type UsagePoint = { day: number; share: number };
+type District = {
+  district_id: string; district: string; province: string; target: number | null; households: number; bought: number; missing: number;
+  fair_starts_on: string | null; fair_ends_on: string | null; fair_status: 'none' | 'planned' | 'ongoing' | 'finished';
+};
+type LiveFair = District & { day: number; days: number; days_left: number; bought_today: number; bought_yesterday: number; hours: number[] };
 type Dashboard = {
   cycles: { id: string; code: string; name: string; status: 'OPEN' | 'CLOSED' }[];
   province: string | null;
-  alerts: { critical: Alert[]; attention: Alert[] };
+  alerts: Alert[];
   activity: { action: string; text: string; at: string; actor: string | null }[];
   cycle: null | {
     id: string; code: string; name: string; description: string | null; status: 'OPEN' | 'CLOSED'; starts_on: string | null; ends_on: string | null;
     closed_at: string | null; day: number; total_days: number | null; days_left: number | null; time_share: number | null;
   };
+  districts?: District[];
+  live_fairs?: LiveFair[];
   kpis?: {
-    households: number; active_cards: number; allocated: number; used: number; used_share: number; unused: number;
+    target: number | null; households: number; active_cards: number; allocated: number; used: number; used_share: number; unused: number;
     not_bought: number; not_bought_value: number; unpaid: number; copayment: number; transactions: number;
   };
   usage?: { days: UsagePoint[]; previous: { code: string; name: string; days: UsagePoint[] } | null };
@@ -28,6 +35,9 @@ type Dashboard = {
   not_bought_by_community?: { community: string; district: string | null; households: number; not_bought: number; unused: number }[];
   by_agrodealer?: { name: string; code: string; transactions: number; voucher_amount: number; to_reconcile: number; in_approval: number; validated: number }[];
 };
+
+const FAIR_STATUS: Record<District['fair_status'], string> = { none: 'Por marcar', planned: 'Marcada', ongoing: 'A decorrer', finished: 'Concluída' };
+const missingHref = (cycle: string, district: string) => `/admin/dashboard/faltosos?cycle=${cycle}&district=${district}`;
 
 // Ritmo do ciclo: valor usado acumulado (% do atribuído), dia a dia, e o
 // ciclo anterior nos mesmos dias.
@@ -84,8 +94,35 @@ function SetupSteps({ steps }: { steps: SetupStep[] }) {
   );
 }
 
-// Painel MEAL do dia-a-dia, por ciclo (CycleDashboardService). Mudar de ciclo
-// volta a pedir só o painel.
+// Feira a decorrer: quem já comprou, ontem e hoje, e compras por hora.
+function LiveFairPanel({ fair, cycleId }: { fair: LiveFair; cycleId: string }) {
+  const hours = fair.hours.map((n, h) => ({ h, n })).filter(({ h }) => h >= 6 && h <= 18);
+  const top = Math.max(1, ...hours.map((x) => x.n));
+  return (
+    <div className="cd-panel">
+      <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="calendar" /></span>
+        <h2>Feira a decorrer: {fair.district}</h2><span className="cd-setup-count">dia {fair.day} de {fair.days}</span></div>
+      <div className="md-live">
+        <div>
+          <div className="md-big">{number(fair.bought)} <small>de {number(fair.households)} agregados compraram</small></div>
+          <Bar value={share(fair.bought, fair.households)} />
+          <p className="cd-note">Ontem {number(fair.bought_yesterday)} · hoje {number(fair.bought_today)} até agora · faltam {number(fair.missing)}</p>
+          <a href={missingHref(cycleId, fair.district_id)} className="primary-button md-go">Lista de quem falta ({number(fair.missing)}) →</a>
+        </div>
+        <div>
+          <div className="cd-note">Compras por hora, hoje</div>
+          <div className="md-hours" role="img" aria-label="Compras por hora">
+            {hours.map(({ h, n }) => <div key={h}><i style={{ height: `${(n / top) * 100}%` }} title={`${h}h: ${n}`} /><span>{h}h</span></div>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Painel MEAL do dia-a-dia, por ciclo (CycleDashboardService): metas e
+// feiras por distrito, a feira a decorrer, alertas por gravidade. Mudar de
+// ciclo volta a pedir só o painel.
 export default function MealDashboard({ dashboard: data, setup }: { dashboard: Dashboard; setup: SetupStep[] }) {
   const user = usePage<SharedProps>().props.auth.user;
   const [loading, setLoading] = useState(false);
@@ -96,8 +133,13 @@ export default function MealDashboard({ dashboard: data, setup }: { dashboard: D
   const cycle = data.cycle;
   const k = data.kpis;
   const firstName = (user?.full_name ?? '').split(' ')[0];
-  const timeShare = cycle?.time_share ?? null;
-  const ahead = k && timeShare !== null ? k.used_share >= timeShare - 0.05 : null;
+  const live = data.live_fairs ?? [];
+  const districts = data.districts ?? [];
+  const sex = data.by_sex ?? [];
+  const women = sex.find((s) => s.sex === 'F');
+  const totalSex = sex.reduce((n, s) => n + s.households, 0);
+  const dealers = data.by_agrodealer ?? [];
+  const dealerTotal = dealers.reduce((t, a) => ({ n: t.n + a.transactions, v: t.v + a.voucher_amount, r: t.r + a.in_approval + a.validated }), { n: 0, v: 0, r: 0 });
 
   return (
     <div className="meal-dashboard-app">
@@ -129,136 +171,139 @@ export default function MealDashboard({ dashboard: data, setup }: { dashboard: D
 
         {!loading && cycle && k && (
           <>
-            <section className="cd-kpis">
-              <div className="cd-kpi cd-green"><Icon name="users" /><div><strong>{number(k.households)}</strong><span>Agregados no ciclo</span><small>{number(k.active_cards)} com cartão ativo</small></div></div>
-              <div className="cd-kpi cd-green"><Icon name="wallet" /><div><strong>{formatMT(k.used)}</strong><span>Usado pelo voucher</span><small>{pct(k.used_share)} de {formatMT(k.allocated)}</small></div></div>
-              <div className="cd-kpi cd-amber"><Icon name="clock" /><div><strong>{number(k.not_bought)}</strong><span>Ainda não compraram</span><small>{pct(share(k.not_bought, k.households))} · {formatMT(k.not_bought_value)} parados</small></div></div>
-              <div className="cd-kpi cd-blue"><Icon name="store" /><div><strong>{formatMT(k.unpaid)}</strong><span>Por pagar aos comerciantes</span><small>ainda não validado pelas Finanças</small></div></div>
-            </section>
-            <section className="cd-grid cd-grid-wide">
-              <div className="cd-panel">
-                <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="chart" /></span><h2>Ritmo de utilização</h2></div>
-                <div className="cd-pace">
-                  {cycle.total_days !== null && timeShare !== null && (
-                    <div className="cd-pace-row"><span>Tempo · dia {cycle.day} de {cycle.total_days}</span><Bar value={timeShare} tone="grey" /><strong>{pct(timeShare)}</strong></div>
-                  )}
-                  <div className="cd-pace-row"><span>Valor usado</span><Bar value={k.used_share} /><strong>{pct(k.used_share)}</strong></div>
-                  <p className="cd-note">
-                    {ahead === null ? `Dia ${cycle.day} do ciclo. Defina a data de fim do ciclo para comparar com o tempo.`
-                      : ahead ? 'O dinheiro está a ser usado ao ritmo do tempo do ciclo, ou mais depressa.'
-                        : 'O uso está atrás do tempo do ciclo: veja quem ainda não comprou.'}
-                  </p>
-                </div>
-                {data.usage && <UsageChart usage={data.usage} totalDays={cycle.total_days} />}
-                <div className="cd-legend">
-                  <span><i className="cd-dot-green" /> {cycle.name}</span>
-                  {data.usage?.previous && <span><i className="cd-dot-grey" /> {data.usage.previous.name} nos mesmos dias</span>}
-                </div>
+            {live.map((f) => (
+              <div key={f.district_id} className="md-banner">
+                <span className="md-dot" aria-hidden="true" />
+                <strong>Feira de {f.district} a decorrer</strong>
+                <span>dia {f.day} de {f.days} ({formatDate(f.fair_starts_on)} a {formatDate(f.fair_ends_on)}) · {number(f.bought)} de {number(f.households)} já compraram · faltam {number(f.missing)}</span>
+                <a href={missingHref(cycle.id, f.district_id)}>Lista de quem falta →</a>
               </div>
+            ))}
+
+            <section className="cd-kpis">
+              <div className="cd-kpi cd-green"><Icon name="users" /><div><strong>{number(k.households)}</strong><span>Agregados no ciclo</span>
+                {k.target ? <Pill value={share(k.households, k.target)}>{`${pct(share(k.households, k.target))} da meta (${number(k.target)})`}</Pill> : <small>Sem meta definida</small>}</div></div>
+              <div className="cd-kpi cd-green"><Icon name="check" /><div><strong>{number(k.active_cards)}</strong><span>Cartões entregues</span>
+                <Pill value={share(k.active_cards, k.households)}>{`${pct(share(k.active_cards, k.households))} dos agregados`}</Pill></div></div>
+              <div className="cd-kpi cd-green"><Icon name="people" /><div><strong>{number(k.households - k.not_bought)}</strong><span>Já compraram</span>
+                <Pill value={share(k.households - k.not_bought, k.households)}>{`${pct(share(k.households - k.not_bought, k.households))} · faltam ${number(k.not_bought)}`}</Pill></div></div>
+              <div className="cd-kpi cd-green"><Icon name="wallet" /><div><strong>{formatMT(k.used)}</strong><span>Valor usado</span>
+                <Pill value={k.used_share}>{`${pct(k.used_share)} de ${formatMT(k.allocated)}`}</Pill></div></div>
+            </section>
+
+            <section className="cd-grid cd-grid-wide">
+              {live[0] ? <LiveFairPanel fair={live[0]} cycleId={cycle.id} /> : (
+                <div className="cd-panel">
+                  <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="chart" /></span><h2>Ritmo de utilização</h2></div>
+                  {data.usage && <UsageChart usage={data.usage} totalDays={cycle.total_days} />}
+                  <div className="cd-legend">
+                    <span><i className="cd-dot-green" /> {cycle.name}</span>
+                    {data.usage?.previous && <span><i className="cd-dot-grey" /> {data.usage.previous.name} nos mesmos dias</span>}
+                  </div>
+                </div>
+              )}
               <div className="cd-panel">
-                <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="map" /></span><h2>Cobertura geográfica</h2></div>
-                <MozambiqueMap figures={data.by_province ?? []} withoutProvince={0} period="no ciclo" />
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="flag" /></span><h2>Metas por distrito</h2>
+                  <a href="/admin/cycles" className="cd-link">Editar →</a></div>
+                <div className="md-bars">
+                  {districts.filter((d) => d.target).map((d) => {
+                    const v = share(d.households, d.target ?? 0);
+                    return <div key={d.district_id}><span>{d.district}</span><Bar value={v} tone={v < 0.9 ? 'amber' : 'green'} /><b>{pct(v)}</b></div>;
+                  })}
+                  {districts.every((d) => !d.target) && <p className="cd-note">Ainda não há metas: defina-as no ciclo, em Metas e feiras por distrito.</p>}
+                </div>
+                <p className="cd-note">Agregados no ciclo / meta do distrito</p>
               </div>
             </section>
 
             <section className="cd-grid cd-grid-3">
-              <AlertPanel title="Alertas" tone="red" icon="alert" alerts={data.alerts.critical} />
-              <AlertPanel title="Atenção" tone="amber" icon="flag" alerts={data.alerts.attention} />
               <div className="cd-panel">
-                <div className="cd-panel-head"><span className="cd-badge cd-badge-blue"><Icon name="people" /></span><h2>Por sexo do representante</h2></div>
-                <div className="cd-demo">
-                  {(data.by_sex ?? []).map((s) => (
-                    <div key={s.sex} className={`cd-demo-card ${s.sex === 'F' ? 'cd-demo-f' : 'cd-demo-m'}`}>
-                      <div><strong>{s.sex === 'F' ? 'Mulheres' : 'Homens'}</strong><span>{number(s.bought)} de {number(s.households)} compraram · gasto médio {formatMT(s.average_spent)}</span></div>
-                      <b>{pct(share(s.bought, s.households))}</b>
-                    </div>
-                  ))}
-                  <p className="cd-note">{number(data.substitutes ?? 0)} cartões entregues a substituto do representante.</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="cd-panel">
-              <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="layers" /></span><h2>Utilização por escalão</h2></div>
-              <div className="cd-table">
-                <table>
-                  <thead><tr><th>Escalão</th><th>Agregados</th><th>Compraram</th><th>Atribuído</th><th>Usado</th><th>Utilização</th>{timeShare !== null && <th>Estado</th>}</tr></thead>
-                  <tbody>
-                    {(data.by_tier ?? []).map((t) => {
-                      const used = share(t.used, t.allocated);
-                      const onPace = timeShare === null || used >= timeShare - 0.05;
-                      return (
-                        <tr key={t.tier}>
-                          <td><strong>{t.tier}</strong><small>{formatMT(t.amount)}{t.generated_codes > 0 ? ` · ${t.generated_codes} sem AF` : ''}</small></td>
-                          <td>{number(t.households)}</td>
-                          <td>{number(t.bought)} ({pct(share(t.bought, t.households))})</td>
-                          <td>{formatMT(t.allocated)}</td>
-                          <td>{formatMT(t.used)}</td>
-                          <td><div className="cd-bar-cell"><Bar value={used} tone={onPace ? 'green' : 'amber'} /><span>{pct(used)}</span></div></td>
-                          {timeShare !== null && <td><span className={onPace ? 'cd-status-ok' : 'cd-status-late'}>{onPace ? 'NO RITMO' : 'ATRASADO'}</span></td>}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            <section className="cd-grid cd-grid-wide">
-              <div className="cd-panel" id="sem-compras">
-                <div className="cd-panel-head"><span className="cd-badge cd-badge-amber"><Icon name="clock" /></span><h2>Quem ainda não comprou, por bairro</h2>
-                  <Link href="/admin/households" className="cd-link">Listas para mobilização →</Link></div>
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="calendar" /></span><h2>Feiras do ciclo</h2></div>
                 <div className="cd-table">
                   <table>
-                    <thead><tr><th>Bairro</th><th>Sem compras</th><th>% do bairro</th><th>Saldo por usar</th></tr></thead>
+                    <thead><tr><th>Distrito</th><th>Datas</th><th>Estado</th><th>Compraram</th></tr></thead>
                     <tbody>
-                      {(data.not_bought_by_community ?? []).map((c) => {
-                        const s = share(c.not_bought, c.households);
-                        return (
-                          <tr key={`${c.community}-${c.district}`}>
-                            <td><strong>{c.community}</strong><small>{c.district ?? ''}</small></td>
-                            <td>{number(c.not_bought)} de {number(c.households)}</td>
-                            <td className={s >= 0.3 ? 'cd-late' : ''}>{pct(s)}</td>
-                            <td>{formatMT(c.unused)}</td>
-                          </tr>
-                        );
-                      })}
-                      {(data.not_bought_by_community ?? []).length === 0 && <tr><td colSpan={4} className="cd-note">Todos os agregados do ciclo já compraram.</td></tr>}
+                      {districts.map((d) => (
+                        <tr key={d.district_id}>
+                          <td><strong>{d.district}</strong></td>
+                          <td>{d.fair_starts_on ? `${formatDate(d.fair_starts_on).slice(0, 5)}–${formatDate(d.fair_ends_on).slice(0, 5)}` : '—'}</td>
+                          <td><span className={`md-st md-st-${d.fair_status}`}>{FAIR_STATUS[d.fair_status]}</span></td>
+                          <td>{d.fair_status === 'none' || d.fair_status === 'planned' || d.households === 0 ? '—' : <Pill value={share(d.bought, d.households)} />}</td>
+                        </tr>
+                      ))}
+                      {districts.length === 0 && <tr><td colSpan={4} className="cd-note">Ainda não há feiras marcadas.</td></tr>}
                     </tbody>
                   </table>
                 </div>
               </div>
               <div className="cd-panel">
-                <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="list" /></span><h2>Últimas actividades</h2></div>
-                <ul className="cd-activity">
-                  {data.activity.map((a, i) => (
-                    <li key={i}><strong>{a.text}</strong><span>{formatDateTime(a.at)}{a.actor ? ` · ${a.actor}` : ''}</span></li>
-                  ))}
-                  {data.activity.length === 0 && <li className="cd-note">Ainda não há actividade.</li>}
-                </ul>
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-blue"><Icon name="people" /></span><h2>Por sexo do representante</h2></div>
+                <div className="md-donut">
+                  <Donut part={share(women?.households ?? 0, totalSex)} total={totalSex} label="agregados" />
+                  <div className="md-legend">
+                    {sex.map((s) => (
+                      <div key={s.sex}><i className={s.sex === 'F' ? 'md-f' : 'md-m'} />{s.sex === 'F' ? 'Mulheres' : 'Homens'} <b>{number(s.households)} ({pct(share(s.households, totalSex))})</b>
+                        <small>{pct(share(s.bought, s.households))} já compraram</small></div>
+                    ))}
+                  </div>
+                </div>
+                <p className="cd-note">{number(data.substitutes ?? 0)} cartões entregues a substituto do representante.</p>
+              </div>
+              <div className="cd-panel">
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-amber"><Icon name="alert" /></span><h2>Alertas e pontos de atenção</h2></div>
+                <AlertList alerts={data.alerts} />
               </div>
             </section>
 
-            <section className="cd-panel">
-              <div className="cd-panel-head"><span className="cd-badge cd-badge-blue"><Icon name="store" /></span><h2>Comerciantes no ciclo</h2>
-                <Link href="/admin/settlements" className="cd-link">Reconciliações →</Link></div>
-              <div className="cd-table">
-                <table>
-                  <thead><tr><th>Comerciante</th><th>Compras</th><th>Valor do voucher</th><th>Por reconciliar</th><th>Em aprovação</th><th>Validado</th></tr></thead>
-                  <tbody>
-                    {(data.by_agrodealer ?? []).map((a) => (
-                      <tr key={a.code}>
-                        <td><strong>{a.name}</strong><small>{a.code}</small></td>
-                        <td>{number(a.transactions)}</td>
-                        <td>{formatMT(a.voucher_amount)}</td>
-                        <td className={a.to_reconcile > 0 ? 'cd-late' : ''}>{formatMT(a.to_reconcile)}</td>
-                        <td>{formatMT(a.in_approval)}</td>
-                        <td>{formatMT(a.validated)}</td>
-                      </tr>
-                    ))}
-                    {(data.by_agrodealer ?? []).length === 0 && <tr><td colSpan={6} className="cd-note">Ainda não há compras neste ciclo.</td></tr>}
-                  </tbody>
-                </table>
+            <section className="cd-grid cd-grid-3">
+              <div className="cd-panel">
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="layers" /></span><h2>Utilização por escalão</h2></div>
+                <div className="md-bars">
+                  {(data.by_tier ?? []).map((t) => {
+                    const v = share(t.used, t.allocated);
+                    return <div key={t.tier}><span>{t.tier}</span><Bar value={v} tone={v < 0.5 ? 'amber' : 'green'} /><b>{pct(v)}</b></div>;
+                  })}
+                </div>
+                <p className="cd-note">Valor usado / atribuído ({(data.by_tier ?? []).map((t) => formatMT(t.amount)).join(' · ')})</p>
+                <div className="md-map"><MozambiqueMap figures={data.by_province ?? []} withoutProvince={0} period="no ciclo" /></div>
+              </div>
+              <div className="cd-panel" id="sem-compras">
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-blue"><Icon name="store" /></span><h2>Comerciantes</h2>
+                  <Link href="/admin/settlements" className="cd-link">Reconciliações →</Link></div>
+                <div className="cd-table">
+                  <table>
+                    <thead><tr><th>Comerciante</th><th>Compras</th><th>Valor</th><th>Reconciliado</th></tr></thead>
+                    <tbody>
+                      {dealers.map((a) => (
+                        <tr key={a.code}><td><strong>{a.name}</strong></td><td>{number(a.transactions)}</td><td>{formatMT(a.voucher_amount)}</td>
+                          <td><Pill value={share(a.in_approval + a.validated, a.voucher_amount)} /></td></tr>
+                      ))}
+                      {dealers.length > 0 && (
+                        <tr className="md-total"><td>Total</td><td>{number(dealerTotal.n)}</td><td>{formatMT(dealerTotal.v)}</td><td><Pill value={share(dealerTotal.r, dealerTotal.v)} /></td></tr>
+                      )}
+                      {dealers.length === 0 && <tr><td colSpan={4} className="cd-note">Ainda não há compras neste ciclo.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+                <h3 className="md-sub">Bairros com menos compras</h3>
+                <div className="cd-table">
+                  <table>
+                    <tbody>
+                      {(data.not_bought_by_community ?? []).slice(0, 5).map((c) => (
+                        <tr key={`${c.community}-${c.district}`}><td><strong>{c.community}</strong><small>{c.district ?? ''}</small></td>
+                          <td>{number(c.households - c.not_bought)} de {number(c.households)}</td><td><Pill value={share(c.households - c.not_bought, c.households)} /></td></tr>
+                      ))}
+                      {(data.not_bought_by_community ?? []).length === 0 && <tr><td className="cd-note">Todos os agregados do ciclo já compraram.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="cd-panel">
+                <div className="cd-panel-head"><span className="cd-badge cd-badge-green"><Icon name="list" /></span><h2>Actividades recentes</h2></div>
+                <ul className="md-timeline">
+                  {data.activity.map((a, i) => <li key={i}><strong>{a.text}</strong><span>{formatDateTime(a.at)}{a.actor ? ` · ${a.actor}` : ''}</span></li>)}
+                  {data.activity.length === 0 && <li className="cd-note">Ainda não há actividade.</li>}
+                </ul>
               </div>
             </section>
           </>

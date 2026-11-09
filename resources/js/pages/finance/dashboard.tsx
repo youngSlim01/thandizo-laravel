@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { type Alert, AlertPanel, Icon, number } from '@/components/dashboard-ui';
+import { type Alert, AlertList, Icon, number } from '@/components/dashboard-ui';
 import { FinanceLayout } from '@/components/finance-layout';
 import { formatDate, formatMT } from '@/lib/format';
 import type { SharedProps } from '@/types';
@@ -14,7 +14,7 @@ type Dashboard = {
         awaiting: number; awaiting_amount: number; overdue: number; overdue_amount: number; oldest_days: number;
         validated_amount: number; in_meal_amount: number; not_reconciled_amount: number;
     };
-    alerts: (Alert & { level: 'critical' | 'attention' })[];
+    alerts: Alert[];
     inbox: {
         id: string; settlement_code: string; agrodealer: string; agrodealer_code: string; period_start: string; period_end: string;
         transactions: number; amount: number; arrived_at: string | null; days_waiting: number; overdue: boolean;
@@ -90,7 +90,10 @@ export default function FinanceDashboard({ dashboard: d }: { dashboard: Dashboar
                             </table>
                         </div>
                     </div>
-                    <AlertPanel title="Atenção" tone="amber" icon="flag" alerts={d.alerts} />
+                    <div className="cd-panel">
+                        <div className="cd-panel-head"><span className="cd-badge cd-badge-amber"><Icon name="alert" /></span><h2>Alertas e pontos de atenção</h2></div>
+                        <AlertList alerts={d.alerts} empty="Nada à espera das Finanças." />
+                    </div>
                 </section>
 
                 <section className="cd-panel">
