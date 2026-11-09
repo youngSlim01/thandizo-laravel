@@ -1815,3 +1815,21 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 .cd-cycle-select{padding:5px 12px 5px 16px;min-height:50px;gap:10px}
 .cd-cycle-select select{padding:8px 12px!important;min-height:46px}
 @media(max-width:600px){.user-menu{padding:6px 12px 6px 6px;gap:8px}.user-menu-avatar{width:30px;height:30px;min-width:30px}.catalog-cycle select{width:100%;min-width:0!important}.cd-cycle-select{width:100%;justify-content:space-between}}
+
+/* Produtos e preços: separar título, acções e ciclo para evitar disputa no topo */
+.admin-shell>.admin-page-heading.catalog-heading{display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:16px!important}
+.catalog-heading>div:first-child{width:100%;flex:none}
+.catalog-heading .catalog-actions{width:100%!important;display:flex!important;justify-content:flex-start!important;align-items:center!important;flex-wrap:wrap!important;gap:10px!important}
+.catalog-heading .catalog-actions button{flex:0 0 auto!important}
+.catalog-cycle{display:flex!important;align-items:flex-end!important;justify-content:flex-start!important;flex-wrap:wrap!important;gap:14px!important;margin:0 0 20px!important;padding:14px 16px!important;border:1px solid var(--border-soft);border-radius:12px;background:var(--surface-muted)}
+.catalog-cycle label{display:flex;flex-direction:column;min-width:260px;max-width:100%;gap:0}
+.catalog-cycle select{width:100%;min-width:0!important;box-sizing:border-box}
+.catalog-cycle .secondary-button{max-width:100%;white-space:normal;text-align:center}
+@media(max-width:650px){
+ .catalog-heading .catalog-actions{display:grid!important;grid-template-columns:1fr 1fr!important}
+ .catalog-heading .catalog-actions button{width:100%!important;min-width:0!important}
+ .catalog-heading .catalog-actions button:first-child{grid-column:1/-1}
+ .catalog-cycle{align-items:stretch!important;flex-direction:column!important}
+ .catalog-cycle label{width:100%;min-width:0}
+ .catalog-cycle .secondary-button{width:100%!important}
+}
