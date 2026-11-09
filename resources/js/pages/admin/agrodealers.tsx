@@ -174,32 +174,30 @@ export default function Agrodealers({ agrodealers, districts, canManage }: Props
     return (
         <AdminLayout>
             <Head title="Comerciantes" />
-            <div className="admin-page-heading">
-                <div>
-                    <div className="eyebrow">MEAL · REDE DE COMERCIANTES</div>
-                    <h1>Comerciantes</h1>
-                    <p>Gerir comerciantes, pontos de venda e os catálogos associados a cada distrito.</p>
-                </div>
+            <div className="admin-page-heading directory-heading">
+                <div><div className="eyebrow">MEAL · REDE DE COMERCIANTES</div><h1>Comerciantes</h1><p>Gerir pontos de venda, operadores e catálogos distritais.</p></div>
+                {canManage && <button className="primary-button directory-primary" onClick={() => setCreating(true)}>+ Novo comerciante</button>}
             </div>
-            <div className="info-box">
-                Cada comerciante pertence a um distrito e vende aos preços desse distrito os produtos do seu catálogo.
-                O catálogo começa vazio. Os utilizadores dos comerciantes criam-se em Utilizadores.
+            <div className="directory-summary">
+                <div className="directory-stat"><span>Comerciantes</span><strong>{agrodealers.length}</strong><small>Total registado</small></div>
+                <div className="directory-stat"><span>Activos</span><strong>{agrodealers.filter(a=>a.status==='ACTIVE').length}</strong><small>Podem realizar vendas</small></div>
+                <div className="directory-stat"><span>Pontos de venda (POS)</span><strong>{agrodealers.reduce((s,a)=>s+a.pos.length,0)}</strong><small>Dispositivos registados</small></div>
+                <div className="directory-stat"><span>Sem distrito</span><strong>{agrodealers.filter(a=>!a.district_id).length}</strong><small>Precisam de configuração</small></div>
             </div>
+            <div className="directory-note"><span>i</span><p>Cada comerciante está associado a um distrito e vende os produtos do catálogo local. Os utilizadores e acessos são configurados no módulo Utilizadores.</p></div>
             {flash.success && <div className="success-box">{flash.success}</div>}
-
-            {canManage && !creating && <button className="primary-button" onClick={() => setCreating(true)}>+ NOVO COMERCIANTE</button>}
             {creating && <AgrodealerForm agrodealer={null} districts={districts} onDone={() => setCreating(false)} />}
 
-            <div className="filter-row">
-                <input className="input" placeholder="Procurar nome ou código" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Procurar comerciante" />
-                <select className="input" value={districtFilter} onChange={(e) => setDistrictFilter(e.target.value)} aria-label="Filtrar por distrito">
-                    <option value="">Todos os distritos</option>
-                    {districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
+            <div className="directory-toolbar">
+                <div className="directory-search"><span>⌕</span><input className="input" placeholder="Pesquisar nome ou código…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Procurar comerciante" /></div>
+                <select className="input directory-district-filter" value={districtFilter} onChange={(e) => setDistrictFilter(e.target.value)} aria-label="Filtrar por distrito">
+                    <option value="">Todos os distritos</option>{districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select><span className="directory-count">{visible.length} de {agrodealers.length}</span>
             </div>
-
+            <div className="directory-grid">
             {visible.length === 0 && <p className="muted-text">Nenhum comerciante.</p>}
             {visible.map((a) => <AgrodealerCard key={a.id} agrodealer={a} districts={districts} canManage={canManage} />)}
+            </div>
 
         </AdminLayout>
     );
