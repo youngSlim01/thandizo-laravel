@@ -1,4 +1,4 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { AdminLayout } from '@/components/admin-layout';
 import { CatalogueEditor } from '@/components/catalogue-editor';
 import { useState, type FormEvent } from 'react';
@@ -151,7 +151,10 @@ function AgrodealerCard({ agrodealer, districts, canManage, canManageCatalogue }
                 ))}
             </div>}
             {agrodealer.status === 'ACTIVE' && agrodealer.catalogue_count === 0 && <div className="warning-box">Sem produtos no catálogo: não consegue vender. Abra o catálogo e junte o que vem da cadeia de abastecimento.</div>}
-            {agrodealer.status === 'ACTIVE' && agrodealer.users === 0 && <div className="warning-box">Sem utilizador: crie a conta do gestor em Utilizadores.</div>}
+            {agrodealer.status === 'ACTIVE' && agrodealer.users === 0 && (
+                <div className="warning-box">Sem utilizador: o comerciante ainda não consegue entrar.{' '}
+                    {canManage && <Link href={`/admin/users?novo=gestor&comerciante=${agrodealer.id}`} className="inline-link">Criar conta do gestor →</Link>}</div>
+            )}
 
             <div className="admin-card-actions">
                 <button className="quick-link" onClick={() => setPanel(panel === 'catalogue' ? 'none' : 'catalogue')}>Catálogo →</button>

@@ -2,16 +2,21 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
+use App\Models\Agrodealer;
 use App\Models\User;
 
 class UserPolicy
 {
     /**
-     * Ver a página de utilizadores e criar contas (gestor MEAL, administrador).
+     * Ver a página de utilizadores e criar contas: gestor MEAL e
+     * administrador; o oficial MEAL só as contas dos comerciantes da sua
+     * província (UserAdminService::guardAccess).
      */
     public function viewAny(User $actor): bool
     {
-        return $actor->isActive() && $actor->role->canAdministerUsers();
+        return $actor->isActive()
+            && ($actor->role->canAdministerUsers() || ($actor->role === UserRole::MealOfficer && $actor->province_id !== null));
     }
 
     public function create(User $actor): bool
@@ -26,6 +31,11 @@ class UserPolicy
      */
     public function update(User $actor, User $user): bool
     {
-        return $this->viewAny($actor) && ! $actor->is($user);
+        if (! $this->viewAny($actor) || $actor->is($user)) {
+            return false;
+        }
+
+        return ! $actor->isProvinceScoped()
+            || ($user->role->isSeller() && Agrodealer::query()->visibleTo($actor)->whereKey($user->agrodealer_id)->exists());
     }
 }

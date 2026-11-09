@@ -24,7 +24,7 @@ class UserController extends Controller
         $me = $request->user();
 
         return Inertia::render('admin/users', [
-            'users' => $users->list()->map(fn (User $user): array => [
+            'users' => $users->list($me)->map(fn (User $user): array => [
                 'id' => $user->id,
                 'email' => $user->email,
                 'username' => $user->username,
@@ -39,13 +39,14 @@ class UserController extends Controller
                 'is_me' => $user->is($me),
                 'last_login_at' => $user->last_login_at?->toIso8601String(),
             ]),
-            'roles' => collect(UserRole::cases())->map(fn (UserRole $role): array => [
+            // O oficial MEAL só cria contas de comerciantes da sua província.
+            'roles' => collect(UserRole::cases())->filter(fn (UserRole $role): bool => ! $me->isProvinceScoped() || $role->isSeller())->values()->map(fn (UserRole $role): array => [
                 'value' => $role->value,
                 'label' => $role->label(),
                 'agrodealer' => $role->isSeller(),
                 'province' => $role->needsProvince(),
             ]),
-            'agrodealers' => Agrodealer::query()->orderBy('name')->get(['id', 'code', 'name', 'status'])
+            'agrodealers' => Agrodealer::query()->visibleTo($me)->orderBy('name')->get(['id', 'code', 'name', 'status'])
                 ->map(fn (Agrodealer $agrodealer): array => [
                     'id' => $agrodealer->id,
                     'code' => $agrodealer->code,

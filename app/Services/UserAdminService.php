@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Enums\RecordStatus;
 use App\Enums\UserRole;
+use App\Models\Agrodealer;
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Contas e acessos.
@@ -19,14 +21,22 @@ use Illuminate\Support\Facades\DB;
  */
 class UserAdminService
 {
+    /** Contas activas no máximo por comerciante (decidido a 9/11/2026). */
+    public const MAX_ACTIVE_PER_AGRODEALER = 2;
+
     /**
-     * Todas as contas por nome, com agrodealer e província.
+     * As contas que quem vê pode gerir, por nome, com agrodealer e província:
+     * todas para o gestor MEAL e o administrador; para o oficial MEAL, só as
+     * dos comerciantes da sua província.
      *
      * @return Collection<int, User>
      */
-    public function list(): Collection
+    public function list(?User $viewer = null): Collection
     {
         return User::query()
+            ->when($viewer?->isProvinceScoped(), fn ($q) => $q
+                ->whereIn('role', [UserRole::AgrodealerManager->value, UserRole::AgrodealerOperator->value])
+                ->whereIn('agrodealer_id', Agrodealer::query()->visibleTo($viewer)->select('id')))
             ->with(['agrodealer:id,name,code', 'province:id,name'])
             ->orderBy('full_name')
             ->orderBy('id')
@@ -42,6 +52,7 @@ class UserAdminService
     public function create(User $actor, array $data): User
     {
         return DB::transaction(function () use ($actor, $data): User {
+            $this->guardAccess($actor, $data, RecordStatus::Active->value, null);
             $user = new User([
                 'email' => mb_strtolower(trim($data['email'])),
                 'password' => $data['password'],
@@ -65,6 +76,7 @@ class UserAdminService
     public function updateAccess(User $actor, User $user, array $data): User
     {
         return DB::transaction(function () use ($actor, $user, $data): User {
+            $this->guardAccess($actor, $data, $data['status'], $user);
             $before = $this->accessSnapshot($user);
 
             $user->update([
@@ -129,6 +141,38 @@ class UserAdminService
                 'metadata' => ['full_name' => $user->full_name, 'via' => 'app'],
             ]);
         });
+    }
+
+    /**
+     * O oficial MEAL só cria e muda contas de comerciantes da sua província;
+     * cada comerciante tem no máximo duas contas activas (gestor ou operador).
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws ValidationException
+     */
+    private function guardAccess(User $actor, array $data, string $status, ?User $user): void
+    {
+        $role = UserRole::from($data['role']);
+        $agrodealerId = $role->isSeller() ? ($data['agrodealer_id'] ?? null) : null;
+        if ($actor->isProvinceScoped()) {
+            if (! $role->isSeller()) {
+                throw ValidationException::withMessages(['role' => 'O oficial MEAL só cria contas de comerciantes.']);
+            }
+            if (! Agrodealer::query()->visibleTo($actor)->whereKey($agrodealerId)->exists()) {
+                throw ValidationException::withMessages(['agrodealer_id' => 'Escolha um comerciante da sua província.']);
+            }
+        }
+        if ($agrodealerId === null || $status !== RecordStatus::Active->value) {
+            return;
+        }
+        // Bloqueia o comerciante: duas contas criadas ao mesmo tempo não passam o limite.
+        Agrodealer::query()->whereKey($agrodealerId)->lockForUpdate()->first();
+        $active = User::query()->where('agrodealer_id', $agrodealerId)->where('status', RecordStatus::Active)
+            ->when($user, fn ($q) => $q->whereKeyNot($user->id))->count();
+        if ($active >= self::MAX_ACTIVE_PER_AGRODEALER) {
+            throw ValidationException::withMessages(['agrodealer_id' => 'Este comerciante já tem '.self::MAX_ACTIVE_PER_AGRODEALER.' contas activas. Desactive uma antes de criar ou activar outra.']);
+        }
     }
 
     /**

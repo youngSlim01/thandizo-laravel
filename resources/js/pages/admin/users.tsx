@@ -139,9 +139,17 @@ function ResetPassword({ user, onDone }: { user: AppUser; onDone: () => void }) 
     );
 }
 
+// Vindo do cartão do comerciante (?novo=gestor&comerciante=…), o papel e o
+// comerciante já vêm escolhidos.
+function prefill(): { role: string; agrodealer_id: string } {
+    if (typeof window === 'undefined') return { role: '', agrodealer_id: '' };
+    const q = new URLSearchParams(window.location.search);
+    return q.get('novo') === 'gestor' ? { role: 'AGRODEALER_MANAGER', agrodealer_id: q.get('comerciante') ?? '' } : { role: '', agrodealer_id: '' };
+}
+
 function CreateUser({ onDone, ...lists }: { onDone: () => void } & Omit<Props, 'users'>) {
     const form = useForm({
-        email: '', username: '', full_name: '', role: '', agrodealer_id: '', province_id: '',
+        email: '', username: '', full_name: '', ...prefill(), province_id: '',
         status: 'ACTIVE' as Status, password: generatePassword(),
     });
 
@@ -212,7 +220,7 @@ function UserCard({ user, ...lists }: { user: AppUser } & Omit<Props, 'users'>) 
 
 export default function Users({ users, ...lists }: Props) {
     const { flash } = usePage<SharedProps>().props;
-    const [creating, setCreating] = useState(false);
+    const [creating, setCreating] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('novo') === 'gestor');
     const [filter, setFilter] = useState('');
     // Fechar esconde só estas credenciais; as de uma conta seguinte aparecem.
     const [closedPassword, setClosedPassword] = useState<string | null>(null);

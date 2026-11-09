@@ -39,7 +39,7 @@ class UserAdminTest extends TestCase
         ];
     }
 
-    public function test_meal_officer_cannot_open_the_page(): void
+    public function test_meal_officer_without_province_cannot_open_the_page(): void
     {
         $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create())
             ->get('/admin/users')
@@ -217,7 +217,7 @@ class UserAdminTest extends TestCase
         $this->assertSame(UserRole::SystemAdmin, $admin->fresh()->role);
     }
 
-    public function test_meal_officer_cannot_create_accounts(): void
+    public function test_meal_officer_without_province_cannot_create_accounts(): void
     {
         $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create())
             ->post('/admin/users', $this->newAccount())
@@ -246,5 +246,49 @@ class UserAdminTest extends TestCase
         $this->actingAs($admin)
             ->put("/admin/users/{$admin->id}/password", ['password' => 'Nova2345xy'])
             ->assertForbidden();
+    }
+
+    public function test_meal_officer_manages_only_merchant_accounts_of_the_province(): void
+    {
+        $tete = Province::factory()->create();
+        $own = Agrodealer::factory()->create(['province_id' => $tete->id]);
+        $other = Agrodealer::factory()->create();
+        $officer = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $tete->id]);
+        $foreign = User::factory()->role(UserRole::AgrodealerManager)->create(['agrodealer_id' => $other->id]);
+        $meal = User::factory()->role(UserRole::MealManager)->create();
+
+        $this->actingAs($officer)->get('/admin/users')->assertInertia(fn (Assert $page) => $page
+            ->has('users', 0)->has('roles', 2)->has('agrodealers', 1)->where('agrodealers.0.id', $own->id));
+
+        $this->actingAs($officer)->post('/admin/users', $this->newAccount(['role' => 'AGRODEALER_MANAGER', 'agrodealer_id' => $own->id]))
+            ->assertSessionHas('credentials');
+        $this->actingAs($officer)->post('/admin/users', $this->newAccount(['email' => 'b@org.org', 'role' => 'AGRODEALER_MANAGER', 'agrodealer_id' => $other->id]))
+            ->assertSessionHasErrors(['agrodealer_id' => 'Escolha um comerciante da sua província.']);
+        $this->actingAs($officer)->post('/admin/users', $this->newAccount(['email' => 'c@org.org']))
+            ->assertSessionHasErrors(['role' => 'O oficial MEAL só cria contas de comerciantes.']);
+
+        $this->actingAs($officer)->put("/admin/users/{$foreign->id}", ['full_name' => 'X', 'role' => 'AGRODEALER_MANAGER', 'agrodealer_id' => $other->id, 'status' => 'ACTIVE'])
+            ->assertForbidden();
+        $this->actingAs($officer)->put("/admin/users/{$meal->id}", ['full_name' => 'X', 'role' => 'MEAL_MANAGER', 'status' => 'ACTIVE'])
+            ->assertForbidden();
+    }
+
+    public function test_a_merchant_has_at_most_two_active_accounts(): void
+    {
+        $admin = $this->admin();
+        $agrodealer = Agrodealer::factory()->create();
+        $first = User::factory()->role(UserRole::AgrodealerManager)->create(['agrodealer_id' => $agrodealer->id]);
+        User::factory()->role(UserRole::AgrodealerOperator)->create(['agrodealer_id' => $agrodealer->id]);
+        $seller = fn (string $email) => $this->newAccount(['email' => $email, 'role' => 'AGRODEALER_MANAGER', 'agrodealer_id' => $agrodealer->id]);
+
+        $this->actingAs($admin)->post('/admin/users', $seller('terceira@org.org'))
+            ->assertSessionHasErrors(['agrodealer_id' => 'Este comerciante já tem 2 contas activas. Desactive uma antes de criar ou activar outra.']);
+
+        $this->actingAs($admin)->put("/admin/users/{$first->id}", ['full_name' => $first->full_name, 'role' => 'AGRODEALER_MANAGER', 'agrodealer_id' => $agrodealer->id, 'status' => 'INACTIVE'])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($admin)->post('/admin/users', $seller('nova@org.org'))->assertSessionHas('credentials');
+
+        $this->actingAs($admin)->put("/admin/users/{$first->id}", ['full_name' => $first->full_name, 'role' => 'AGRODEALER_MANAGER', 'agrodealer_id' => $agrodealer->id, 'status' => 'ACTIVE'])
+            ->assertSessionHasErrors('agrodealer_id');
     }
 }
