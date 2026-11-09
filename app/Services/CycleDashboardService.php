@@ -88,6 +88,10 @@ class CycleDashboardService
                 $alerts[] = ['key' => "fair_absent_{$d['district_id']}", 'level' => 'attention', 'label' => "Agregados de {$d['district']} que faltaram à feira", 'value' => $d['missing'], 'href' => "/admin/dashboard/faltosos?cycle={$cycle->id}&district={$d['district_id']}"];
             }
         }
+        if (! $closed) {
+            $withoutPrices = collect($districts)->filter(fn ($d) => in_array($d['fair_status'], ['planned', 'ongoing'], true) && $d['priced_products'] === 0);
+            $alerts[] = ['key' => 'fair_no_prices', 'level' => 'critical', 'label' => 'Distritos com feira marcada e sem preços: o POS não vende ('.$withoutPrices->pluck('district')->join(', ').')', 'value' => $withoutPrices->count(), 'href' => '/admin/products'];
+        }
         if (! $closed && $closingIn !== null && $closingIn <= self::CLOSING_SOON_DAYS && $unused > 0) {
             $alerts[] = ['key' => 'closing', 'level' => 'critical', 'label' => "O ciclo fecha em {$closingIn} dia(s) com saldo por usar", 'value' => $unused, 'money' => true, 'href' => '/admin/cycles'];
         }
@@ -170,6 +174,7 @@ class CycleDashboardService
                 'district_id' => $d['district_id'], 'district' => $d['district'], 'province' => $d['province'],
                 'target' => $d['target_households'], 'households' => $g->count(), 'bought' => $bought, 'missing' => $g->count() - $bought,
                 'fair_starts_on' => $d['fair_starts_on'], 'fair_ends_on' => $d['fair_ends_on'], 'fair_status' => $d['fair_status'],
+                'priced_products' => $d['priced_products'],
             ];
         })->filter(fn ($d) => $d['households'] > 0 || $d['target'] !== null || $d['fair_starts_on'] !== null)->values()->all();
     }

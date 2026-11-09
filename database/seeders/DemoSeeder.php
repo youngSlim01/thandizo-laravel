@@ -63,10 +63,10 @@ class DemoSeeder extends Seeder
         $realToday = now('Africa/Maputo')->toDateString();
         Carbon::setTestNow(now()->subMonthNoOverflow()->startOfMonth()->setTime(8, 0));
 
-        $prices = app(PriceService::class);
+        $products = [];
         foreach ([['Semente de milho', 'kg', 150], ['Fertilizante NPK', 'saco 50 kg', 2500], ['Enxada', 'unidade', 450]] as [$name, $unit, $price]) {
             $product = app(ProductService::class)->create($admin, ['name' => $name, 'unit' => $unit]);
-            $prices->setPrice($admin, $product, $district, $price);
+            $products[] = [$product, $price];
             $agrodealer->catalogue()->attach($product->id);
         }
 
@@ -84,6 +84,10 @@ class DemoSeeder extends Seeder
         Household::query()->whereIn('id', $codes->take(-4))->update(['voucher_tier_id' => $tierC->id]);
 
         $cycle = app(CycleService::class)->open($admin, 'AA - Janela 1', now()->toDateString(), now()->addDays(75)->toDateString(), 'Acções antecipadas à seca, Out–Dez');
+        // Os preços são de cada ciclo: lançam-se depois de o abrir.
+        foreach ($products as [$product, $price]) {
+            app(PriceService::class)->setPrice($admin, $product, $district, $price);
+        }
         // Feira de Mutarara do início do ciclo até depois de amanhã (as vendas de
         // exemplo e o POS de hoje precisam dela) e meta de 25 agregados.
         app(CyclePlanService::class)->save($admin, $cycle['cycle_id'], $district->id, [

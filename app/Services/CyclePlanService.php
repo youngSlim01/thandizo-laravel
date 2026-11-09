@@ -29,7 +29,8 @@ class CyclePlanService
     public function __construct(private ProvinceScope $scope) {}
 
     /**
-     * Distritos do programa visíveis para quem vê, com o planeamento no ciclo.
+     * Distritos do programa visíveis para quem vê, com o planeamento no ciclo
+     * e quantos produtos têm preço lá.
      *
      * @return list<array<string, mixed>>
      */
@@ -42,10 +43,19 @@ class CyclePlanService
             ->orderBy('p.name')->orderBy('d.name');
         $this->scope->apply($query, $viewer, 'p.id');
 
-        return $query->get(['d.id as district_id', 'd.name as district', 'p.name as province', 'cd.target_households', 'cd.fair_starts_on', 'cd.fair_ends_on'])
+        // Produtos activos com preço no distrito, neste ciclo: uma feira sem
+        // preços não vende nada (aviso, decidido a 9/11/2026).
+        $priced = DB::table('price_lists as pl')->join('products as pr', 'pr.id', '=', 'pl.product_id')
+            ->whereColumn('pl.district_id', 'd.id')->where('pl.cycle_id', $cycleId)
+            ->where('pl.status', 'ACTIVE')->whereNull('pl.effective_to')->where('pr.status', 'ACTIVE')
+            ->selectRaw('count(*)');
+
+        return $query->select(['d.id as district_id', 'd.name as district', 'p.name as province', 'cd.target_households', 'cd.fair_starts_on', 'cd.fair_ends_on'])
+            ->selectSub($priced, 'priced_products')->get()
             ->map(fn (object $row): array => [
                 ...(array) $row,
                 'target_households' => $row->target_households === null ? null : (int) $row->target_households,
+                'priced_products' => (int) $row->priced_products,
                 'fair_status' => $this->fairStatus($row->fair_starts_on, $row->fair_ends_on, $today),
             ])->all();
     }

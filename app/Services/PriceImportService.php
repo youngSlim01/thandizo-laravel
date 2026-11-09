@@ -25,16 +25,19 @@ class PriceImportService
     ) {}
 
     /**
+     * Com a feira de um distrito a decorrer, mudar um preço lá pede o motivo
+     * (o mesmo para toda a importação).
+     *
      * @param  list<array{code?: string|null, name?: string|null, unit?: string|null, category?: string|null, prices?: array<string, float|int|string|null>}>  $rows
      * @return array{rows: int, products_created: int, prices_set: int, prices_unchanged: int, last_code: string|null}
      *
      * @throws ValidationException com a linha e o motivo, em "rows"
      */
-    public function import(User $actor, array $rows, ?string $fileName): array
+    public function import(User $actor, array $rows, ?string $fileName, ?string $reason = null): array
     {
         $districts = District::query()->inProgramme()->get()->keyBy('id');
 
-        return DB::transaction(function () use ($actor, $rows, $fileName, $districts): array {
+        return DB::transaction(function () use ($actor, $rows, $fileName, $districts, $reason): array {
             $summary = ['rows' => 0, 'products_created' => 0, 'prices_set' => 0, 'prices_unchanged' => 0, 'last_code' => null];
 
             foreach ($rows as $index => $row) {
@@ -50,9 +53,10 @@ class PriceImportService
                         $this->fail($line, 'preço inválido.');
                     }
                     try {
-                        $result = $this->prices->setPrice($actor, $product, $district, (float) $price);
+                        $result = $this->prices->setPrice($actor, $product, $district, (float) $price, $reason);
                     } catch (InvalidArgumentException $exception) {
-                        $this->fail($line, mb_strtolower($exception->getMessage()));
+                        $message = $exception->getMessage();
+                        $this->fail($line, mb_strtolower(mb_substr($message, 0, 1)).mb_substr($message, 1));
                     }
                     $result['changed'] ? $summary['prices_set']++ : $summary['prices_unchanged']++;
                 }
@@ -67,7 +71,7 @@ class PriceImportService
                     'action' => 'PRICES_IMPORTED',
                     'entity_type' => 'PRODUCT',
                     'entity_id' => null,
-                    'metadata' => ['file_name' => $fileName, ...collect($summary)->except('last_code')->all()],
+                    'metadata' => ['file_name' => $fileName, 'reason' => trim((string) $reason) ?: null, ...collect($summary)->except('last_code')->all()],
                 ]);
             }
 

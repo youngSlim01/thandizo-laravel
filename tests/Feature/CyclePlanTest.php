@@ -7,8 +7,10 @@ use App\Exceptions\DomainRuleException;
 use App\Models\District;
 use App\Models\Province;
 use App\Models\User;
+use App\Services\CycleDashboardService;
 use App\Services\CyclePlanService;
 use App\Services\PosService;
+use App\Services\PriceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -115,5 +117,19 @@ class CyclePlanTest extends TestCase
 
         DB::table('cycle_districts')->update(['fair_starts_on' => now('Africa/Maputo')->subDays(5)->toDateString(), 'fair_ends_on' => now('Africa/Maputo')->subDays(3)->toDateString()]);
         $this->assertRuleFails('FAIR_NOT_RUNNING', fn () => $this->preview());
+    }
+
+    public function test_a_fair_without_prices_is_flagged_in_the_plan_and_on_the_dashboard(): void
+    {
+        $this->plan($this->admin, ['fair_starts_on' => now()->addDays(3)->toDateString(), 'fair_ends_on' => now()->addDays(5)->toDateString()]);
+        $this->actingAs($this->admin)->get('/admin/cycles')
+            ->assertInertia(fn (Assert $page) => $page->where('plan.0.priced_products', 1));
+
+        app(PriceService::class)->setPrice($this->admin, $this->product, $this->district, null);
+
+        $this->actingAs($this->admin)->get('/admin/cycles')
+            ->assertInertia(fn (Assert $page) => $page->where('plan.0.priced_products', 0));
+        $alerts = collect(app(CycleDashboardService::class)->forViewer($this->admin, $this->cycleId())['alerts']);
+        $this->assertSame(1, $alerts->firstWhere('key', 'fair_no_prices')['value']);
     }
 }

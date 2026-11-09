@@ -113,7 +113,7 @@ class PosSaleTest extends TestCase
     {
         $preview = $this->preview(2)->json();
         $this->travel(1)->minutes();
-        app(PriceService::class)->setPrice($this->admin, $this->product, $this->district, 1100);
+        app(PriceService::class)->setPrice($this->admin, $this->product, $this->district, 1100, 'Erro de digitação');
 
         $this->actingAs($this->operator)->postJson('/pos/sales', [
             ...$this->sale(2), 'idempotency_key' => 'key-1', 'expected_total' => $preview['total_amount'], 'expected_voucher_amount' => $preview['voucher_amount'],
@@ -141,7 +141,7 @@ class PosSaleTest extends TestCase
 
         $this->agrodealer->catalogue()->attach($this->product->id);
         $this->travel(1)->minutes();
-        app(PriceService::class)->setPrice($this->admin, $this->product, $this->district, null);
+        app(PriceService::class)->setPrice($this->admin, $this->product, $this->district, null, 'Produto esgotado');
         $this->preview(1)->assertJson(['code' => 'PRODUCT_NO_DISTRICT_PRICE']);
 
         DB::table('households')->update(['status' => 'INACTIVE']);

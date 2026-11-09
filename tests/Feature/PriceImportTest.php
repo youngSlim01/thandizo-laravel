@@ -8,6 +8,7 @@ use App\Models\District;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\CycleService;
 use App\Services\PriceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
@@ -31,6 +32,7 @@ class PriceImportTest extends TestCase
     {
         parent::setUp();
         $this->manager = User::factory()->role(UserRole::MealManager)->create();
+        app(CycleService::class)->open($this->manager, 'Ciclo 1', null, null);
         $this->mutarara = District::factory()->inProgramme()->create(['name' => 'Mutarara']);
         $this->guro = District::factory()->inProgramme()->create(['name' => 'Guro']);
     }
@@ -59,7 +61,7 @@ class PriceImportTest extends TestCase
 
         $this->assertSame('1000.00', $this->price($seed, $this->mutarara));
         $audit = AuditLog::query()->where('action', 'PRICES_IMPORTED')->sole();
-        $this->assertEquals(['file_name' => 'precos.xlsx', 'rows' => 1, 'products_created' => 0, 'prices_set' => 1, 'prices_unchanged' => 1], $audit->metadata);
+        $this->assertEquals(['file_name' => 'precos.xlsx', 'rows' => 1, 'products_created' => 0, 'prices_set' => 1, 'prices_unchanged' => 1, 'reason' => null], $audit->metadata);
     }
 
     public function test_empty_code_creates_a_new_product_with_a_generated_code(): void

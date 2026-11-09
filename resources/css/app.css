@@ -1633,7 +1633,16 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 .catalog-heading h1{margin:5px 0 7px;font-size:clamp(28px,3vw,38px);font-weight:450;letter-spacing:-.035em;color:var(--text)}
 .catalog-heading p{margin:0;color:var(--muted);font-size:14px}
 .catalog-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
-.catalog-actions button{min-height:40px;padding:0 15px;font-size:13px;text-transform:none;letter-spacing:0}
+.catalog-actions button{width:auto;min-height:40px;padding:0 15px;font-size:13px;text-transform:none;letter-spacing:0}
+.catalog-cycle{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:-8px 0 16px}
+.catalog-cycle label span{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.catalog-cycle select{min-width:280px}
+.catalog-cycle .secondary-button{width:auto;min-height:40px;padding:0 15px;font-size:13px;text-transform:none;letter-spacing:0}
+.catalog-stat-alert{border-color:var(--danger-border);background:var(--danger-soft)}
+.catalog-stat-alert strong{color:var(--danger)}
+.catalog-fair{display:inline-block;margin-top:4px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;background:var(--surface-muted);color:var(--text-soft)}
+.catalog-fair-ongoing{background:var(--brand-soft);color:var(--brand-dark)}
+.catalog-fair-planned{background:var(--info-soft);color:var(--info)}
 .catalog-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}
 .catalog-stat{background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:15px 17px;display:flex;flex-direction:column;gap:4px;min-width:0}
 .catalog-stat span{font-size:12px;color:var(--text-soft)}
@@ -1686,6 +1695,8 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 .plan-finished{background:var(--warning-soft);color:var(--warning)}
 .plan-reason,.plan-note,.plan-error{grid-column:1/-1}
 .plan-note{color:var(--muted);font-size:12px}
+.plan-warning{color:var(--danger);font-weight:600}
+.plan-warning a{color:inherit}
 @media(max-width:900px){.plan-line{grid-template-columns:1fr 1fr}.plan-district{grid-column:1/-1}}
 
 /* Feira no início do POS */

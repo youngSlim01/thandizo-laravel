@@ -9,8 +9,11 @@ use App\Models\District;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\CycleService;
 use App\Services\PriceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
@@ -29,10 +32,13 @@ class ProductPriceTest extends TestCase
 
     private District $mutarara;
 
+    private string $cycleId;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->manager = User::factory()->role(UserRole::MealManager)->create();
+        $this->cycleId = app(CycleService::class)->open($this->manager, 'Ciclo 1', null, null)['cycle_id'];
         $this->product = Product::factory()->create(['name' => 'Semente', 'unit' => 'kg']);
         $this->mutarara = District::factory()->inProgramme()->create(['name' => 'Mutarara']);
     }
@@ -56,9 +62,8 @@ class ProductPriceTest extends TestCase
             ->assertSessionHas('success', 'Semente em Mutarara: 1000 MT / kg, já em vigor.');
 
         $this->assertSame('1000.00', $this->current());
-        $audit = AuditLog::query()->sole();
-        $this->assertSame('PRICE_SET', $audit->action);
-        $this->assertEquals(['district_id' => $this->mutarara->id, 'old_price' => null, 'new_price' => '1000.00'], $audit->metadata);
+        $audit = AuditLog::query()->where('action', 'PRICE_SET')->sole();
+        $this->assertEquals(['cycle_id' => $this->cycleId, 'district_id' => $this->mutarara->id, 'old_price' => null, 'new_price' => '1000.00', 'reason' => null], $audit->metadata);
     }
 
     public function test_changing_a_price_closes_the_old_one_and_keeps_the_history(): void
@@ -91,7 +96,7 @@ class ProductPriceTest extends TestCase
         $this->setPrice(1000);
 
         $this->assertSame(1, PriceList::query()->count());
-        $this->assertSame(1, AuditLog::query()->count());
+        $this->assertSame(1, AuditLog::query()->where('action', 'PRICE_SET')->count());
     }
 
     public function test_removing_the_price_stops_the_sale_there(): void
@@ -152,5 +157,65 @@ class ProductPriceTest extends TestCase
             ->assertSessionHasErrors();
 
         $this->assertFalse(Product::query()->where('name', 'Enxada')->exists());
+    }
+
+    public function test_prices_belong_to_the_open_cycle_and_a_new_cycle_starts_empty(): void
+    {
+        $this->setPrice(1000);
+        $cycles = app(CycleService::class);
+        $cycles->close($this->manager, $this->cycleId, true);
+
+        $this->assertNull($this->current());
+        $this->setPrice(900)->assertSessionHasErrors(['unit_price' => 'Abra o ciclo antes de lançar preços: cada ciclo tem os seus preços.']);
+
+        $second = $cycles->open($this->manager, 'Ciclo 2', null, null)['cycle_id'];
+        $this->assertNull($this->current());
+        $this->actingAs($this->manager)->get('/admin/products')
+            ->assertInertia(fn (Assert $page) => $page->where('cycle.id', $second)->where('products.0.prices', [])->where('previousCycle.id', $this->cycleId));
+        $this->actingAs($this->manager)->get("/admin/products?cycle={$this->cycleId}")
+            ->assertInertia(fn (Assert $page) => $page->where('cycle.status', 'CLOSED')->where("products.0.prices.{$this->mutarara->id}", '1000.00'));
+    }
+
+    public function test_during_the_fair_changing_or_removing_a_price_needs_a_reason_but_adding_one_does_not(): void
+    {
+        DB::table('cycle_districts')->insert([
+            'id' => (string) Str::uuid7(), 'cycle_id' => $this->cycleId, 'district_id' => $this->mutarara->id,
+            'fair_starts_on' => now('Africa/Maputo')->toDateString(), 'fair_ends_on' => now('Africa/Maputo')->addDays(2)->toDateString(),
+        ]);
+
+        $this->setPrice(1000)->assertSessionHas('success');
+        $this->travel(1)->minutes();
+        $this->setPrice(1100)->assertSessionHasErrors(['unit_price' => 'A feira de Mutarara está a decorrer: indique o motivo da mudança de preço.']);
+        $this->setPrice(null)->assertSessionHasErrors('unit_price');
+        $this->assertSame('1000.00', $this->current());
+
+        $this->actingAs($this->manager)->from('/admin/products')
+            ->put("/admin/products/{$this->product->id}/prices/{$this->mutarara->id}", ['unit_price' => 1100, 'reason' => 'Erro de digitação do comité'])
+            ->assertSessionHas('success');
+        $this->assertSame('1100.00', $this->current());
+        $this->assertSame('Erro de digitação do comité', AuditLog::query()->where('action', 'PRICE_SET')->latest('created_at')->orderByDesc('id')->first()->metadata['reason']);
+    }
+
+    public function test_copying_from_the_previous_cycle_fills_only_missing_prices_and_is_audited(): void
+    {
+        $guro = District::factory()->inProgramme()->create(['name' => 'Guro']);
+        $prices = app(PriceService::class);
+        $prices->setPrice($this->manager, $this->product, $this->mutarara, 1000);
+        $prices->setPrice($this->manager, $this->product, $guro, 800);
+        $cycles = app(CycleService::class);
+        $cycles->close($this->manager, $this->cycleId, true);
+        $cycles->open($this->manager, 'Ciclo 2', null, null);
+        $prices->setPrice($this->manager, $this->product, $this->mutarara, 1200);
+
+        $this->actingAs($this->manager)->from('/admin/products')->post('/admin/products/copy-prices')
+            ->assertSessionHas('success', '1 preço(s) copiados do ciclo CIC-01. Reveja-os antes da feira: já estão em vigor.');
+
+        $this->assertSame('1200.00', $this->current());
+        $this->assertSame('800.00', $prices->currentPrice($this->product->id, $guro->id));
+        $this->assertSame(1, AuditLog::query()->where('action', 'PRICES_COPIED')->sole()->metadata['copied']);
+
+        $this->actingAs($this->manager)->from('/admin/products')->post('/admin/products/copy-prices')
+            ->assertSessionHasErrors(['copy' => 'Nada a copiar: o ciclo CIC-01 não tem preços que faltem neste ciclo.']);
+        $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create())->post('/admin/products/copy-prices')->assertForbidden();
     }
 }

@@ -9,7 +9,7 @@ A migração técnica (Next.js + Supabase → Laravel + MySQL) está em
 [`MIGRACAO_LARAVEL.md`](MIGRACAO_LARAVEL.md). Este documento fala do sistema
 e do produto.
 
-Última actualização: 9 de Novembro de 2026 (feiras e metas por distrito).
+Última actualização: 9 de Novembro de 2026 (preços por ciclo).
 
 ---
 
@@ -118,6 +118,16 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 | Cada ciclo tem uma **meta de agregados por distrito**, no mesmo sítio das feiras ("Metas e feiras por distrito", no ecrã do ciclo). | As metas do programa são por distrito e ciclo; o painel mostra "% da meta". |
 | A internet no local da feira é garantida (Starlink): o POS continua a funcionar só com ligação. | Evita um POS sem rede, muito mais complexo. |
 
+**Preços por ciclo** (decidido a 9/11/2026)
+
+| Decisão | Razão |
+|---|---|
+| Os preços são **de cada ciclo**, por distrito. O POS usa os preços do **ciclo aberto**; sem ciclo aberto não se lançam preços. Os ciclos fechados mostram os últimos preços que tiveram, só para consulta. | O comité de preços faz uma lista nova em cada ciclo. |
+| O ciclo novo **começa sem preços**. O botão **"Copiar preços do ciclo anterior"** copia os do último ciclo fechado só onde ainda falta preço (nunca substitui um preço já lançado); a cópia fica na auditoria. | Copiar é um acto consciente: nenhum preço velho passa sem alguém decidir. |
+| Com a **feira do distrito a decorrer**, **mudar ou retirar** um preço pede **motivo**, registado na auditoria (na importação, um motivo para toda a lista). Lançar um preço que faltava não pede. | Na mesma feira dois agregados não devem pagar valores diferentes sem razão; quem muda é o gestor MEAL ou o administrador, os únicos que gerem preços. |
+| Uma feira marcada num distrito **sem preços** não é impedida, mas é **avisada**: no planeamento do ciclo, no cartão "Feira marcada sem preços" dos produtos e como alerta crítico no painel MEAL. | O planeamento costuma vir antes da reunião do comité de preços. |
+| Nos primeiros passos, **"Abrir o ciclo" passa para antes de "Produtos e preços"**. | Os preços pertencem ao ciclo. |
+
 **Reconciliação (pagamento ao comerciante)**
 - Só **dias já fechados** (até ontem, hora de Moçambique) e só vendas confirmadas ainda não reconciliadas.
 - Circuito: **oficial MEAL** cria e envia → **gestor MEAL** aprova ou devolve → **Finanças** validam ou devolvem. Ninguém valida sozinho.
@@ -143,7 +153,7 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 - Os painéis MEAL e das Finanças partilham os mesmos componentes (`components/dashboard-ui.tsx`), incluindo a lista de alertas.
 
 **Primeiros passos** (8/11/2026)
-- Enquanto o programa não está montado, o painel MEAL mostra ao **gestor MEAL e ao administrador** os 7 primeiros passos, por ordem: configurar o programa (cliente e programa na Configuração), produtos e preços, comerciantes (catálogo e terminal POS), utilizadores dos comerciantes, beneficiários, abrir o ciclo, gerar e distribuir os cartões. Cada passo marca-se sozinho quando os dados existem; o seguinte tem o botão "Fazer agora". A lista desaparece quando todos estão feitos. Razão: no primeiro dia, abrir o ciclo não é o primeiro passo, e o gestor precisa de ver o caminho.
+- Enquanto o programa não está montado, o painel MEAL mostra ao **gestor MEAL e ao administrador** os 7 primeiros passos, por ordem: configurar o programa (cliente e programa na Configuração), abrir o ciclo (os preços são de cada ciclo), produtos e preços, comerciantes (catálogo e terminal POS), utilizadores dos comerciantes, beneficiários, gerar e distribuir os cartões. Cada passo marca-se sozinho quando os dados existem; o seguinte tem o botão "Fazer agora". A lista desaparece quando todos estão feitos. Razão: no primeiro dia, abrir o ciclo não é o primeiro passo, e o gestor precisa de ver o caminho.
 
 **Painel das Finanças** (decidido a 8/11/2026)
 

@@ -1,27 +1,30 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { BackOfficeLayout } from '@/components/finance-layout';
 import { formatMT } from '@/lib/format';
 import { downloadPriceTemplate, parsePrice, priceChanges, readPriceFile, type PriceFile } from '@/lib/price-import';
 import type { SharedProps } from '@/types';
 
-// Produtos e o seu preço em cada distrito do programa, como em
-// app/admin/products/page.tsx do Next.js. Cada distrito tem os seus preços;
-// mudar um preço tem efeito imediato e o antigo fica no histórico.
+// Produtos e o seu preço em cada distrito do programa, em cada ciclo. O
+// ciclo novo começa sem preços (copiam-se do anterior com um botão); mudar
+// um preço tem efeito imediato e o antigo fica no histórico. Com a feira do
+// distrito a decorrer, mudar ou retirar um preço pede motivo.
 
 type Status = 'ACTIVE' | 'INACTIVE';
-type District = { id: string; name: string; province: string };
+type Fair = 'none' | 'planned' | 'ongoing' | 'finished';
+type District = { id: string; name: string; province: string; fair: Fair };
+type Cycle = { id: string; code: string; name: string; status: 'OPEN' | 'CLOSED' };
 type Product = {
     id: string; code: string; name: string; unit: string; category: string | null; status: Status;
     prices: Record<string, string>; agrodealers: number;
 };
-type Props = { products: Product[]; districts: District[]; canManage: boolean };
+type Props = { products: Product[]; districts: District[]; canManage: boolean; cycles: Cycle[]; cycle: Cycle | null; previousCycle: Cycle | null };
 
 function firstError(errors: Record<string, string>): string | undefined {
     return Object.values(errors)[0];
 }
 
-function ProductForm({ product, districts, onDone }: { product: Product | null; districts: District[]; onDone: () => void }) {
+function ProductForm({ product, districts, withPrices, onDone }: { product: Product | null; districts: District[]; withPrices: boolean; onDone: () => void }) {
     const form = useForm({
         name: product?.name ?? '',
         unit: product?.unit ?? '',
@@ -42,7 +45,7 @@ function ProductForm({ product, districts, onDone }: { product: Product | null; 
         }
         // Produto e preços de uma vez: gravam-se os dois, ou nenhum.
         const parsed: Record<string, number> = {};
-        for (const d of districts) {
+        for (const d of withPrices ? districts : []) {
             const value = parsePrice(form.data.prices[d.id] ?? '');
             if (value === null) continue;
             if (!Number.isFinite(value) || value <= 0) { setPriceError(`Preço inválido em ${d.name}.`); return; }
@@ -67,7 +70,7 @@ function ProductForm({ product, districts, onDone }: { product: Product | null; 
                 <div><label className="form-label" htmlFor="product-category">Categoria</label>
                     <input id="product-category" className="input" value={form.data.category} onChange={(e) => form.setData('category', e.target.value)} placeholder="Ex.: Sementes" /></div>
             </div>
-            {!product && districts.length > 0 && (
+            {!product && withPrices && districts.length > 0 && (
                 <>
                     <div className="form-label">Preço por distrito (MT por unidade) — deixe vazio onde não se vende</div>
                     <div className="form-grid-4">
@@ -129,14 +132,17 @@ function PriceCell({ product, district, canManage }: { product: Product; distric
     const current = product.prices[district.id];
     const [editing, setEditing] = useState(false);
     const [value, setValue] = useState('');
+    const [reason, setReason] = useState('');
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // Com a feira a decorrer, mudar ou retirar um preço que já existe pede motivo.
+    const needsReason = district.fair === 'ongoing' && current !== undefined;
 
     function save(price: number | null) {
         setBusy(true); setError(null);
-        router.put(`/admin/products/${product.id}/prices/${district.id}`, { unit_price: price }, {
+        router.put(`/admin/products/${product.id}/prices/${district.id}`, { unit_price: price, reason }, {
             preserveScroll: true,
-            onSuccess: () => setEditing(false),
+            onSuccess: () => { setEditing(false); setReason(''); },
             onError: (errors) => setError(firstError(errors) ?? 'Não foi possível guardar o preço.'),
             onFinish: () => setBusy(false),
         });
@@ -156,15 +162,20 @@ function PriceCell({ product, district, canManage }: { product: Product; distric
     const parsed = Number(value.replace(',', '.'));
     const valid = value.trim() !== '' && Number.isFinite(parsed) && parsed > 0;
     const changed = valid && parsed !== Number(current);
+    const reasonMissing = needsReason && reason.trim() === '';
     return (
         <td className="price-cell editing">
             <input className="input" inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)}
                 aria-label={`Novo preço de ${product.name} em ${district.name}`} autoFocus />
             {changed && current !== undefined && <small className="muted-text">{formatMT(current)} → {formatMT(parsed)}, em vigor já.</small>}
+            {needsReason && (
+                <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo (feira a decorrer)"
+                    aria-label={`Motivo da mudança de preço em ${district.name}`} />
+            )}
             {error && <small className="error-text">{error}</small>}
             <div className="price-cell-actions">
-                <button className="primary-button small-button" disabled={busy || !changed} onClick={() => save(parsed)}>GUARDAR</button>
-                {current !== undefined && <button className="quick-link danger small-link" disabled={busy} onClick={() => save(null)}>Retirar preço</button>}
+                <button className="primary-button small-button" disabled={busy || !changed || reasonMissing} onClick={() => save(parsed)}>GUARDAR</button>
+                {current !== undefined && <button className="quick-link danger small-link" disabled={busy || reasonMissing} onClick={() => save(null)}>Retirar preço</button>}
                 <button className="quick-link small-link" disabled={busy} onClick={() => setEditing(false)}>Cancelar</button>
             </div>
         </td>
@@ -175,6 +186,7 @@ function PriceImport({ districts, products, onDone }: { districts: District[]; p
     const [file, setFile] = useState<{ name: string; parsed: PriceFile } | null>(null);
     const [busy, setBusy] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [reason, setReason] = useState('');
 
     async function template() {
         setBusy('template'); setError(null);
@@ -198,6 +210,7 @@ function PriceImport({ districts, products, onDone }: { districts: District[]; p
         setBusy('import'); setError(null);
         router.post('/admin/products/import', {
             file_name: file.name,
+            reason,
             rows: file.parsed.rows.map((row) => ({ code: row.code, name: row.name, unit: row.unit, category: row.category, prices: row.prices })),
         }, {
             preserveScroll: true,
@@ -208,7 +221,14 @@ function PriceImport({ districts, products, onDone }: { districts: District[]; p
     }
 
     const summary = file ? priceChanges(file.parsed.rows) : null;
-    const blocked = !file || file.parsed.errors.length > 0 || file.parsed.rows.length === 0 || (summary!.changed === 0 && summary!.newProducts === 0);
+    // Preços que mudam em distritos com a feira a decorrer: pedem motivo.
+    const ongoing = districts.filter((d) => d.fair === 'ongoing');
+    const fairChanges = ongoing.filter((d) => file?.parsed.rows.some((row) => {
+        const next = row.prices[d.id];
+        const now = row.current[d.id];
+        return next !== undefined && now !== undefined && Number(now) !== next;
+    }));
+    const blocked = (fairChanges.length > 0 && reason.trim() === '') || !file || file.parsed.errors.length > 0 || file.parsed.rows.length === 0 || (summary!.changed === 0 && summary!.newProducts === 0);
 
     return (
         <div className="admin-form price-import">
@@ -262,6 +282,12 @@ function PriceImport({ districts, products, onDone }: { districts: District[]; p
                             </table>
                         </div>
                     )}
+                    {fairChanges.length > 0 && (
+                        <div>
+                            <label className="form-label" htmlFor="import-reason">Motivo — a feira está a decorrer em {fairChanges.map((d) => d.name).join(', ')}</label>
+                            <input id="import-reason" className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Ex.: correcção da lista do comité" />
+                        </div>
+                    )}
                     <button className="primary-button" onClick={apply} disabled={blocked || busy !== null}>
                         {busy === 'import' ? 'A IMPORTAR…' : 'IMPORTAR PREÇOS'}
                     </button>
@@ -271,14 +297,28 @@ function PriceImport({ districts, products, onDone }: { districts: District[]; p
     );
 }
 
-export default function Products({ products, districts, canManage }: Props) {
-    const { flash } = usePage<SharedProps>().props;
+const FAIR_LABEL: Record<Fair, string> = { none: '', planned: 'feira marcada', ongoing: 'feira a decorrer', finished: 'feira terminada' };
+
+export default function Products({ products, districts, canManage, cycles, cycle, previousCycle }: Props) {
+    const { flash, errors } = usePage<SharedProps & { errors: Record<string, string> }>().props;
     const [form, setForm] = useState<'none' | 'new' | 'district' | 'import' | Product>('none');
     const [filter, setFilter] = useState('');
+    const [copying, setCopying] = useState(false);
     const close = () => setForm('none');
+    const isOpen = cycle?.status === 'OPEN';
+    const editable = canManage && isOpen;
 
     const term = filter.trim().toLowerCase();
     const visible = products.filter((p) => !term || p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term));
+    const active = products.filter((p) => p.status === 'ACTIVE');
+    const pricesSet = active.reduce((sum, p) => sum + Object.keys(p.prices).length, 0);
+    const fairWithoutPrices = districts.filter((d) => (d.fair === 'planned' || d.fair === 'ongoing') && !active.some((p) => p.prices[d.id] !== undefined));
+
+    function copyPrices() {
+        if (!previousCycle || !window.confirm(`Copiar os preços do ciclo ${previousCycle.code} para os produtos e distritos que ainda não têm preço neste ciclo? Os preços já lançados não mudam.`)) return;
+        setCopying(true);
+        router.post('/admin/products/copy-prices', {}, { preserveScroll: true, onFinish: () => setCopying(false) });
+    }
 
     return (
         <BackOfficeLayout>
@@ -287,37 +327,60 @@ export default function Products({ products, districts, canManage }: Props) {
                 <div>
                     <div className="eyebrow">MEAL · CATÁLOGO</div>
                     <h1>Produtos e preços</h1>
-                    <p>Gerir produtos e definir preços de venda por distrito.</p>
+                    <p>Os preços de venda de cada distrito, em cada ciclo.</p>
                 </div>
                 {canManage && <div className="catalog-actions">
                     <button className="primary-button" onClick={() => setForm('new')}>+ Novo produto</button>
-                    <button className="secondary-button" onClick={() => setForm('import')}>Importar Excel</button>
+                    {isOpen && <button className="secondary-button" onClick={() => setForm('import')}>Importar Excel</button>}
                     <button className="secondary-button" onClick={() => setForm('district')}>+ Distrito</button>
                 </div>}
             </div>
 
+            <div className="catalog-cycle">
+                {cycles.length > 0 ? (
+                    <label>
+                        <span>Ciclo</span>
+                        <select className="input" value={cycle?.id ?? ''} onChange={(e) => router.get('/admin/products', { cycle: e.target.value }, { preserveScroll: true })}>
+                            {cycles.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.name}{c.status === 'OPEN' ? ' (aberto)' : ' (fechado)'}</option>)}
+                        </select>
+                    </label>
+                ) : <span />}
+                {editable && previousCycle && (
+                    <button className="secondary-button" onClick={copyPrices} disabled={copying}>
+                        {copying ? 'A copiar…' : `Copiar preços do ciclo ${previousCycle.code}`}
+                    </button>
+                )}
+            </div>
+
+            {cycle === null && <div className="info-box">Ainda não há ciclo aberto. Os preços são de cada ciclo: <Link href="/admin/cycles">abra o ciclo</Link> para os lançar. Pode já registar os produtos.</div>}
+            {cycle !== null && !isOpen && <div className="info-box">O ciclo {cycle.code} está fechado: estes foram os últimos preços dele, só para consulta.</div>}
+
             <div className="catalog-summary">
-                <div className="catalog-stat"><span>Produtos no catálogo</span><strong>{products.length}</strong><small>Produtos registados</small></div>
-                <div className="catalog-stat"><span>Distritos configurados</span><strong>{districts.length}</strong><small>Com preços próprios</small></div>
-                <div className="catalog-stat"><span>Preços definidos</span><strong>{products.reduce((sum, p) => sum + Object.keys(p.prices).length, 0)}</strong><small>Produto × distrito</small></div>
-                <div className="catalog-stat"><span>Sem preço definido</span><strong>{products.reduce((sum, p) => sum + Math.max(0, districts.length - Object.keys(p.prices).length), 0)}</strong><small>Combinações por configurar</small></div>
+                <div className="catalog-stat"><span>Produtos activos</span><strong>{active.length}</strong><small>{products.length - active.length > 0 ? `${products.length - active.length} inactivo(s)` : 'No catálogo do programa'}</small></div>
+                <div className="catalog-stat"><span>Distritos do programa</span><strong>{districts.length}</strong><small>Cada um com os seus preços</small></div>
+                <div className="catalog-stat"><span>Preços neste ciclo</span><strong>{pricesSet}</strong><small>{cycle ? cycle.code : 'Sem ciclo'}</small></div>
+                <div className={`catalog-stat${fairWithoutPrices.length > 0 ? ' catalog-stat-alert' : ''}`}>
+                    <span>Feira marcada sem preços</span><strong>{fairWithoutPrices.length}</strong>
+                    <small>{fairWithoutPrices.length > 0 ? `${fairWithoutPrices.map((d) => d.name).join(', ')}: o POS não vende` : 'Nenhum distrito em falta'}</small>
+                </div>
             </div>
 
             <div className="catalog-note">
                 <span className="catalog-note-icon">i</span>
-                <p>O preço é definido por distrito. Os comerciantes visualizam apenas os produtos com preço configurado no seu distrito. Alterações aplicam-se às novas vendas; o histórico mantém os preços anteriores.</p>
+                <p>O comerciante só vende os produtos com preço no seu distrito, no ciclo aberto. Mudar um preço vale para as vendas seguintes; as vendas feitas guardam o preço que pagaram. Com a feira a decorrer, mudar ou retirar um preço pede o motivo.</p>
             </div>
 
             {flash.success && <div className="success-box">{flash.success}</div>}
+            {errors.copy && <div className="error-box">{errors.copy}</div>}
 
-            {form === 'new' && <ProductForm product={null} districts={districts} onDone={close} />}
+            {form === 'new' && <ProductForm product={null} districts={districts} withPrices={isOpen} onDone={close} />}
             {form === 'import' && <PriceImport districts={districts} products={products} onDone={close} />}
             {form === 'district' && <DistrictForm onDone={close} />}
-            {typeof form === 'object' && <ProductForm key={form.id} product={form} districts={districts} onDone={close} />}
+            {typeof form === 'object' && <ProductForm key={form.id} product={form} districts={districts} withPrices={false} onDone={close} />}
 
             <section className="catalog-section">
                 <div className="catalog-section-head">
-                    <div><h2>Catálogo e preços distritais</h2><p>Consulte e actualize os preços por produto e localização.</p></div>
+                    <div><h2>Preços por distrito{cycle ? ` · ${cycle.code}` : ''}</h2><p>{editable ? 'Defina ou mude o preço em cada célula.' : 'Só consulta.'}</p></div>
                     <span className="catalog-count">{visible.length} de {products.length} produtos</span>
                 </div>
                 <div className="catalog-toolbar">
@@ -332,24 +395,27 @@ export default function Products({ products, districts, canManage }: Props) {
                         <thead>
                             <tr>
                                 <th className="catalog-product-col">Produto</th>
-                                {districts.map((d) => <th key={d.id} className="catalog-district-col">{d.name}<small>{d.province}</small></th>)}
-                            {canManage && <th className="catalog-action-col">Acções</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {visible.map((p) => (
-                            <tr key={p.id} className={p.status === 'INACTIVE' ? 'inactive-row' : ''}>
-                                <td className="product-cell catalog-product-cell">
-                                    <strong>{p.name}</strong>
-                                    <small>{p.code} · {p.unit}{p.category ? ` · ${p.category}` : ''}</small>
-                                    <div className="catalog-product-meta"><span>{p.agrodealers} comerciante(s)</span>{p.status === 'INACTIVE' && <span className="badge">Inactivo</span>}</div>
-                                </td>
-                                {districts.map((d) => <PriceCell key={d.id} product={p} district={d} canManage={canManage} />)}
-                                {canManage && <td className="catalog-row-action"><button className="sc-link" onClick={() => setForm(p)}>Editar produto</button></td>}
+                                {districts.map((d) => (
+                                    <th key={d.id} className="catalog-district-col">{d.name}<small>{d.province}</small>
+                                        {FAIR_LABEL[d.fair] && <span className={`catalog-fair catalog-fair-${d.fair}`}>{FAIR_LABEL[d.fair]}</span>}</th>
+                                ))}
+                                {canManage && <th className="catalog-action-col">Acções</th>}
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {visible.map((p) => (
+                                <tr key={p.id} className={p.status === 'INACTIVE' ? 'inactive-row' : ''}>
+                                    <td className="product-cell catalog-product-cell">
+                                        <strong>{p.name}</strong>
+                                        <small>{p.code} · {p.unit}{p.category ? ` · ${p.category}` : ''}</small>
+                                        <div className="catalog-product-meta"><span>{p.agrodealers} comerciante(s)</span>{p.status === 'INACTIVE' && <span className="badge">Inactivo</span>}</div>
+                                    </td>
+                                    {districts.map((d) => <PriceCell key={d.id} product={p} district={d} canManage={editable} />)}
+                                    {canManage && <td className="catalog-row-action"><button className="sc-link" onClick={() => setForm(p)}>Editar produto</button></td>}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>}
             </section>
         </BackOfficeLayout>

@@ -100,8 +100,8 @@ class CycleDashboardTest extends TestCase
         $done = fn () => collect($this->actingAs($manager)->get('/admin/dashboard')->viewData('page')['props']['setup'])->pluck('done', 'key')->all();
 
         $this->assertSame([
-            'settings' => false, 'products' => true, 'merchants' => true, 'merchant_users' => true,
-            'households' => false, 'cycle' => true, 'cards' => false,
+            'settings' => false, 'cycle' => true, 'products' => true, 'merchants' => true, 'merchant_users' => true,
+            'households' => false, 'cards' => false,
         ], $done());
 
         $this->householdWithCard();

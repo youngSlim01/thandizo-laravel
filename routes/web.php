@@ -140,6 +140,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
         Route::put('/products/{product}/prices/{district}', [ProductPriceController::class, 'update'])->name('products.prices.update');
         Route::post('/products/import', [PriceImportController::class, 'store'])->name('products.import');
+        Route::post('/products/copy-prices', [ProductPriceController::class, 'copy'])->name('products.prices.copy');
 
         Route::get('/comerciantes', [AgrodealerController::class, 'index'])->name('agrodealers.index');
         Route::post('/comerciantes', [AgrodealerController::class, 'store'])->name('agrodealers.store');

@@ -21,12 +21,12 @@ class ProductPriceController extends Controller
     {
         Gate::authorize('update', $product);
         $data = $request->validate(
-            ['unit_price' => ['nullable', 'numeric']],
+            ['unit_price' => ['nullable', 'numeric'], 'reason' => ['nullable', 'string', 'max:500']],
             ['unit_price.numeric' => 'O preço tem de ser maior que zero.'],
         );
 
         try {
-            $result = $prices->setPrice($request->user(), $product, $district, $data['unit_price'] ?? null);
+            $result = $prices->setPrice($request->user(), $product, $district, $data['unit_price'] ?? null, $data['reason'] ?? null);
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages(['unit_price' => $exception->getMessage()]);
         }
@@ -36,6 +36,21 @@ class ProductPriceController extends Controller
             : "{$product->name} em {$district->name}: ".self::mt($result['unit_price'])." / {$product->unit}, já em vigor.";
 
         return back()->with('success', $message);
+    }
+
+    /**
+     * Copia para o ciclo aberto os preços do ciclo anterior que ainda faltam.
+     */
+    public function copy(Request $request, PriceService $prices): RedirectResponse
+    {
+        Gate::authorize('create', Product::class);
+        try {
+            $result = $prices->copyFromPreviousCycle($request->user());
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages(['copy' => $exception->getMessage()]);
+        }
+
+        return back()->with('success', "{$result['copied']} preço(s) copiados do ciclo {$result['from']}. Reveja-os antes da feira: já estão em vigor.");
     }
 
     /**

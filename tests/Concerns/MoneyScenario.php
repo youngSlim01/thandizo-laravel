@@ -56,8 +56,8 @@ trait MoneyScenario
         $this->product = Product::factory()->create(['name' => 'Semente', 'unit' => 'kg']);
         // Preço e ciclo desde o início do ano, para as vendas em datas passadas.
         $this->travelTo(now()->startOfYear());
-        app(PriceService::class)->setPrice($this->admin, $this->product, $this->district, 1000);
         app(CycleService::class)->open($this->admin, 'Ciclo 1', null, null);
+        app(PriceService::class)->setPrice($this->admin, $this->product, $this->district, 1000);
         $this->travelBack();
         // Feira do distrito durante todo o ano: os testes vendem em várias datas.
         $this->fairAllYear();

@@ -12,7 +12,7 @@ class PriceImportController extends Controller
     public function store(ImportPricesRequest $request, PriceImportService $import): RedirectResponse
     {
         $fileName = $request->validated('file_name');
-        $result = $import->import($request->user(), $request->validated('rows'), $fileName);
+        $result = $import->import($request->user(), $request->validated('rows'), $fileName, $request->validated('reason'));
 
         $message = "{$fileName}: {$result['prices_set']} preço(s) atualizados"
             .($result['products_created'] ? ", {$result['products_created']} produto(s) novo(s)" : '')

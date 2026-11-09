@@ -7,6 +7,7 @@ use App\Models\Agrodealer;
 use App\Models\AuditLog;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\CycleService;
 use App\Services\PriceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -31,6 +32,7 @@ class AgrodealerCatalogueTest extends TestCase
     {
         parent::setUp();
         $this->manager = User::factory()->role(UserRole::MealManager)->create();
+        app(CycleService::class)->open($this->manager, 'Ciclo 1', null, null);
         $this->agrodealer = Agrodealer::factory()->create();
         $this->seed = Product::factory()->create(['name' => 'Semente']);
     }
@@ -65,7 +67,7 @@ class AgrodealerCatalogueTest extends TestCase
         $this->actingAs($this->manager)->putJson($this->url($this->seed), ['in_catalogue' => false])->assertJson(['changed' => true]);
         $this->assertFalse($this->agrodealer->catalogue()->exists());
 
-        $this->assertSame(['CATALOGUE_PRODUCT_ADDED', 'CATALOGUE_PRODUCT_REMOVED'], AuditLog::query()->orderBy('created_at')->orderBy('action')->pluck('action')->all());
+        $this->assertSame(['CATALOGUE_PRODUCT_ADDED', 'CATALOGUE_PRODUCT_REMOVED'], AuditLog::query()->where('action', 'like', 'CATALOGUE_%')->orderBy('created_at')->orderBy('action')->pluck('action')->all());
     }
 
     public function test_an_inactive_product_cannot_be_added(): void

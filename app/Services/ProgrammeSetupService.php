@@ -25,9 +25,15 @@ class ProgrammeSetupService
                 'done' => DB::table('client_profiles')->where(fn ($q) => $q->whereNotNull('name')->orWhereNotNull('programme'))->exists(),
             ],
             [
+                'key' => 'cycle', 'href' => '/admin/cycles', 'title' => 'Abrir o ciclo',
+                'text' => 'Nome e datas do ciclo de assistência. Os preços e as feiras são de cada ciclo.',
+                'done' => DB::table('programme_cycles')->exists(),
+            ],
+            [
                 'key' => 'products', 'href' => '/admin/products', 'title' => 'Produtos e preços',
-                'text' => 'Os insumos que os comerciantes vendem, com o preço em cada distrito do programa.',
+                'text' => 'Os insumos que os comerciantes vendem, com o preço em cada distrito do programa, neste ciclo.',
                 'done' => DB::table('price_lists as pl')->join('products as p', 'p.id', '=', 'pl.product_id')
+                    ->join('programme_cycles as c', fn ($j) => $j->on('c.id', '=', 'pl.cycle_id')->where('c.status', 'OPEN'))
                     ->join('districts as d', 'd.id', '=', 'pl.district_id')
                     ->where('pl.status', 'ACTIVE')->where('p.status', 'ACTIVE')->where('d.programme_active', true)->exists(),
             ],
@@ -50,11 +56,6 @@ class ProgrammeSetupService
                 'key' => 'households', 'href' => '/admin/households', 'title' => 'Beneficiários',
                 'text' => 'Registar ou importar a lista de agregados, cada um no seu escalão.',
                 'done' => DB::table('households')->where('status', 'ACTIVE')->exists(),
-            ],
-            [
-                'key' => 'cycle', 'href' => '/admin/cycles', 'title' => 'Abrir o ciclo',
-                'text' => 'Nome, âmbito e datas do ciclo de assistência.',
-                'done' => DB::table('programme_cycles')->exists(),
             ],
             [
                 'key' => 'cards', 'href' => '/admin/cards', 'title' => 'Gerar e distribuir os cartões',

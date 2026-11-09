@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * Um preço de um produto num distrito, válido de effective_from até
  * effective_to (aberto quando effective_to é null). Nunca se apaga.
  */
-#[Fillable(['product_id', 'district_id', 'unit_price', 'effective_from', 'effective_to', 'status', 'created_by'])]
+#[Fillable(['cycle_id', 'product_id', 'district_id', 'unit_price', 'effective_from', 'effective_to', 'status', 'created_by'])]
 #[Hidden(['open_price_key'])]
 class PriceList extends Model
 {

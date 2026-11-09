@@ -1,4 +1,4 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { AdminLayout } from '@/components/admin-layout';
 import { CycleCard, CycleFields, type Cycle } from '@/components/cycle-card';
@@ -10,7 +10,7 @@ import type { SharedProps } from '@/types';
 
 type PlanRow = {
     district_id: string; district: string; province: string; target_households: number | null;
-    fair_starts_on: string | null; fair_ends_on: string | null; fair_status: 'none' | 'planned' | 'ongoing' | 'finished';
+    fair_starts_on: string | null; fair_ends_on: string | null; fair_status: 'none' | 'planned' | 'ongoing' | 'finished'; priced_products: number;
 };
 type Props = { cycles: Cycle[]; canManage: boolean; plan: PlanRow[] };
 
@@ -47,6 +47,9 @@ function PlanLine({ cycleId, row, canManage }: { cycleId: string; row: PlanRow; 
             {started && datesChanged && (
                 <label className="plan-reason"><span>Motivo da mudança de datas (decisão da direcção)</span>
                     <input className="input" value={form.data.reason} onChange={(e) => form.setData('reason', e.target.value)} placeholder="Ex.: prolongar a feira por um dia, decisão de 12/11" /></label>
+            )}
+            {(row.fair_status === 'planned' || row.fair_status === 'ongoing') && row.priced_products === 0 && (
+                <small className="plan-note plan-warning">Ainda não há preços em {row.district} neste ciclo: o POS não vende. <Link href="/admin/products">Lançar preços →</Link></small>
             )}
             {datesLocked && <small className="plan-note">A feira já começou: só o gestor MEAL muda as datas.</small>}
             {error && <div className="error-box plan-error">{error}</div>}

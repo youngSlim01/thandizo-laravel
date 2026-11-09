@@ -19,6 +19,7 @@ class ImportPricesRequest extends FormRequest
     {
         return [
             'file_name' => ['nullable', 'string', 'max:255'],
+            'reason' => ['nullable', 'string', 'max:500'],
             'rows' => ['required', 'array', 'min:1', 'max:2000'],
             'rows.*.code' => ['nullable', 'string', 'max:20'],
             'rows.*.name' => ['nullable', 'string', 'max:255'],
