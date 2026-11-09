@@ -1769,3 +1769,37 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 .catalog-heading .catalog-actions button{display:inline-flex!important;align-items:center;justify-content:center;width:auto!important;min-width:0!important;flex:0 0 auto!important;white-space:nowrap;padding:0 16px!important;min-height:40px!important}
 @media(max-width:900px){.admin-shell>.admin-page-heading.catalog-heading{align-items:flex-start!important;flex-direction:column!important}.catalog-heading .catalog-actions{width:100%!important;justify-content:flex-start!important;flex-wrap:wrap}.catalog-heading .catalog-actions button{flex:1 1 auto!important}}
 @media(max-width:600px){.catalog-heading .catalog-actions{display:grid!important;grid-template-columns:1fr 1fr!important;width:100%!important}.catalog-heading .catalog-actions button:first-child{grid-column:1/-1}}
+
+/* Diretórios MEAL: comerciantes e utilizadores */
+.directory-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:0 0 22px!important;padding-right:0!important}
+.directory-heading>div:first-child{min-width:0;flex:1}
+.directory-heading h1{font-size:clamp(28px,3vw,38px);font-weight:450;letter-spacing:-.035em}
+.directory-heading p{font-size:14px;color:var(--muted)}
+.directory-primary{white-space:nowrap;min-height:40px;padding:0 16px;text-transform:none;letter-spacing:0}
+.directory-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 18px}
+.directory-stat{background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:15px 17px;display:flex;flex-direction:column;gap:4px}
+.directory-stat span{font-size:12px;color:var(--text-soft)}
+.directory-stat strong{font-size:26px;font-weight:550;letter-spacing:-.03em;color:var(--text);line-height:1.25}
+.directory-stat small{font-size:11px;color:var(--muted)}
+.directory-note{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--border-soft);background:var(--surface-muted);border-radius:10px;padding:13px 15px;margin-bottom:20px}
+.directory-note>span{display:grid;place-items:center;flex:none;width:20px;height:20px;border:1px solid var(--brand-border);border-radius:50%;color:var(--brand);font-size:12px;font-weight:700}
+.directory-note p{margin:0;font-size:13px;line-height:1.55;color:var(--text-soft)}
+.directory-toolbar{display:flex;align-items:center;gap:12px;margin:18px 0}
+.directory-search{display:flex;align-items:center;gap:8px;flex:1;max-width:520px;border:1px solid var(--border);border-radius:8px;padding:0 11px;background:var(--surface)}
+.directory-search>span{font-size:20px;color:var(--muted)}
+.directory-search .input{border:0;box-shadow:none;background:transparent;min-height:38px;padding:7px 0}
+.directory-search .input:focus{outline:none}
+.directory-district-filter{max-width:240px}
+.directory-count{font-size:12px;color:var(--muted);white-space:nowrap;margin-left:auto}
+.directory-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.directory-grid>.admin-card{margin:0;min-width:0}
+.directory-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 10px}
+.directory-list-head h2{margin:0;font-size:17px;font-weight:550}
+.directory-list-head>span{font-size:12px;color:var(--muted)}
+.directory-user-list{display:grid;gap:10px}
+.directory-user-list>.admin-user{margin:0;border:1px solid var(--border-soft);border-radius:11px;padding:16px;background:var(--surface)}
+.directory-empty{border:1px dashed var(--border);border-radius:10px;padding:35px;text-align:center;color:var(--muted);font-size:13px}
+.directory-heading+.directory-summary{margin-top:0}
+@media(max-width:1000px){.directory-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.directory-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.directory-heading{align-items:flex-start!important;flex-direction:column!important}.directory-primary{width:100%}.directory-toolbar{align-items:stretch;flex-direction:column}.directory-search{max-width:none}.directory-district-filter{max-width:none}.directory-count{margin-left:0;align-self:flex-end}.directory-list-head>span{display:none}}
+@media(max-width:420px){.directory-summary{gap:8px}.directory-stat{padding:12px}.directory-stat strong{font-size:22px}}
