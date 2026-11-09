@@ -19,7 +19,7 @@ const GAP_X = 6;
 const GAP_Y = 3;
 const MARGIN_X = (210 - COLS * CARD_W - (COLS - 1) * GAP_X) / 2;
 const MARGIN_Y = (297 - ROWS * CARD_H - (ROWS - 1) * GAP_Y) / 2;
-const BRAND: [number, number, number] = [22, 101, 70];
+const BRAND: [number, number, number] = [0, 91, 55];\nconst PALE: [number, number, number] = [225, 245, 229];\nconst ACCENT: [number, number, number] = [112, 190, 65];
 
 type Logo = { data: string; ratio: number };
 
@@ -73,36 +73,24 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
     const x = MARGIN_X + (slot % COLS) * (CARD_W + GAP_X);
     const y = MARGIN_Y + Math.floor(slot / COLS) * (CARD_H + GAP_Y);
 
-    // Moldura de corte discreta
-    doc.setDrawColor(190).setLineWidth(0.25).setLineDashPattern([1.1, 1.1], 0);
-    doc.roundedRect(x, y, CARD_W, CARD_H, 3, 3, 'S');
-    doc.setLineDashPattern([], 0);
-
-    // Cabeçalho institucional moderno
+    // Cartão com cantos suaves e cabeçalho institucional do mockup.
+    doc.setFillColor(255,255,255).setDrawColor(220).setLineWidth(0.2);
+    doc.roundedRect(x,y,CARD_W,CARD_H,3.2,3.2,'FD');
     doc.setFillColor(...BRAND);
-    doc.roundedRect(x, y, CARD_W, 13, 3, 3, 'F');
-    doc.rect(x, y + 7, CARD_W, 6, 'F');
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(x + 2, y + 1.5, 20, 9.5, 1.4, 1.4, 'F');
-
-    if (logos.length > 0) {
-      let lx = x + 3;
-      for (const logo of logos.slice(0, 2)) {
-        const h = 7.5;
-        const w = Math.min(h * logo.ratio, 17);
-        if (lx + w > x + 23) break;
-        doc.addImage(logo.data, 'PNG', lx, y + 2.5, w, h);
-        lx += w + 1.5;
-      }
-    } else {
-      doc.setFont('helvetica', 'bold').setFontSize(5.5).setTextColor(...BRAND);
-      doc.text('LINK GCF', x + 12, y + 7.2, { align: 'center' });
+    doc.roundedRect(x+55,y,30,14,3.2,3.2,'F');
+    doc.rect(x+55,y+3,30,11,'F');
+    doc.setFillColor(...ACCENT).rect(x,y+13.7,CARD_W,0.45,'F');
+    let lx=x+3.5;
+    for (const logo of logos.slice(0,3)) {
+      const h=6.4,w=Math.min(h*logo.ratio,17);
+      if(lx+w>x+53) break;
+      doc.addImage(logo.data,'PNG',lx,y+3.1,w,h); lx+=w+3;
+      doc.setDrawColor(190).setLineWidth(0.2).line(lx-1.5,y+3,lx-1.5,y+10.5);
     }
-
-    doc.setFont('helvetica', 'bold').setFontSize(8.5).setTextColor(255);
-    doc.text('THANDIZO', x + CARD_W - 3, y + 5.2, { align: 'right' });
-    doc.setFont('helvetica', 'normal').setFontSize(5.2);
-    if (subtitle) doc.text(subtitle.toUpperCase(), x + CARD_W - 3, y + 9.5, { align: 'right', maxWidth: 38 });
+    doc.setFont('helvetica','bold').setFontSize(9.2).setTextColor(255);
+    doc.text('THANDIZO',x+82,y+5.8,{align:'right'});
+    doc.setFont('helvetica','normal').setFontSize(5.1);
+    doc.text((subtitle||'PROJECTO LINK GCF').toUpperCase(),x+82,y+9.5,{align:'right',maxWidth:26});
 
     // Dados do agregado: nome, código AF e localização
     const left = x + 4;
@@ -125,26 +113,26 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
     doc.text(doc.splitTextToSize(place || '—', textWidth).slice(0, 1), left, y + 39);
     doc.text(doc.splitTextToSize(region || '—', textWidth).slice(0, 1), left, y + 42);
 
-    // QR de validação, isolado numa área limpa
-    const qr = await QRCode.toDataURL(card.voucher_code, { errorCorrectionLevel: 'M', margin: 1, width: 320 });
-    doc.setDrawColor(155, 220, 170).setLineWidth(0.35);
-    doc.roundedRect(x + CARD_W - 27, y + 15, 24, 24, 1.8, 1.8, 'S');
-    doc.addImage(qr, 'PNG', x + CARD_W - 25.5, y + 16.5, 21, 21);
-    doc.setFont('helvetica', 'normal').setTextColor(85).setFontSize(4.6);
-    doc.text('VÁLIDO PARA ESTE AGREGADO', x + CARD_W - 15, y + 41, { align: 'center', maxWidth: 25 });
+    // QR e validação em caixa verde-clara, conforme mockup.
+    const qr = await QRCode.toDataURL(card.voucher_code, { errorCorrectionLevel: 'M', margin: 1, width: 360 });
+    doc.setFillColor(255,255,255).setDrawColor(155,225,175).setLineWidth(0.45);
+    doc.roundedRect(x+60.5,y+16,21.5,21.5,2.2,2.2,'FD');
+    doc.addImage(qr,'PNG',x+62,y+17.5,18.5,18.5);
+    doc.setFillColor(...PALE).roundedRect(x+59.5,y+38.5,24,5.2,1.5,1.5,'F');
+    doc.setFont('helvetica','normal').setTextColor(...BRAND).setFontSize(4.3);
+    doc.text('VÁLIDO APENAS PARA O',x+71.5,y+40.6,{align:'center'});
+    doc.text('AGREGADO INDICADO',x+71.5,y+42.5,{align:'center'});
 
-    // Rodapé verde: código único do voucher
-    doc.setFillColor(...BRAND);
-    doc.roundedRect(x, y + CARD_H - 9.5, CARD_W, 9.5, 3, 3, 'F');
-    doc.rect(x, y + CARD_H - 9.5, CARD_W, 3, 'F');
-    doc.setFont('courier', 'bold').setTextColor(255).setFontSize(9.5);
-    doc.text(card.voucher_code, x + CARD_W / 2, y + CARD_H - 3.3, { align: 'center' });
-  }
+    // Rodapé tripartido com código e finalidade agrícola.
+    doc.setFillColor(...BRAND).roundedRect(x,y+45,CARD_W,9,3.2,3.2,'F');
+    doc.rect(x,y+45,CARD_W,3,'F');
+    doc.setDrawColor(255,255,255).setLineWidth(0.25);
+    doc.line(x+23,y+47,x+23,y+52); doc.line(x+62,y+47,x+62,y+52);
+    doc.setFont('helvetica','normal').setFontSize(4.5).setTextColor(255);
+    doc.text('CÓDIGO DO VOUCHER',x+4,y+50.5);
+    doc.setFont('courier','bold').setFontSize(7.3);
+    doc.text(card.voucher_code,x+42.5,y+51,{align:'center',maxWidth:37});
+    doc.setFont('helvetica','normal').setFontSize(4.2);
+    doc.text('Voucher para aquisição',x+64,y+49.2);
+    doc.text('de insumos agrícolas',x+64,y+51.3);
 
-  return doc;
-}
-
-export async function downloadCardsPdf(cards: VoucherCard[], label: string, subtitle: string, logoUrls: string[]) {
-  const doc = await buildCardsPdf(cards, label, subtitle, logoUrls);
-  doc.save(`${label}.pdf`);
-}
