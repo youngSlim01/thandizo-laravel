@@ -228,8 +228,7 @@ export default function Users({ users, ...lists }: Props) {
     return (
         <AdminLayout>
             <Head title="Utilizadores" />
-            <div className="admin-page-heading"><div><div className="eyebrow">ADMINISTRAÇÃO · ACESSOS</div><h1>Utilizadores</h1><p>Gerir contas, perfis, permissões e associação dos operadores aos comerciantes.</p></div></div>
-
+            <div className="admin-page-heading directory-heading"><div><div className="eyebrow">ADMINISTRAÇÃO · ACESSOS</div><h1>Utilizadores</h1><p>Gerir contas, perfis, permissões e acessos ao sistema.</p></div>{!creating && <button className="primary-button directory-primary" onClick={() => setCreating(true)}>+ Criar utilizador</button>}</div><div className="directory-summary"><div className="directory-stat"><span>Contas registadas</span><strong>{users.length}</strong><small>Total de utilizadores</small></div><div className="directory-stat"><span>Activas</span><strong>{users.filter(u=>u.status==="ACTIVE").length}</strong><small>Com acesso ao sistema</small></div><div className="directory-stat"><span>Inactivas</span><strong>{users.filter(u=>u.status==="INACTIVE").length}</strong><small>Acesso suspenso</small></div><div className="directory-stat"><span>Perfis diferentes</span><strong>{new Set(users.map(u=>u.role)).size}</strong><small>Funções atribuídas</small></div></div>
             {credentials && (
                 <div className="success-box">
                     {credentials.kind === 'created'
@@ -241,15 +240,9 @@ export default function Users({ users, ...lists }: Props) {
             )}
             {flash.success && <div className="success-box">{flash.success}</div>}
 
-            {creating
-                ? <CreateUser onDone={() => setCreating(false)} {...lists} />
-                : <button className="primary-button create-user-button" onClick={() => setCreating(true)}>+ CRIAR CONTA</button>}
-
-            <input className="input admin-search" placeholder="Procurar por nome, email, utilizador ou comerciante" value={filter} onChange={(e) => setFilter(e.target.value)} />
-
-            <h2>Contas ({visible.length})</h2>
-            {visible.length === 0 && <p>Nenhuma conta encontrada.</p>}
-            {visible.map((u) => <UserCard key={u.id} user={u} {...lists} />)}
+            {creating && <CreateUser onDone={() => setCreating(false)} {...lists} />}
+            <div className="directory-toolbar"><div className="directory-search"><span>⌕</span><input className="input" placeholder="Pesquisar nome, email, utilizador ou comerciante…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Pesquisar utilizadores" /></div><span className="directory-count">{visible.length} de {users.length} contas</span></div>
+            <div className="directory-list-head"><h2>Contas de utilizador</h2><span>Estado · Perfil · Último acesso</span></div><div className="directory-user-list">{visible.length === 0 && <div className="directory-empty">Nenhuma conta encontrada. Ajuste a pesquisa ou crie um utilizador.</div>}{visible.map((u) => <UserCard key={u.id} user={u} {...lists} />)}</div>
         </AdminLayout>
     );
 }
