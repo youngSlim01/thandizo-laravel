@@ -110,16 +110,16 @@ class AgrodealerTest extends TestCase
                 'name' => ' Agro Mutarara ', 'district_id' => $mutarara->id, 'address' => 'Mercado', 'contact_phone' => '', 'code' => 'T-MER-X',
             ])
             ->assertRedirect('/admin/comerciantes')
-            ->assertSessionHas('success', 'Comerciante Agro Mutarara (MER-MUT-001) criado. O catálogo começa vazio.');
+            ->assertSessionHas('success', 'Comerciante Agro Mutarara (MER-MUT-001) criado, com o terminal POS-MUT-001-01. Falta o catálogo e a conta do gestor.');
 
         $agrodealer = Agrodealer::query()->sole();
         $this->assertSame('MER-MUT-001', $agrodealer->code);
         $this->assertSame($mutarara->province_id, $agrodealer->province_id);
         $this->assertSame('Mercado', $agrodealer->address);
         $this->assertNull($agrodealer->contact_phone);
+        $this->assertSame(['POS-MUT-001-01'], $agrodealer->pos()->pluck('pos_code')->all());
 
-        $audit = AuditLog::query()->sole();
-        $this->assertSame('AGRODEALER_CREATED', $audit->action);
+        $audit = AuditLog::query()->where('action', 'AGRODEALER_CREATED')->sole();
         $this->assertSame($manager->id, $audit->actor_id);
         $this->assertEquals(['code' => 'MER-MUT-001', 'name' => 'Agro Mutarara', 'district_id' => $mutarara->id, 'status' => 'ACTIVE'], $audit->metadata);
     }

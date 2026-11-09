@@ -49,7 +49,9 @@ class AgrodealerService
     }
 
     /**
-     * Cria um agrodealer num distrito do programa com o código MER-<DIS>-NNN.
+     * Cria um agrodealer num distrito do programa com o código MER-<DIS>-NNN,
+     * já com o seu terminal POS: cada comerciante vende do próprio telemóvel
+     * e o terminal só regista de onde veio a venda (decidido a 9/11/2026).
      *
      * @param  array{name: string, district_id: string, address?: string|null, contact_phone?: string|null}  $data
      */
@@ -65,6 +67,7 @@ class AgrodealerService
             ]);
 
             $this->audit($actor, 'AGRODEALER_CREATED', 'AGRODEALER', $agrodealer->id, $this->agrodealerAudit($agrodealer));
+            $this->createPos($actor, $agrodealer, null);
 
             return $agrodealer;
         });

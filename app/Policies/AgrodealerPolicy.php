@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Enums\UserRole;
 use App\Models\Agrodealer;
 use App\Models\User;
 
@@ -51,16 +50,12 @@ class AgrodealerPolicy
     }
 
     /**
-     * Juntar ou retirar produtos do catálogo: gestor MEAL, administrador, ou
-     * o gestor do próprio agrodealer (o preço vem sempre do distrito).
+     * Juntar ou retirar produtos do catálogo: só o gestor MEAL e o
+     * administrador. O catálogo vem da cadeia de abastecimento e do
+     * fornecedor; o comerciante só o consulta (decidido a 9/11/2026).
      */
     public function manageCatalogue(User $user, Agrodealer $agrodealer): bool
     {
-        if (! $user->isActive()) {
-            return false;
-        }
-
-        return $user->role->canManageCatalogue()
-            || ($user->role === UserRole::AgrodealerManager && $user->agrodealer_id === $agrodealer->id);
+        return $user->isActive() && $user->role->canManageCatalogue();
     }
 }

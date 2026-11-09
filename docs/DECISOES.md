@@ -9,7 +9,7 @@ A migração técnica (Next.js + Supabase → Laravel + MySQL) está em
 [`MIGRACAO_LARAVEL.md`](MIGRACAO_LARAVEL.md). Este documento fala do sistema
 e do produto.
 
-Última actualização: 9 de Novembro de 2026 (preços por ciclo).
+Última actualização: 9 de Novembro de 2026 (comerciante, terminal e gestor do comerciante).
 
 ---
 
@@ -128,6 +128,17 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 | Uma feira marcada num distrito **sem preços** não é impedida, mas é **avisada**: no planeamento do ciclo, no cartão "Feira marcada sem preços" dos produtos e como alerta crítico no painel MEAL. | O planeamento costuma vir antes da reunião do comité de preços. |
 | Nos primeiros passos, **"Abrir o ciclo" passa para antes de "Produtos e preços"**. | Os preços pertencem ao ciclo. |
 
+**Comerciante, terminal e utilizadores do comerciante** (decidido a 9/11/2026)
+
+| Decisão | Razão |
+|---|---|
+| O **comerciante** é a loja que recebe o dinheiro (as reconciliações são por comerciante); o **utilizador** é a pessoa que vende; o **terminal POS** só regista de onde veio a venda. | Separar quem é pago de quem vende. |
+| Hoje cada comerciante tem **um gestor**, que vende do **próprio telemóvel**. O terminal é **criado sozinho** com o comerciante (os que não tinham ganharam o primeiro) e aparece numa linha discreta enquanto for só um; "+ Terminal" fica para casos raros. | Sem aparelho do programa, ligar o terminal ao aparelho não acrescenta controlo; criar um POS à mão era burocracia. |
+| O **operador** fica disponível para ajudantes em feiras grandes, mas não é obrigatório. | Pode vir a ser preciso. |
+| O **catálogo** é **por comerciante** e **estável entre ciclos**; vem da cadeia de abastecimento e do fornecedor, e **só o MEAL** (gestor MEAL e administrador) o regista. O gestor do comerciante só o consulta. | O dono da loja não decide o que o programa lhe compra. |
+| O **gestor do comerciante é o dono**: vê as **vendas de toda a loja** no ciclo (de qualquer operador) e a página **Pagamentos**, com o que lhe devem por fase (por reconciliar, no MEAL, nas Finanças, validado) e as suas reconciliações. Só anula as vendas que ele próprio fez. | Responde ao comerciante sem ele ter de telefonar ao MEAL. |
+| O passo "Comerciantes" dos primeiros passos fica feito com um comerciante activo **com catálogo** (o terminal já existe). | O terminal deixou de ser um passo. |
+
 **Reconciliação (pagamento ao comerciante)**
 - Só **dias já fechados** (até ontem, hora de Moçambique) e só vendas confirmadas ainda não reconciliadas.
 - Circuito: **oficial MEAL** cria e envia → **gestor MEAL** aprova ou devolve → **Finanças** validam ou devolvem. Ninguém valida sozinho.
@@ -153,7 +164,7 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 - Os painéis MEAL e das Finanças partilham os mesmos componentes (`components/dashboard-ui.tsx`), incluindo a lista de alertas.
 
 **Primeiros passos** (8/11/2026)
-- Enquanto o programa não está montado, o painel MEAL mostra ao **gestor MEAL e ao administrador** os 7 primeiros passos, por ordem: configurar o programa (cliente e programa na Configuração), abrir o ciclo (os preços são de cada ciclo), produtos e preços, comerciantes (catálogo e terminal POS), utilizadores dos comerciantes, beneficiários, gerar e distribuir os cartões. Cada passo marca-se sozinho quando os dados existem; o seguinte tem o botão "Fazer agora". A lista desaparece quando todos estão feitos. Razão: no primeiro dia, abrir o ciclo não é o primeiro passo, e o gestor precisa de ver o caminho.
+- Enquanto o programa não está montado, o painel MEAL mostra ao **gestor MEAL e ao administrador** os 7 primeiros passos, por ordem: configurar o programa (cliente e programa na Configuração), abrir o ciclo (os preços são de cada ciclo), produtos e preços, comerciantes (com catálogo), utilizadores dos comerciantes, beneficiários, gerar e distribuir os cartões. Cada passo marca-se sozinho quando os dados existem; o seguinte tem o botão "Fazer agora". A lista desaparece quando todos estão feitos. Razão: no primeiro dia, abrir o ciclo não é o primeiro passo, e o gestor precisa de ver o caminho.
 
 **Painel das Finanças** (decidido a 8/11/2026)
 
@@ -175,7 +186,7 @@ Dois perfis de administração, com papéis distintos:
 | **Gestor MEAL** (administrador operacional) | Back office completo, utilizadores, aprovar reconciliações, gerir ciclos, cancelar lotes, substituir cartões; em **Configuração**: programa, frase do cliente, escalões do voucher e logótipos. |
 | **Oficial MEAL** | Back office **só da sua província** (beneficiários, cartões, comerciantes, vendas, reconciliações). Sem província não vê nada. |
 | **Oficial de Finanças** | Painel, validar ou devolver reconciliações, transacções, relatórios; vê **produtos e preços sem alterar**. |
-| **Gestor de comerciante** | POS, vendas e o **catálogo** do seu comerciante. |
+| **Gestor de comerciante** | O dono da loja: POS, as vendas de toda a loja no ciclo, os **pagamentos** (o que lhe devem por fase); **consulta** o catálogo, que é o MEAL que regista. |
 | **Operador de comerciante** | POS e as suas vendas. |
 
 - Ninguém altera o seu próprio acesso nem repõe a sua própria palavra-passe pelo ecrã de Utilizadores.

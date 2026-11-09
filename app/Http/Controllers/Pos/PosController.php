@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AgrodealerPos;
 use App\Services\CatalogueService;
 use App\Services\CyclePlanService;
+use App\Services\MerchantAccountService;
 use App\Services\PosService;
 use App\Services\PosTerminal;
 use Illuminate\Http\JsonResponse;
@@ -118,9 +119,30 @@ class PosController extends Controller
         ));
     }
 
-    public function sales(Request $request): Response
+    /**
+     * O operador vê as suas vendas das últimas 24 horas; o gestor do
+     * comerciante (o dono) vê as de toda a loja no ciclo.
+     */
+    public function sales(Request $request, MerchantAccountService $account): Response
     {
-        return Inertia::render('pos/sales', ['sales' => $this->pos->recent($request->user(), 50)]);
+        $user = $request->user();
+        if (MerchantAccountService::isOwner($user)) {
+            $shop = $account->sales($user, PosService::VOID_WINDOW_MINUTES);
+
+            return Inertia::render('pos/sales', ['sales' => $shop['sales'], 'scope' => 'shop', 'cycle' => $shop['cycle']]);
+        }
+
+        return Inertia::render('pos/sales', ['sales' => $this->pos->recent($user, 50), 'scope' => 'mine', 'cycle' => null]);
+    }
+
+    /**
+     * Quanto se deve à loja em cada fase do pagamento (só o gestor do comerciante).
+     */
+    public function payments(Request $request, MerchantAccountService $account): Response
+    {
+        abort_unless(MerchantAccountService::isOwner($request->user()), 403);
+
+        return Inertia::render('pos/payments', $account->payments($request->user()));
     }
 
     public function void(Request $request, string $transaction): RedirectResponse

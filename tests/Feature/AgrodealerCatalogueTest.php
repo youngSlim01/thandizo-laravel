@@ -26,7 +26,7 @@ class AgrodealerCatalogueTest extends TestCase
 
     private Agrodealer $agrodealer;
 
-    private Product $seed;
+    private Product $seedProduct;
 
     protected function setUp(): void
     {
@@ -34,7 +34,7 @@ class AgrodealerCatalogueTest extends TestCase
         $this->manager = User::factory()->role(UserRole::MealManager)->create();
         app(CycleService::class)->open($this->manager, 'Ciclo 1', null, null);
         $this->agrodealer = Agrodealer::factory()->create();
-        $this->seed = Product::factory()->create(['name' => 'Semente']);
+        $this->seedProduct = Product::factory()->create(['name' => 'Semente']);
     }
 
     private function url(?Product $product = null): string
@@ -44,7 +44,7 @@ class AgrodealerCatalogueTest extends TestCase
 
     public function test_catalogue_lists_active_products_with_the_district_price(): void
     {
-        app(PriceService::class)->setPrice($this->manager, $this->seed, $this->agrodealer->district, 1000);
+        app(PriceService::class)->setPrice($this->manager, $this->seedProduct, $this->agrodealer->district, 1000);
         Product::factory()->create(['name' => 'Adubo']);
         Product::factory()->inactive()->create(['name' => 'Antigo']);
 
@@ -60,11 +60,11 @@ class AgrodealerCatalogueTest extends TestCase
 
     public function test_adding_and_removing_a_product_is_audited_once(): void
     {
-        $this->actingAs($this->manager)->putJson($this->url($this->seed), ['in_catalogue' => true])->assertJson(['changed' => true]);
-        $this->actingAs($this->manager)->putJson($this->url($this->seed), ['in_catalogue' => true])->assertJson(['changed' => false]);
-        $this->assertTrue($this->agrodealer->catalogue()->whereKey($this->seed->id)->exists());
+        $this->actingAs($this->manager)->putJson($this->url($this->seedProduct), ['in_catalogue' => true])->assertJson(['changed' => true]);
+        $this->actingAs($this->manager)->putJson($this->url($this->seedProduct), ['in_catalogue' => true])->assertJson(['changed' => false]);
+        $this->assertTrue($this->agrodealer->catalogue()->whereKey($this->seedProduct->id)->exists());
 
-        $this->actingAs($this->manager)->putJson($this->url($this->seed), ['in_catalogue' => false])->assertJson(['changed' => true]);
+        $this->actingAs($this->manager)->putJson($this->url($this->seedProduct), ['in_catalogue' => false])->assertJson(['changed' => true]);
         $this->assertFalse($this->agrodealer->catalogue()->exists());
 
         $this->assertSame(['CATALOGUE_PRODUCT_ADDED', 'CATALOGUE_PRODUCT_REMOVED'], AuditLog::query()->where('action', 'like', 'CATALOGUE_%')->orderBy('created_at')->orderBy('action')->pluck('action')->all());
@@ -79,15 +79,16 @@ class AgrodealerCatalogueTest extends TestCase
             ->assertJsonValidationErrors(['product' => 'Produto não encontrado ou inativo.']);
     }
 
-    public function test_the_agrodealer_manager_manages_only_their_own_catalogue(): void
+    public function test_the_merchant_only_reads_its_own_catalogue_and_never_changes_it(): void
     {
         $own = User::factory()->role(UserRole::AgrodealerManager)->create(['agrodealer_id' => $this->agrodealer->id]);
         $other = User::factory()->role(UserRole::AgrodealerManager)->create(['agrodealer_id' => Agrodealer::factory()->create()->id]);
         $operator = User::factory()->role(UserRole::AgrodealerOperator)->create(['agrodealer_id' => $this->agrodealer->id]);
 
-        $this->actingAs($own)->putJson($this->url($this->seed), ['in_catalogue' => true])->assertOk();
-        $this->actingAs($other)->putJson($this->url($this->seed), ['in_catalogue' => false])->assertForbidden();
-        $this->actingAs($operator)->putJson($this->url($this->seed), ['in_catalogue' => false])->assertForbidden();
+        $this->actingAs($own)->putJson($this->url($this->seedProduct), ['in_catalogue' => true])->assertForbidden();
+        $this->actingAs($own)->getJson($this->url())->assertOk();
+        $this->actingAs($other)->putJson($this->url($this->seedProduct), ['in_catalogue' => false])->assertForbidden();
+        $this->actingAs($operator)->putJson($this->url($this->seedProduct), ['in_catalogue' => false])->assertForbidden();
         $this->actingAs($operator)->getJson($this->url())->assertOk();
         $this->actingAs($other)->getJson($this->url())->assertForbidden();
     }
@@ -98,13 +99,13 @@ class AgrodealerCatalogueTest extends TestCase
         $elsewhere = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => Agrodealer::factory()->create()->province_id]);
 
         $this->actingAs($inProvince)->getJson($this->url())->assertOk();
-        $this->actingAs($inProvince)->putJson($this->url($this->seed), ['in_catalogue' => true])->assertForbidden();
+        $this->actingAs($inProvince)->putJson($this->url($this->seedProduct), ['in_catalogue' => true])->assertForbidden();
         $this->actingAs($elsewhere)->getJson($this->url())->assertForbidden();
     }
 
     public function test_agrodealer_list_counts_the_catalogue(): void
     {
-        $this->agrodealer->catalogue()->attach($this->seed->id);
+        $this->agrodealer->catalogue()->attach($this->seedProduct->id);
 
         $this->actingAs($this->manager)->get('/admin/comerciantes')
             ->assertInertia(fn (Assert $page) => $page->where('agrodealers.0.catalogue_count', 1));

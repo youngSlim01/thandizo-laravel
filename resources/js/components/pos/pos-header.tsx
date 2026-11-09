@@ -8,6 +8,7 @@ const NAV = [
     { href: '/', label: 'Início', icon: '⌂' },
     { href: '/pos/voucher', label: 'Nova venda', icon: '+' },
     { href: '/sales', label: 'Vendas', icon: '▤' },
+    { href: '/payments', label: 'Pagamentos', icon: '$', owner: true },
     { href: '/profile', label: 'Perfil', icon: '◉' },
 ];
 
@@ -16,6 +17,8 @@ export function PosHeader({ title, back, right }: { title: string; back?: string
     const user = page.props.auth.user;
     const brand = page.props.brand;
     const pathname = page.url.split('?')[0];
+    // Pagamentos só para o gestor do comerciante (o dono da loja).
+    const nav = NAV.filter((item) => !item.owner || user?.role === 'AGRODEALER_MANAGER');
     const active = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
 
     return (
@@ -26,7 +29,7 @@ export function PosHeader({ title, back, right }: { title: string; back?: string
                     <span><strong>Thandizo</strong><small>{(brand.client ?? 'E-voucher').toUpperCase()} · POS</small></span>
                 </Link>
                 <nav className="app-nav" aria-label="Navegação principal">
-                    {NAV.map((item) => (
+                    {nav.map((item) => (
                         <Link key={item.href} href={item.href} className={active(item.href) ? 'app-nav-item active' : 'app-nav-item'}>
                             <span className="app-nav-icon">{item.icon}</span><span>{item.label}</span>
                         </Link>
@@ -55,7 +58,7 @@ export function PosHeader({ title, back, right }: { title: string; back?: string
             </header>
 
             <nav className="mobile-nav no-print" aria-label="Navegação móvel">
-                {NAV.map((item) => (
+                {nav.map((item) => (
                     <Link key={item.href} href={item.href} className={active(item.href) ? 'mobile-nav-item active' : 'mobile-nav-item'}>
                         <span className="mobile-nav-icon">{item.icon}</span><span>{item.label}</span>
                     </Link>

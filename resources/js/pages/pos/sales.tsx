@@ -2,7 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { PosHeader } from '@/components/pos/pos-header';
 import { useAction } from '@/lib/action';
-import { formatMT, formatTime } from '@/lib/format';
+import { formatDate, formatMT, formatTime } from '@/lib/format';
 import type { RecentSale } from '@/lib/sales';
 import type { SharedProps } from '@/types';
 
@@ -27,7 +27,7 @@ function VoidForm({ sale, onDone }: { sale: RecentSale; onDone: () => void }) {
     );
 }
 
-export default function Sales({ sales }: { sales: RecentSale[] }) {
+export default function Sales({ sales, scope, cycle }: { sales: RecentSale[]; scope: 'mine' | 'shop'; cycle: string | null }) {
     const { flash } = usePage<SharedProps>().props;
     const [voiding, setVoiding] = useState<string | null>(null);
     const [query, setQuery] = useState('');
@@ -47,7 +47,7 @@ export default function Sales({ sales }: { sales: RecentSale[] }) {
             <Head title="Vendas" />
             <PosHeader title="Vendas" back="/" />
             <section className="pos-content sales-content">
-                <div className="eyebrow">Últimas 24 horas · suas transações</div>
+                <div className="eyebrow">{scope === 'shop' ? `Toda a loja · ${cycle ? `ciclo ${cycle}` : 'últimos 30 dias'}` : 'Últimas 24 horas · suas transações'}</div>
                 <div className="sales-title-row">
                     <div><h1>Vendas</h1><p>Consulte recibos e faça anulações quando ainda estiverem dentro do prazo.</p></div>
                     <Link href="/pos/voucher" className="sales-new-button">+ Nova venda</Link>
@@ -75,7 +75,7 @@ export default function Sales({ sales }: { sales: RecentSale[] }) {
                     {filtered.map((sale) => (
                         <article className={sale.status === 'REVERSED' ? 'sale-record reversed' : 'sale-record'} key={sale.transaction_id}>
                             <div className="sale-record-head">
-                                <div className="sale-code"><span className="sale-icon">↗</span><div><strong>{sale.transaction_code}</strong><small>{formatTime(sale.confirmed_at)} · {sale.voucher_code}</small></div></div>
+                                <div className="sale-code"><span className="sale-icon">↗</span><div><strong>{sale.transaction_code}</strong><small>{scope === 'shop' ? `${formatDate(sale.confirmed_at)} ` : ''}{formatTime(sale.confirmed_at)} · {sale.voucher_code}{scope === 'shop' && sale.operator_name ? ` · ${sale.mine ? 'você' : sale.operator_name}` : ''}</small></div></div>
                                 <span className={sale.status === 'REVERSED' ? 'sale-status reversed' : 'sale-status'}>{STATUS_LABEL[sale.status] ?? sale.status}</span>
                             </div>
                             <div className="sale-record-values">

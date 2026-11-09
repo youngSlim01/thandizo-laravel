@@ -126,6 +126,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/pos/preview', [PosController::class, 'preview'])->name('pos.preview');
         Route::post('/pos/sales', [PosController::class, 'confirm'])->name('pos.confirm');
         Route::get('/sales', [PosController::class, 'sales'])->name('sales');
+        Route::get('/payments', [PosController::class, 'payments'])->name('payments');
         Route::post('/sales/{transaction}/void', [PosController::class, 'void'])->whereUuid('transaction')->name('sales.void');
         Route::get('/receipt/{transaction}', [PosController::class, 'receipt'])->whereUuid('transaction')->name('receipt');
         Route::get('/catalogue', [PosController::class, 'catalogue'])->name('catalogue');

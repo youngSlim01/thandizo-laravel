@@ -39,10 +39,9 @@ class ProgrammeSetupService
             ],
             [
                 'key' => 'merchants', 'href' => '/admin/comerciantes', 'title' => 'Comerciantes',
-                'text' => 'Pelo menos um comerciante activo, com catálogo e um terminal POS.',
+                'text' => 'Pelo menos um comerciante activo, com o catálogo que vem da cadeia de abastecimento.',
                 'done' => (clone $activeDealers)
                     ->whereExists(fn ($q) => $q->from('agrodealer_products as c')->whereColumn('c.agrodealer_id', 'agrodealers.id'))
-                    ->whereExists(fn ($q) => $q->from('agrodealer_pos as pos')->whereColumn('pos.agrodealer_id', 'agrodealers.id')->where('pos.status', 'ACTIVE'))
                     ->exists(),
             ],
             [

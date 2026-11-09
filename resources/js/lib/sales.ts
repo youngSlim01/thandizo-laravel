@@ -1,4 +1,5 @@
-// Venda do próprio operador nas últimas 24 horas (PosService::recent).
+// Venda do próprio operador nas últimas 24 horas (PosService::recent) ou, para
+// o gestor do comerciante, da loja no ciclo (MerchantAccountService::sales).
 export type RecentSale = {
     transaction_id: string;
     transaction_code: string;
@@ -10,6 +11,8 @@ export type RecentSale = {
     copayment_amount: number;
     can_void: boolean;
     void_deadline: string;
+    operator_name?: string | null;
+    mine?: boolean;
 };
 
 export function isToday(value: string): boolean {

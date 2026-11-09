@@ -1833,3 +1833,22 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
  .catalog-cycle label{width:100%;min-width:0}
  .catalog-cycle .secondary-button{width:100%!important}
 }
+
+/* Pagamentos do comerciante (POS, gestor do comerciante) */
+.pay-owed{display:flex;align-items:baseline;justify-content:space-between;gap:12px;background:var(--brand-soft);border:1px solid var(--brand-border);border-radius:14px;padding:16px 18px;margin:6px 0 12px}
+.pay-owed span{font-size:13px;color:var(--brand-dark);font-weight:600}
+.pay-owed strong{font-size:26px;color:var(--brand-dark);letter-spacing:-.02em}
+.pay-stages{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:22px}
+.pay-stage{background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;padding:13px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.pay-stage span{font-size:12px;color:var(--text-soft);font-weight:600}
+.pay-stage strong{font-size:18px;color:var(--text)}
+.pay-stage small{font-size:11px;color:var(--muted);line-height:1.35}
+.pay-validated strong{color:var(--brand)}
+.pay-title{font-size:16px;margin:0 0 10px}
+.sale-status.pay-badge-in_meal{background:var(--warning-soft);color:var(--warning)}
+.sale-status.pay-badge-in_finance{background:var(--info-soft);color:var(--info)}
+@media(max-width:700px){.pay-stages{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Comerciantes: cartões com alerta e terminal único numa linha */
+.directory-stat-alert{border-color:var(--warning-border);background:var(--warning-soft)}
+.terminal-line{font-size:12px;color:var(--muted)}

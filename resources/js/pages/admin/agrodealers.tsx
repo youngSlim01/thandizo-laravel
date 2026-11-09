@@ -135,9 +135,13 @@ function AgrodealerCard({ agrodealer, districts, canManage }: { agrodealer: Agro
                 <span className={`badge ${agrodealer.status === 'ACTIVE' ? 'badge-active' : ''}`}>{agrodealer.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}</span>
             </div>
             {!agrodealer.district_id && <div className="warning-box">Sem distrito: não consegue vender. Edite e escolha o distrito.</div>}
-            <div className="muted-text small-note">{agrodealer.pos.length} POS · {agrodealer.catalogue_count} produto(s) no catálogo · {agrodealer.users} utilizador(es)</div>
+            <div className="muted-text small-note">{agrodealer.catalogue_count} produto(s) no catálogo · {agrodealer.users} utilizador(es){agrodealer.pos.length > 1 ? ` · ${agrodealer.pos.length} terminais` : ''}</div>
 
-            <div className="pos-list">
+            {/* Um só terminal (o normal: o dono vende do telemóvel) fica numa linha discreta. */}
+            {agrodealer.pos.length === 1 && agrodealer.pos[0].status === 'ACTIVE' ? (
+                <div className="terminal-line">Terminal {agrodealer.pos[0].pos_code}{agrodealer.pos[0].last_seen_at ? ` · visto ${formatDateTime(agrodealer.pos[0].last_seen_at)}` : ' · ainda sem vendas'}
+                    {canManage && <> · <button className="quick-link small-link" onClick={() => setPanel(agrodealer.pos[0])}>Editar</button></>}</div>
+            ) : <div className="pos-list">
                 {agrodealer.pos.map((p) => (
                     <div className="pos-row" key={p.id}>
                         <span><strong>{p.pos_code}</strong>{p.device_label ? ` · ${p.device_label}` : ''}
@@ -145,11 +149,13 @@ function AgrodealerCard({ agrodealer, districts, canManage }: { agrodealer: Agro
                         {canManage && <button className="quick-link small-link" onClick={() => setPanel(p)}>Editar</button>}
                     </div>
                 ))}
-            </div>
+            </div>}
+            {agrodealer.status === 'ACTIVE' && agrodealer.catalogue_count === 0 && <div className="warning-box">Sem produtos no catálogo: não consegue vender. Abra o catálogo e junte o que vem da cadeia de abastecimento.</div>}
+            {agrodealer.status === 'ACTIVE' && agrodealer.users === 0 && <div className="warning-box">Sem utilizador: crie a conta do gestor em Utilizadores.</div>}
 
             <div className="admin-card-actions">
                 <button className="quick-link" onClick={() => setPanel(panel === 'catalogue' ? 'none' : 'catalogue')}>Catálogo →</button>
-                {canManage && <button className="quick-link" onClick={() => setPanel('newPos')}>+ POS</button>}
+                {canManage && <button className="quick-link" onClick={() => setPanel('newPos')}>+ Terminal</button>}
                 {canManage && <button className="quick-link" onClick={() => setPanel('edit')}>Editar dados</button>}
             </div>
 
@@ -167,6 +173,9 @@ export default function Agrodealers({ agrodealers, districts, canManage }: Props
     const [filter, setFilter] = useState('');
     const [districtFilter, setDistrictFilter] = useState('');
 
+    const activeDealers = agrodealers.filter((a) => a.status === 'ACTIVE');
+    const noCatalogue = activeDealers.filter((a) => a.catalogue_count === 0).length;
+    const noUser = activeDealers.filter((a) => a.users === 0).length;
     const term = filter.trim().toLowerCase();
     const visible = agrodealers.filter((a) => (!districtFilter || a.district_id === districtFilter)
         && (!term || a.name.toLowerCase().includes(term) || a.code.toLowerCase().includes(term)));
@@ -175,16 +184,16 @@ export default function Agrodealers({ agrodealers, districts, canManage }: Props
         <AdminLayout>
             <Head title="Comerciantes" />
             <div className="admin-page-heading directory-heading">
-                <div><div className="eyebrow">MEAL · REDE DE COMERCIANTES</div><h1>Comerciantes</h1><p>Gerir pontos de venda, operadores e catálogos distritais.</p></div>
+                <div><div className="eyebrow">MEAL · REDE DE COMERCIANTES</div><h1>Comerciantes</h1><p>As lojas que vendem aos beneficiários, com o catálogo de cada uma.</p></div>
                 {canManage && <button className="primary-button directory-primary" onClick={() => setCreating(true)}>+ Novo comerciante</button>}
             </div>
             <div className="directory-summary">
                 <div className="directory-stat"><span>Comerciantes</span><strong>{agrodealers.length}</strong><small>Total registado</small></div>
-                <div className="directory-stat"><span>Activos</span><strong>{agrodealers.filter(a=>a.status==='ACTIVE').length}</strong><small>Podem realizar vendas</small></div>
-                <div className="directory-stat"><span>Pontos de venda (POS)</span><strong>{agrodealers.reduce((s,a)=>s+a.pos.length,0)}</strong><small>Dispositivos registados</small></div>
-                <div className="directory-stat"><span>Sem distrito</span><strong>{agrodealers.filter(a=>!a.district_id).length}</strong><small>Precisam de configuração</small></div>
+                <div className="directory-stat"><span>Activos</span><strong>{activeDealers.length}</strong><small>Podem realizar vendas</small></div>
+                <div className={`directory-stat${noCatalogue > 0 ? ' directory-stat-alert' : ''}`}><span>Sem catálogo</span><strong>{noCatalogue}</strong><small>Activos que ainda não vendem nada</small></div>
+                <div className={`directory-stat${noUser > 0 ? ' directory-stat-alert' : ''}`}><span>Sem utilizador</span><strong>{noUser}</strong><small>Activos sem conta para entrar</small></div>
             </div>
-            <div className="directory-note"><span>i</span><p>Cada comerciante está associado a um distrito e vende os produtos do catálogo local. Os utilizadores e acessos são configurados no módulo Utilizadores.</p></div>
+            <div className="directory-note"><span>i</span><p>Cada comerciante pertence a um distrito e vende, aos preços do distrito no ciclo, os produtos do seu catálogo. O catálogo é registado pelo MEAL com o que vem da cadeia de abastecimento. O terminal é criado com o comerciante; a conta do gestor cria-se em Utilizadores.</p></div>
             {flash.success && <div className="success-box">{flash.success}</div>}
             {creating && <AgrodealerForm agrodealer={null} districts={districts} onDone={() => setCreating(false)} />}
 
