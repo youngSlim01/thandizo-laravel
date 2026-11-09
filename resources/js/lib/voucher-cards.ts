@@ -19,7 +19,9 @@ const GAP_X = 6;
 const GAP_Y = 3;
 const MARGIN_X = (210 - COLS * CARD_W - (COLS - 1) * GAP_X) / 2;
 const MARGIN_Y = (297 - ROWS * CARD_H - (ROWS - 1) * GAP_Y) / 2;
-const BRAND: [number, number, number] = [0, 91, 55];\nconst PALE: [number, number, number] = [225, 245, 229];\nconst ACCENT: [number, number, number] = [112, 190, 65];
+const BRAND: [number, number, number] = [0, 91, 55];
+const PALE: [number, number, number] = [225, 245, 229];
+const ACCENT: [number, number, number] = [112, 190, 65];
 
 type Logo = { data: string; ratio: number };
 
@@ -136,3 +138,12 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
     doc.text('Voucher para aquisição',x+64,y+49.2);
     doc.text('de insumos agrícolas',x+64,y+51.3);
 
+  }
+
+  return doc;
+}
+
+export async function downloadCardsPdf(cards: VoucherCard[], label: string, subtitle: string, logoUrls: string[]) {
+  const doc = await buildCardsPdf(cards, label, subtitle, logoUrls);
+  doc.save(`${label}.pdf`);
+}
