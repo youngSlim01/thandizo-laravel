@@ -43,12 +43,17 @@ class AgrodealerController extends Controller
                     'last_seen_at' => $pos->last_seen_at?->toIso8601String(),
                 ]),
             ]),
-            'districts' => $districts->list()->map(fn (District $district): array => [
-                'id' => $district->id,
-                'name' => $district->name,
-                'province' => $district->province->name,
-            ]),
+            // O oficial MEAL só escolhe distritos da sua província.
+            'districts' => $districts->list()
+                ->filter(fn (District $district): bool => ! $request->user()->isProvinceScoped() || $district->province_id === $request->user()->province_id)
+                ->values()->map(fn (District $district): array => [
+                    'id' => $district->id,
+                    'name' => $district->name,
+                    'province' => $district->province->name,
+                ]),
             'canManage' => $request->user()->can('create', Agrodealer::class),
+            // O catálogo é só do gestor MEAL e do administrador.
+            'canManageCatalogue' => $request->user()->role->canManageCatalogue(),
         ]);
     }
 

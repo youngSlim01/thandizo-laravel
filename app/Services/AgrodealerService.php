@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Agrodealers e os seus POS.
@@ -58,7 +59,7 @@ class AgrodealerService
     public function create(User $actor, array $data): Agrodealer
     {
         return DB::transaction(function () use ($actor, $data): Agrodealer {
-            $district = District::query()->inProgramme()->findOrFail($data['district_id']);
+            $district = $this->districtFor($actor, $data['district_id']);
 
             $agrodealer = Agrodealer::query()->create([
                 'code' => $this->nextAgrodealerCode($district),
@@ -82,7 +83,7 @@ class AgrodealerService
     public function update(User $actor, Agrodealer $agrodealer, array $data): Agrodealer
     {
         return DB::transaction(function () use ($actor, $agrodealer, $data): Agrodealer {
-            $district = District::query()->inProgramme()->findOrFail($data['district_id']);
+            $district = $this->districtFor($actor, $data['district_id']);
 
             $agrodealer->update([
                 ...$this->agrodealerFields($data, $district),
@@ -129,6 +130,20 @@ class AgrodealerService
 
             return $pos;
         });
+    }
+
+    /**
+     * Distrito do programa onde quem regista pode pôr o comerciante: o
+     * oficial MEAL só na sua província.
+     */
+    private function districtFor(User $actor, string $districtId): District
+    {
+        $district = District::query()->inProgramme()->findOrFail($districtId);
+        if ($actor->isProvinceScoped() && $district->province_id !== $actor->province_id) {
+            throw ValidationException::withMessages(['district_id' => 'Escolha um distrito da sua província.']);
+        }
+
+        return $district;
     }
 
     /**

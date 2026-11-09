@@ -73,15 +73,17 @@ class AgrodealerPosTest extends TestCase
         $this->assertSame($pos->agrodealer_id, $pos->fresh()->agrodealer_id);
     }
 
-    public function test_meal_officer_cannot_create_a_pos(): void
+    public function test_meal_officer_adds_terminals_only_to_merchants_of_the_province(): void
     {
-        $agrodealer = Agrodealer::factory()->create();
+        $own = Agrodealer::factory()->create();
+        $other = Agrodealer::factory()->create();
+        $officer = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $own->province_id]);
 
-        $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $agrodealer->province_id]))
-            ->post("/admin/comerciantes/{$agrodealer->id}/pos", ['device_label' => 'Tablet'])
-            ->assertForbidden();
+        $this->actingAs($officer)->post("/admin/comerciantes/{$own->id}/pos", ['device_label' => 'Tablet'])->assertSessionHas('success');
+        $this->actingAs($officer)->post("/admin/comerciantes/{$other->id}/pos", ['device_label' => 'Tablet'])->assertForbidden();
 
-        $this->assertDatabaseCount('agrodealer_pos', 0);
+        $this->assertSame(1, $own->pos()->count());
+        $this->assertSame(0, $other->pos()->count());
     }
 
     public function test_update_refuses_an_unknown_status(): void

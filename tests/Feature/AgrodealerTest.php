@@ -88,7 +88,10 @@ class AgrodealerTest extends TestCase
                 ->has('agrodealers', 2)
                 ->where('agrodealers.0.name', 'Agro Tete')
                 ->where('agrodealers.1.name', 'Agro Tete antigo')
-                ->where('canManage', false));
+                ->where('canManage', true)
+                ->where('canManageCatalogue', false)
+                ->has('districts', 1)
+                ->where('districts.0.name', 'Mutarara'));
     }
 
     public function test_meal_officer_without_province_sees_nothing(): void
@@ -166,11 +169,25 @@ class AgrodealerTest extends TestCase
             ]);
     }
 
-    public function test_meal_officer_cannot_create(): void
+    public function test_meal_officer_registers_and_edits_merchants_only_in_the_province(): void
     {
-        $mutarara = $this->programmeDistrict('Mutarara');
+        $mutarara = $this->programmeDistrict('Mutarara', 'Tete');
+        $guro = $this->programmeDistrict('Guro', 'Manica');
+        $elsewhere = Agrodealer::factory()->for($guro)->create(['province_id' => $guro->province_id]);
+        $officer = User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $mutarara->province_id]);
 
-        $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create(['province_id' => $mutarara->province_id]))
+        $this->actingAs($officer)->post('/admin/comerciantes', ['name' => 'Agro Tete', 'district_id' => $mutarara->id])->assertSessionHas('success');
+        $own = Agrodealer::query()->where('name', 'Agro Tete')->sole();
+        $this->assertSame(1, $own->pos()->count());
+
+        $this->actingAs($officer)->post('/admin/comerciantes', ['name' => 'Agro Manica', 'district_id' => $guro->id])
+            ->assertSessionHasErrors(['district_id' => 'Escolha um distrito da sua província.']);
+        $this->actingAs($officer)->put("/admin/comerciantes/{$own->id}", ['name' => 'Agro Tete', 'district_id' => $guro->id, 'status' => 'ACTIVE'])
+            ->assertSessionHasErrors(['district_id' => 'Escolha um distrito da sua província.']);
+        $this->actingAs($officer)->put("/admin/comerciantes/{$elsewhere->id}", ['name' => 'X', 'district_id' => $guro->id, 'status' => 'ACTIVE'])
+            ->assertForbidden();
+
+        $this->actingAs(User::factory()->role(UserRole::MealOfficer)->create(['province_id' => null]))
             ->post('/admin/comerciantes', ['name' => 'Agro', 'district_id' => $mutarara->id])
             ->assertForbidden();
     }

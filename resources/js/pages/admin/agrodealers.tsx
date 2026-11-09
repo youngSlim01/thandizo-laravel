@@ -12,7 +12,7 @@ type Agrodealer = {
     district_id: string | null; district: string | null; province: string | null;
     address: string | null; contact_phone: string | null; users: number; catalogue_count: number; pos: Pos[];
 };
-type Props = { agrodealers: Agrodealer[]; districts: District[]; canManage: boolean };
+type Props = { agrodealers: Agrodealer[]; districts: District[]; canManage: boolean; canManageCatalogue: boolean };
 
 function formatDateTime(iso: string): string {
     return new Date(iso).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' });
@@ -118,7 +118,7 @@ function PosForm({ agrodealerId, pos, onDone }: { agrodealerId: string; pos: Pos
     );
 }
 
-function AgrodealerCard({ agrodealer, districts, canManage }: { agrodealer: Agrodealer; districts: District[]; canManage: boolean }) {
+function AgrodealerCard({ agrodealer, districts, canManage, canManageCatalogue }: { agrodealer: Agrodealer; districts: District[]; canManage: boolean; canManageCatalogue: boolean }) {
     const [panel, setPanel] = useState<'none' | 'edit' | 'catalogue' | 'newPos' | Pos>('none');
     const close = () => setPanel('none');
 
@@ -162,12 +162,12 @@ function AgrodealerCard({ agrodealer, districts, canManage }: { agrodealer: Agro
             {panel === 'edit' && <AgrodealerForm agrodealer={agrodealer} districts={districts} onDone={close} />}
             {panel === 'newPos' && <PosForm agrodealerId={agrodealer.id} pos={null} onDone={close} />}
             {typeof panel === 'object' && <PosForm key={panel.id} agrodealerId={agrodealer.id} pos={panel} onDone={close} />}
-            {panel === 'catalogue' && <CatalogueEditor agrodealerId={agrodealer.id} canManage={canManage} />}
+            {panel === 'catalogue' && <CatalogueEditor agrodealerId={agrodealer.id} canManage={canManageCatalogue} />}
         </div>
     );
 }
 
-export default function Agrodealers({ agrodealers, districts, canManage }: Props) {
+export default function Agrodealers({ agrodealers, districts, canManage, canManageCatalogue }: Props) {
     const { flash } = usePage<SharedProps>().props;
     const [creating, setCreating] = useState(false);
     const [filter, setFilter] = useState('');
@@ -205,7 +205,7 @@ export default function Agrodealers({ agrodealers, districts, canManage }: Props
             </div>
             <div className="directory-grid">
             {visible.length === 0 && <p className="muted-text">Nenhum comerciante.</p>}
-            {visible.map((a) => <AgrodealerCard key={a.id} agrodealer={a} districts={districts} canManage={canManage} />)}
+            {visible.map((a) => <AgrodealerCard key={a.id} agrodealer={a} districts={districts} canManage={canManage} canManageCatalogue={canManageCatalogue} />)}
             </div>
 
         </AdminLayout>

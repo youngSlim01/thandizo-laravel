@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\UserRole;
 use App\Models\Agrodealer;
 use App\Models\User;
 
@@ -17,19 +18,23 @@ class AgrodealerPolicy
     }
 
     /**
-     * Criar agrodealers (gestor MEAL, administrador).
+     * Registar comerciantes: gestor MEAL, administrador, e o oficial MEAL na
+     * sua província (decidido a 9/11/2026: quem regista no terreno é o oficial).
      */
     public function create(User $user): bool
     {
-        return $user->isActive() && $user->role->canManageCatalogue();
+        return $user->isActive()
+            && ($user->role->canManageCatalogue() || ($user->role === UserRole::MealOfficer && $user->province_id !== null));
     }
 
     /**
-     * Editar o agrodealer e criar ou editar os seus POS.
+     * Editar o comerciante e os seus terminais: o oficial MEAL só os da sua
+     * província.
      */
     public function update(User $user, Agrodealer $agrodealer): bool
     {
-        return $this->create($user);
+        return $this->create($user)
+            && (! $user->isProvinceScoped() || Agrodealer::query()->visibleTo($user)->whereKey($agrodealer->id)->exists());
     }
 
     /**
