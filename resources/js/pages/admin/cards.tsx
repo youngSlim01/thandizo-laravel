@@ -208,6 +208,49 @@ function DistributePanel({ batch, onClose }: { batch: Batch; onClose: () => void
     );
 }
 
+// O cartão como sai no PDF (lib/voucher-cards.ts), para ver antes de imprimir.
+function VoucherCardFace({ card, logos, subtitle }: { card: VoucherCard; logos: string[]; subtitle: string }) {
+    const [qr, setQr] = useState<string | null>(null);
+    useEffect(() => {
+        let alive = true;
+        import('qrcode').then((QRCode) => QRCode.toDataURL(card.voucher_code, { errorCorrectionLevel: 'M', margin: 1, width: 240 }))
+            .then((url) => { if (alive) setQr(url); }).catch(() => setQr(null));
+        return () => { alive = false; };
+    }, [card.voucher_code]);
+    const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+
+    return (
+        <div className="vc">
+            <div className="vc-head">
+                <div className="vc-logos">{logos.slice(0, 3).map((src) => <img key={src} src={src} alt="" />)}</div>
+                <div className="vc-brand">
+                    <svg viewBox="0 0 24 24" className="vc-leaf" aria-hidden="true"><path d="M3 21C4 11 11 4 21 3c-1 10-8 17-18 18Z" fill="currentColor" /><path d="M5 19 17 7" stroke="#005b37" strokeWidth="1.4" /></svg>
+                    <div><strong>Thandizo</strong><small>{subtitle.toUpperCase()}</small></div>
+                </div>
+            </div>
+            <div className="vc-body">
+                <div className="vc-info">
+                    <span className="vc-icon vc-icon-soft"><svg viewBox="0 0 24 24" {...stroke}><circle cx="12" cy="8" r="4" /><path d="M5 20c0-4 3-6 7-6s7 2 7 6Z" /></svg></span>
+                    <div><small>REPRESENTANTE DO AGREGADO</small><strong className="vc-name">{card.representative_name}</strong></div>
+                    <span className="vc-icon"><svg viewBox="0 0 24 24" {...stroke}><rect x="3" y="6" width="18" height="12" rx="2" /><path d="M3 10h18" /><circle cx="16" cy="14.5" r=".6" fill="currentColor" /></svg></span>
+                    <div><small>CÓDIGO DO AF</small><strong>{card.household_code}</strong></div>
+                    <span className="vc-icon"><svg viewBox="0 0 24 24" {...stroke}><path d="M12 21s-6-6.5-6-11a6 6 0 0 1 12 0c0 4.5-6 11-6 11Z" /><circle cx="12" cy="10" r="2" /></svg></span>
+                    <div><small>LOCALIZAÇÃO</small><span>{[card.community, card.locality].filter(Boolean).join(', ') || '—'}</span><span>{[card.district, card.province].filter(Boolean).join(' · ') || '—'}</span></div>
+                </div>
+                <div className="vc-side">
+                    <div className="vc-qr">{qr ? <img src={qr} alt={`QR ${card.voucher_code}`} /> : null}</div>
+                    <div className="vc-valid">Válido apenas para o agregado indicado</div>
+                </div>
+            </div>
+            <div className="vc-foot">
+                <span>CÓDIGO DO VOUCHER</span>
+                <b>{card.voucher_code}</b>
+                <span>Voucher para aquisição de insumos agrícolas</span>
+            </div>
+        </div>
+    );
+}
+
 function CardPreview({ card, busy, onPrint, onClose }: { card: VoucherCard; busy: boolean; onPrint: () => void; onClose: () => void }) {
     const brand = useBrand();
     useEffect(() => {
@@ -223,31 +266,12 @@ function CardPreview({ card, busy, onPrint, onClose }: { card: VoucherCard; busy
                     <strong>Cartão de {card.representative_name}</strong>
                     <button type="button" className="card-preview-close" onClick={onClose} aria-label="Fechar">✕</button>
                 </div>
-                <div className="voucher-card-preview">
-                    <div className="voucher-card-preview-head">
-                        <div className="voucher-card-preview-logos">
-                            {brand.logos.map((src) => <img key={src} src={src} alt="" />)}
-                            <div><strong>Thandizo</strong><small>{cardSubtitle(brand).toUpperCase()}</small></div>
-                        </div>
-                        <span>e-VOUCHER</span>
-                    </div>
-                    <div className="voucher-card-preview-body">
-                        <div className="voucher-card-preview-info">
-                            <small>REPRESENTANTE</small><strong>{card.representative_name}</strong>
-                            <small>CÓDIGO DO AF</small><strong>{card.household_code}</strong>
-                            <span>{[card.community, card.locality].filter(Boolean).join(', ') || '—'}</span>
-                            <span>{[card.district, card.province].filter(Boolean).join(' · ') || '—'}</span>
-                            <b>{card.voucher_code}</b>
-                        </div>
-                        <div className="voucher-card-preview-qr"><span>QR</span><small>{card.voucher_code}</small></div>
-                    </div>
-                    <div className="voucher-card-preview-foot">Válido apenas para o agregado indicado</div>
-                </div>
+                <VoucherCardFace card={card} logos={brand.logos} subtitle={cardSubtitle(brand)} />
                 <div className="batch-actions">
                     <button className="quick-link" onClick={onPrint} disabled={busy}>Imprimir cartão seleccionado (PDF)</button>
                     <button className="quick-link" onClick={onClose}>Fechar</button>
                 </div>
-                <p className="muted-text small-note">A pré-visualização é ilustrativa. O PDF mantém o desenho oficial do cartão e inclui o QR real.</p>
+                <p className="muted-text small-note">O cartão impresso tem 85 × 54 mm, com o mesmo desenho.</p>
             </div>
         </div>
     );

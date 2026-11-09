@@ -1275,28 +1275,11 @@ select.input { background: var(--surface); }
 .batch-card-item-name{font-weight:650;overflow-wrap:anywhere}
 .batch-card-item-action{font-size:11px;color:var(--brand);font-weight:750;white-space:nowrap}
 .batch-card-preview-wrap{margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
-.voucher-card-preview{width:min(100%,480px);aspect-ratio:85/54;border:1px dashed var(--faint);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 5px 18px rgba(16,24,40,.09);color:var(--text)}
-.voucher-card-preview-head{height:24%;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--brand);color:#fff}
-.voucher-card-preview-head>div{display:grid;gap:2px}
-.voucher-card-preview-head strong{font-size:clamp(12px,2vw,18px);letter-spacing:.02em}
-.voucher-card-preview-head small{font-size:clamp(7px,1vw,10px);letter-spacing:.08em}
-.voucher-card-preview-head>span{font-size:clamp(9px,1.4vw,13px);font-weight:800;white-space:nowrap}
-.voucher-card-preview-body{height:64%;padding:8px 12px;display:flex;justify-content:space-between;gap:8px}
-.voucher-card-preview-info{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;overflow:hidden}
-.voucher-card-preview-info small{font-size:clamp(6px,.9vw,9px);color:var(--muted)}
-.voucher-card-preview-info strong{font-size:clamp(8px,1.4vw,13px);line-height:1.2;overflow-wrap:anywhere}
-.voucher-card-preview-info span{font-size:clamp(7px,1.1vw,10px);color:var(--text-soft);overflow-wrap:anywhere}
-.voucher-card-preview-info b{margin-top:auto;font-family:ui-monospace,monospace;font-size:clamp(9px,1.5vw,14px);color:var(--brand);overflow-wrap:anywhere}
-.voucher-card-preview-qr{width:25%;min-width:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:5px;background:repeating-conic-gradient(#fff 0% 25%,var(--border-soft) 0% 50%) 50%/7px 7px}
-.voucher-card-preview-qr span{font-size:clamp(12px,2vw,20px);font-weight:900;color:var(--brand)}
-.voucher-card-preview-qr small{max-width:100%;padding:2px;font-size:6px;text-align:center;overflow-wrap:anywhere}
-.voucher-card-preview-foot{height:12%;padding:3px 12px;text-align:right;font-size:clamp(6px,.9vw,9px);color:var(--muted)}
 @media(max-width:640px){
  .batch-card-item{grid-template-columns:1fr auto;gap:4px 8px;padding:9px}
  .batch-card-item-name{grid-column:1}
  .batch-card-item-voucher{grid-column:1}
  .batch-card-item-action{grid-column:2;grid-row:1/4}
- .voucher-card-preview{width:100%}
 }
 
 /* User menu (top right of every back-office screen) and profile */
@@ -1344,7 +1327,6 @@ select.input { background: var(--surface); }
 .card-preview-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .card-preview-modal-head strong{font-size:14px}
 .card-preview-close{width:32px;height:32px;min-width:32px;border-radius:50%;border:1px solid var(--border-soft);background:#fff;cursor:pointer;font-size:14px;padding:0!important;line-height:1}
-.card-preview-modal .voucher-card-preview{width:100%}
 .card-preview-modal .batch-actions{display:flex;flex-wrap:wrap;gap:8px}
 .card-preview-modal .batch-actions .quick-link{width:auto;flex:none}
 
@@ -1434,10 +1416,6 @@ select.input { background: var(--surface); }
 .report-print-row small{font-size:10.5px;color:var(--muted)}
 .report-print-row .quick-link{width:auto;min-height:30px;padding:4px 10px;font-size:11px}
 @media(max-width:760px){.report-form{grid-template-columns:1fr}.report-print-row{grid-template-columns:1fr auto}.report-print-row>span:nth-child(2){grid-column:1/-1;grid-row:2}}
-/* Logótipos do cliente na pré-visualização do cartão (Configuração) */
-.voucher-card-preview-head>.voucher-card-preview-logos{display:flex;align-items:center;gap:8px}
-.voucher-card-preview-logos img{height:clamp(16px,3vw,26px);max-width:70px;object-fit:contain;background:#fff;border-radius:3px;padding:2px}
-.voucher-card-preview-logos>div{display:grid;gap:2px}
 
 /* THANDIZO minimalist split login */
 
@@ -1852,3 +1830,34 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 /* Comerciantes: cartões com alerta e terminal único numa linha */
 .directory-stat-alert{border-color:var(--warning-border);background:var(--warning-soft)}
 .terminal-line{font-size:12px;color:var(--muted)}
+
+/* Cartão do voucher no ecrã: o mesmo desenho do PDF (85 × 54 mm) */
+.vc{container-type:inline-size;width:min(100%,520px);aspect-ratio:85/54;position:relative;display:flex;flex-direction:column;border:1px solid #dedede;border-radius:3.8cqw;overflow:hidden;background:#fff;color:#1c211e;box-shadow:0 5px 18px rgba(16,24,40,.09);font-family:Helvetica,Arial,sans-serif}
+.card-preview-modal .vc{width:100%}
+.vc-head{height:20.4%;display:flex;align-items:stretch;justify-content:space-between;border-bottom:.55cqw solid #70be41}
+.vc-logos{display:flex;align-items:center;gap:2.6cqw;padding:0 0 0 4.7cqw}
+.vc-logos img{height:7.3cqw;max-width:17.6cqw;object-fit:contain;padding-right:2.6cqw;border-right:1px solid #c8c8c8}
+.vc-brand{display:flex;align-items:center;gap:1.6cqw;padding:0 3cqw 0 9cqw;background:#005b37;color:#fff;clip-path:polygon(12% 100%,22% 0,100% 0,100% 100%);margin-bottom:-.6cqw}
+.vc-leaf{width:4.6cqw;height:4.6cqw;color:#70be41}
+.vc-brand div{display:grid;justify-items:end}
+.vc-brand strong{font-size:4.6cqw;line-height:1.1}
+.vc-brand small{font-size:2.2cqw;letter-spacing:.02em}
+.vc-body{flex:1;display:flex;gap:2cqw;padding:3cqw 2.5cqw 0 4.7cqw;min-height:0}
+.vc-info{flex:1;display:grid;grid-template-columns:7.5cqw 1fr;column-gap:3cqw;row-gap:2.2cqw;align-content:start;padding-right:3cqw;border-right:.25cqw solid #70be41;margin-bottom:5cqw;min-width:0}
+.vc-icon{width:7.5cqw;height:7.5cqw;display:grid;place-items:center;color:#005b37;border-radius:1.8cqw}
+.vc-icon svg{width:5.6cqw;height:5.6cqw}
+.vc-icon-soft{background:#e1f5e5}
+.vc-info>div{display:flex;flex-direction:column;min-width:0}
+.vc-info small{font-size:2.3cqw;color:#606863}
+.vc-info strong{font-size:3.9cqw;font-weight:700;text-transform:uppercase;overflow-wrap:anywhere;line-height:1.15}
+.vc-info .vc-name{font-size:4.2cqw}
+.vc-info span:not(.vc-icon){font-size:3cqw;line-height:1.35}
+.vc-side{width:25cqw;display:flex;flex-direction:column;align-items:center;gap:2cqw}
+.vc-qr{width:22.4cqw;aspect-ratio:1;border:.55cqw solid #a0deb0;border-radius:2.6cqw;display:grid;place-items:center;background:#fff}
+.vc-qr img{width:86%;height:86%}
+.vc-valid{width:100%;padding:1.4cqw 2cqw;border-radius:2cqw;background:#e1f5e5;font-size:2.3cqw;line-height:1.3;text-align:center}
+.vc-foot{height:14.4%;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:3cqw;padding:0 3.6cqw;background:#005b37;color:#fff}
+.vc-foot span{font-size:2cqw;line-height:1.3}
+.vc-foot span:first-child{white-space:nowrap}
+.vc-foot span:last-child{max-width:27cqw;padding-left:3cqw;border-left:.3cqw solid #fff}
+.vc-foot b{font-family:"Courier New",monospace;font-size:3.9cqw;text-align:center;padding-left:3cqw;border-left:.3cqw solid #fff;white-space:nowrap}

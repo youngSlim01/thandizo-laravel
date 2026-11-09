@@ -55,7 +55,62 @@ async function loadLogo(src: string): Promise<Logo | null> {
   }
 }
 
-// subtitle: linha por baixo de THANDIZO no cartão (programa ou organização cliente);
+type Doc = InstanceType<typeof import('jspdf').jsPDF>;
+type Rgb = [number, number, number];
+
+const INK: Rgb = [28, 33, 30];
+const GREY: Rgb = [96, 104, 99];
+const QR_BORDER: Rgb = [160, 222, 176];
+const WAVE: Rgb = [230, 243, 233];
+
+// Ícones desenhados em vector (traço verde), à volta do ponto (cx, cy).
+function personIcon(doc: Doc, cx: number, cy: number) {
+  doc.setDrawColor(...BRAND).setLineWidth(0.38);
+  doc.circle(cx, cy - 1.1, 1.05, 'S');
+  doc.lines([[0, -1.9, 3.6, -1.9, 3.6, 0]], cx - 1.8, cy + 1.9, [1, 1], 'S', false);
+  doc.line(cx - 1.8, cy + 1.9, cx + 1.8, cy + 1.9);
+}
+
+function cardIcon(doc: Doc, cx: number, cy: number) {
+  doc.setDrawColor(...BRAND).setLineWidth(0.38);
+  doc.roundedRect(cx - 2.3, cy - 1.5, 4.6, 3, 0.5, 0.5, 'S');
+  doc.line(cx - 2.3, cy - 0.5, cx + 2.3, cy - 0.5);
+  doc.setFillColor(...BRAND).circle(cx + 1.3, cy + 0.65, 0.22, 'F');
+}
+
+function pinIcon(doc: Doc, cx: number, cy: number) {
+  doc.setDrawColor(...BRAND).setLineWidth(0.38);
+  doc.lines([[0, -1.3, 1.1, -2.3, 1.85, -2.3], [0.75, 0, 1.85, 1.0, 1.85, 2.3], [0, 1.4, -1.85, 3.5, -1.85, 3.5], [0, 0, -1.85, -2.1, -1.85, -3.5]], cx - 1.85, cy - 0.6, [1, 1], 'S', true);
+  doc.circle(cx, cy - 0.6, 0.55, 'S');
+}
+
+function leafIcon(doc: Doc, x: number, y: number, size: number) {
+  doc.setFillColor(...ACCENT);
+  doc.lines([[size * 0.15, -size * 0.75, size * 0.7, -size * 0.95, size, -size], [-size * 0.05, size * 0.55, -size * 0.4, size * 0.95, -size, size]], x, y, [1, 1], 'F', true);
+  doc.setDrawColor(...BRAND).setLineWidth(0.25);
+  doc.line(x + size * 0.12, y - size * 0.12, x + size * 0.78, y - size * 0.78);
+}
+
+function tagIcon(doc: Doc, x: number, cy: number) {
+  doc.setDrawColor(255, 255, 255).setLineWidth(0.3);
+  doc.lines([[2.2, -1.3], [1.3, 0], [0, 2.6], [-1.3, 0], [-2.2, -1.3]], x, cy, [1, 1], 'S', true);
+  doc.circle(x + 2.8, cy - 0.6, 0.28, 'S');
+}
+
+function sproutIcon(doc: Doc, cx: number, cy: number) {
+  doc.setDrawColor(255, 255, 255).setLineWidth(0.3);
+  doc.line(cx, cy + 1.6, cx, cy - 0.2);
+  doc.lines([[-0.4, -0.2, -1.6, -0.8, -1.8, -1.9], [0.9, -0.1, 1.7, 0.5, 1.8, 1.9]], cx, cy - 0.2, [1, 1], 'S', false);
+  doc.lines([[0.4, -0.3, 1.6, -1.0, 1.8, -2.1], [-0.9, -0.1, -1.7, 0.6, -1.8, 2.1]], cx, cy - 0.2, [1, 1], 'S', false);
+}
+
+function miniQrIcon(doc: Doc, x: number, y: number) {
+  doc.setDrawColor(...BRAND).setLineWidth(0.25);
+  for (const [dx, dy] of [[0, 0], [1.6, 0], [0, 1.6]]) doc.rect(x + dx, y + dy, 1.2, 1.2, 'S');
+  doc.setFillColor(...BRAND).rect(x + 1.75, y + 1.75, 0.9, 0.9, 'F');
+}
+
+// subtitle: linha por baixo de Thandizo no cartão (programa ou organização cliente);
 // logoUrls: logótipos do cliente, da esquerda para a direita (Configuração).
 export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitle: string, logoUrls: string[]) {
   const [{ jsPDF }, QRCode] = await Promise.all([import('jspdf'), import('qrcode')]);
@@ -63,6 +118,7 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const perPage = COLS * ROWS;
   const pages = Math.max(1, Math.ceil(cards.length / perPage));
+  const R = 3.2;
 
   for (let i = 0; i < cards.length; i++) {
     const card = cards[i];
@@ -75,69 +131,94 @@ export async function buildCardsPdf(cards: VoucherCard[], label: string, subtitl
     const x = MARGIN_X + (slot % COLS) * (CARD_W + GAP_X);
     const y = MARGIN_Y + Math.floor(slot / COLS) * (CARD_H + GAP_Y);
 
-    // Cartão com cantos suaves e cabeçalho institucional do mockup.
-    doc.setFillColor(255,255,255).setDrawColor(220).setLineWidth(0.2);
-    doc.roundedRect(x,y,CARD_W,CARD_H,3.2,3.2,'FD');
-    doc.setFillColor(...BRAND);
-    doc.roundedRect(x+55,y,30,14,3.2,3.2,'F');
-    doc.rect(x+55,y+3,30,11,'F');
-    doc.setFillColor(...ACCENT).rect(x,y+13.7,CARD_W,0.45,'F');
-    let lx=x+3.5;
-    for (const logo of logos.slice(0,3)) {
-      const h=6.4,w=Math.min(h*logo.ratio,17);
-      if(lx+w>x+53) break;
-      doc.addImage(logo.data,'PNG',lx,y+3.1,w,h); lx+=w+3;
-      doc.setDrawColor(190).setLineWidth(0.2).line(lx-1.5,y+3,lx-1.5,y+10.5);
+    // Fundo branco com cantos redondos e ondas suaves.
+    doc.setFillColor(255, 255, 255).setDrawColor(222).setLineWidth(0.2);
+    doc.roundedRect(x, y, CARD_W, CARD_H, R, R, 'FD');
+    doc.setDrawColor(...WAVE).setLineWidth(0.2);
+    for (let k = 0; k < 5; k++) {
+      doc.lines([[12, -2 - k * 0.3, 28, 2 - k * 0.2, 50, -3 - k * 0.4]], x + 0.5, y + 45.6 - k * 0.6, [1, 1], 'S', false);
     }
-    doc.setFont('helvetica','bold').setFontSize(9.2).setTextColor(255);
-    doc.text('THANDIZO',x+82,y+5.8,{align:'right'});
-    doc.setFont('helvetica','normal').setFontSize(5.1);
-    doc.text((subtitle||'PROJECTO LINK GCF').toUpperCase(),x+82,y+9.5,{align:'right',maxWidth:26});
 
-    // Dados do agregado: nome, código AF e localização
-    const left = x + 4;
-    const textWidth = CARD_W - 35;
-    doc.setFont('helvetica', 'normal').setTextColor(105).setFontSize(5.2);
-    doc.text('REPRESENTANTE DO AGREGADO', left, y + 17);
-    doc.setFont('helvetica', 'bold').setTextColor(25).setFontSize(8.2);
+    // Cabeçalho: logótipos à esquerda, painel verde inclinado à direita.
+    const headH = 11;
+    doc.setFillColor(...BRAND);
+    doc.roundedRect(x + 60, y, CARD_W - 60, headH, R, R, 'F');
+    doc.rect(x + 60, y + R, CARD_W - 60, headH - R, 'F');
+    doc.lines([[5, 0, 5, -headH, 10, -headH], [2.5, 0], [0, headH]], x + 52.5, y + headH, [1, 1], 'F', true);
+    doc.setFillColor(...ACCENT).rect(x, y + headH - 0.45, 54.5, 0.45, 'F');
+    let lx = x + 4;
+    for (const logo of logos.slice(0, 3)) {
+      const h = 6.2;
+      const w = Math.min(h * logo.ratio, 15);
+      if (lx + w > x + 51) break;
+      doc.addImage(logo.data, 'PNG', lx, y + 2.2, w, h);
+      lx += w + 2.2;
+      doc.setDrawColor(200).setLineWidth(0.2).line(lx - 1.1, y + 2.4, lx - 1.1, y + 8.2);
+    }
+    leafIcon(doc, x + 61.2, y + 7.9, 3.8);
+    doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(255);
+    doc.text('Thandizo', x + 82.5, y + 5.6, { align: 'right' });
+    doc.setFont('helvetica', 'normal').setFontSize(4.8);
+    doc.text((subtitle || 'Projecto LINK GCF').toUpperCase(), x + 82.5, y + 8.7, { align: 'right', maxWidth: 22 });
+
+    // Dados do agregado, cada um com o seu ícone.
+    const left = x + 13;
+    const textWidth = 41;
+    doc.setFillColor(...PALE).roundedRect(x + 4, y + 13.6, 6.4, 6.4, 1.5, 1.5, 'F');
+    personIcon(doc, x + 7.2, y + 16.8);
+    doc.setFont('helvetica', 'normal').setTextColor(...GREY).setFontSize(5);
+    doc.text('REPRESENTANTE DO AGREGADO', left, y + 15.4);
+    doc.setFont('helvetica', 'bold').setTextColor(...INK).setFontSize(card.representative_name.length > 22 ? 7.6 : 9);
     const name = doc.splitTextToSize(card.representative_name.toUpperCase(), textWidth).slice(0, 2);
-    doc.text(name, left, y + 21);
-    const nameBottom = y + 21 + (name.length - 1) * 3.3;
+    doc.text(name, left, y + 19.2);
+    const shift = (name.length - 1) * 3;
 
-    doc.setFont('helvetica', 'normal').setTextColor(105).setFontSize(5.2);
-    doc.text('CÓDIGO DO AF', left, nameBottom + 4.2);
-    doc.setFont('helvetica', 'bold').setTextColor(25).setFontSize(7.4);
-    doc.text(card.household_code, left, nameBottom + 7.5);
+    cardIcon(doc, x + 7.2, y + 25.4 + shift);
+    doc.setFont('helvetica', 'normal').setTextColor(...GREY).setFontSize(5);
+    doc.text('CÓDIGO DO AF', left, y + 24.2 + shift);
+    doc.setFont('helvetica', 'bold').setTextColor(...INK).setFontSize(8.4);
+    doc.text(card.household_code, left, y + 27.6 + shift);
 
     const place = [card.community, card.locality].filter(Boolean).join(', ');
     const region = [card.district, card.province].filter(Boolean).join(' · ');
-    doc.setFont('helvetica', 'normal').setTextColor(65).setFontSize(5.4);
-    doc.text(doc.splitTextToSize(place || '—', textWidth).slice(0, 1), left, y + 39);
-    doc.text(doc.splitTextToSize(region || '—', textWidth).slice(0, 1), left, y + 42);
+    pinIcon(doc, x + 7.2, y + 34 + shift / 2);
+    doc.setFont('helvetica', 'normal').setTextColor(...GREY).setFontSize(5);
+    doc.text('LOCALIZAÇÃO', left, y + 32 + shift / 2);
+    doc.setTextColor(...INK).setFontSize(6.4);
+    doc.text(doc.splitTextToSize(place || '—', textWidth).slice(0, 1), left, y + 35.4 + shift / 2);
+    doc.text(doc.splitTextToSize(region || '—', textWidth).slice(0, 1), left, y + 38.4 + shift / 2);
 
-    // QR e validação em caixa verde-clara, conforme mockup.
+    doc.setDrawColor(...ACCENT).setLineWidth(0.2).line(x + 57, y + 14, x + 57, y + 42);
+
+    // QR em caixa de cantos redondos e o selo "válido apenas para…".
     const qr = await QRCode.toDataURL(card.voucher_code, { errorCorrectionLevel: 'M', margin: 1, width: 360 });
-    doc.setFillColor(255,255,255).setDrawColor(155,225,175).setLineWidth(0.45);
-    doc.roundedRect(x+60.5,y+16,21.5,21.5,2.2,2.2,'FD');
-    doc.addImage(qr,'PNG',x+62,y+17.5,18.5,18.5);
-    doc.setFillColor(...PALE).roundedRect(x+59.5,y+38.5,24,5.2,1.5,1.5,'F');
-    doc.setFont('helvetica','normal').setTextColor(...BRAND).setFontSize(4.3);
-    doc.text('VÁLIDO APENAS PARA O',x+71.5,y+40.6,{align:'center'});
-    doc.text('AGREGADO INDICADO',x+71.5,y+42.5,{align:'center'});
+    doc.setFillColor(255, 255, 255).setDrawColor(...QR_BORDER).setLineWidth(0.45);
+    doc.roundedRect(x + 61.5, y + 13.4, 19, 19, 2.2, 2.2, 'FD');
+    doc.addImage(qr, 'PNG', x + 62.7, y + 14.6, 16.6, 16.6);
+    doc.setFillColor(...PALE).roundedRect(x + 60.5, y + 34, 21, 6.6, 1.8, 1.8, 'F');
+    miniQrIcon(doc, x + 62, y + 35.9);
+    doc.setFont('helvetica', 'normal').setTextColor(...INK).setFontSize(4.7);
+    doc.text('Válido apenas para o', x + 66.2, y + 36.8);
+    doc.text('agregado indicado', x + 66.2, y + 38.9);
 
-    // Rodapé tripartido com código e finalidade agrícola.
-    doc.setFillColor(...BRAND).roundedRect(x,y+45,CARD_W,9,3.2,3.2,'F');
-    doc.rect(x,y+45,CARD_W,3,'F');
-    doc.setDrawColor(255,255,255).setLineWidth(0.25);
-    doc.line(x+23,y+47,x+23,y+52); doc.line(x+62,y+47,x+62,y+52);
-    doc.setFont('helvetica','normal').setFontSize(4.5).setTextColor(255);
-    doc.text('CÓDIGO DO VOUCHER',x+4,y+50.5);
-    doc.setFont('courier','bold').setFontSize(7.3);
-    doc.text(card.voucher_code,x+42.5,y+51,{align:'center',maxWidth:37});
-    doc.setFont('helvetica','normal').setFontSize(4.2);
-    doc.text('Voucher para aquisição',x+64,y+49.2);
-    doc.text('de insumos agrícolas',x+64,y+51.3);
-
+    // Rodapé verde em três partes: código do voucher ao centro.
+    const footY = y + CARD_H - 7.8;
+    doc.setFillColor(...BRAND);
+    doc.roundedRect(x, footY, CARD_W, 7.8, R, R, 'F');
+    doc.rect(x, footY, CARD_W, R, 'F');
+    const mid = footY + 3.9;
+    tagIcon(doc, x + 3.2, mid);
+    doc.setFont('helvetica', 'normal').setFontSize(4.2).setTextColor(255);
+    doc.text('CÓDIGO DO VOUCHER', x + 7.8, mid + 0.6);
+    doc.setDrawColor(255, 255, 255).setLineWidth(0.25);
+    doc.line(x + 26, mid - 2.3, x + 26, mid + 2.3);
+    doc.line(x + 59.5, mid - 2.3, x + 59.5, mid + 2.3);
+    doc.setFont('courier', 'bold').setFontSize(8.6);
+    doc.text(card.voucher_code, x + 42.75, mid + 1.1, { align: 'center', maxWidth: 32 });
+    sproutIcon(doc, x + 62.5, mid);
+    doc.setFont('helvetica', 'normal').setFontSize(4.2);
+    doc.text('Voucher para aquisição de', x + 65.2, mid - 0.3);
+    doc.text('insumos agrícolas', x + 65.2, mid + 1.8);
   }
 
   return doc;
