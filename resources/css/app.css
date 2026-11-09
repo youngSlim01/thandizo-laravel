@@ -1866,3 +1866,26 @@ h1,h2,h3{font-weight:450;letter-spacing:-.025em}
 .tier-choice{display:grid;gap:8px}
 .tier-choice select{max-width:360px}
 .tier-choice small{color:var(--text-soft)}
+
+/* Sino das notificações (canto superior direito do back office) */
+.admin-topbar{display:flex;align-items:center;gap:10px}
+.cd-heading-tools{align-items:center}
+.notify{position:relative}
+.notify-button{position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;border:1px solid var(--border-soft);background:var(--surface);color:var(--text-soft);cursor:pointer;padding:0}
+.notify-button:hover{color:var(--brand);border-color:var(--brand-border)}
+.notify-button svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.notify-count{position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:var(--danger);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;border:2px solid var(--background)}
+.notify-panel{position:absolute;top:calc(100% + 8px);right:0;z-index:40;width:320px;max-width:calc(100vw - 32px);background:var(--surface);border:1px solid var(--border-soft);border-radius:12px;box-shadow:0 12px 32px rgba(16,24,40,.14);padding:12px;display:grid;gap:8px}
+.notify-panel>strong{font-size:13px;padding:2px 4px}
+.notify-panel>p{margin:0;padding:6px 4px;font-size:13px;color:var(--muted)}
+.notify-item{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;text-decoration:none;color:var(--text);font-size:13px;background:var(--surface-muted)}
+.notify-item b{min-width:26px;text-align:center;font-size:15px}
+.notify-item i{font-style:normal;color:var(--muted)}
+.notify-attention{background:var(--warning-soft)}
+.notify-attention b{color:var(--warning)}
+.notify-critical{background:var(--danger-soft)}
+.notify-critical b{color:var(--danger)}
+/* Directório: o botão principal e os filtros não esticam (primary-button e quick-link têm width:100%) */
+.directory-heading .directory-primary{width:auto;flex:none}
+.directory-toolbar .quick-link{width:auto;flex:none;white-space:nowrap}
+.directory-heading{align-items:flex-end}

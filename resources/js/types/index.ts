@@ -38,9 +38,12 @@ export type Credentials = {
 // Cliente desta instalação, mostrado junto do nome THANDIZO (config/thandizo.php).
 export type Brand = { client: string | null; programme: string | null; tagline: string | null; logos: string[] };
 
+export type AppNotification = { key: string; level: 'critical' | 'attention' | 'info'; label: string; value: number; href: string };
+
 export type SharedProps = {
     auth: { user: AuthUser | null };
     brand: Brand;
     navigation: NavSection[];
+    notifications: AppNotification[];
     flash: { success: string | null; error: string | null; credentials: Credentials | null };
 };

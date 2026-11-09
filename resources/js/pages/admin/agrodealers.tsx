@@ -172,12 +172,15 @@ export default function Agrodealers({ agrodealers, districts, canManage, canMana
     const [creating, setCreating] = useState(false);
     const [filter, setFilter] = useState('');
     const [districtFilter, setDistrictFilter] = useState('');
+    // ?filtro=sem-catalogo (vem do sino das notificações): só os que esperam pelo catálogo.
+    const [onlyNoCatalogue, setOnlyNoCatalogue] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('filtro') === 'sem-catalogo');
 
     const activeDealers = agrodealers.filter((a) => a.status === 'ACTIVE');
     const noCatalogue = activeDealers.filter((a) => a.catalogue_count === 0).length;
     const noUser = activeDealers.filter((a) => a.users === 0).length;
     const term = filter.trim().toLowerCase();
     const visible = agrodealers.filter((a) => (!districtFilter || a.district_id === districtFilter)
+        && (!onlyNoCatalogue || (a.status === 'ACTIVE' && a.catalogue_count === 0))
         && (!term || a.name.toLowerCase().includes(term) || a.code.toLowerCase().includes(term)));
 
     return (
@@ -201,7 +204,9 @@ export default function Agrodealers({ agrodealers, districts, canManage, canMana
                 <div className="directory-search"><span>⌕</span><input className="input" placeholder="Pesquisar nome ou código…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Procurar comerciante" /></div>
                 <select className="input directory-district-filter" value={districtFilter} onChange={(e) => setDistrictFilter(e.target.value)} aria-label="Filtrar por distrito">
                     <option value="">Todos os distritos</option>{districts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select><span className="directory-count">{visible.length} de {agrodealers.length}</span>
+                </select>
+                {onlyNoCatalogue && <button className="quick-link small-link" onClick={() => setOnlyNoCatalogue(false)}>Só sem catálogo ✕</button>}
+                <span className="directory-count">{visible.length} de {agrodealers.length}</span>
             </div>
             <div className="directory-grid">
             {visible.length === 0 && <p className="muted-text">Nenhum comerciante.</p>}

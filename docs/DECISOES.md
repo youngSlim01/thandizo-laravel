@@ -9,7 +9,7 @@ A migração técnica (Next.js + Supabase → Laravel + MySQL) está em
 [`MIGRACAO_LARAVEL.md`](MIGRACAO_LARAVEL.md). Este documento fala do sistema
 e do produto.
 
-Última actualização: 9 de Novembro de 2026 (oficial MEAL regista comerciantes; todos entram da mesma forma).
+Última actualização: 9 de Novembro de 2026 (sino de notificações; oficial MEAL regista comerciantes).
 
 ---
 
@@ -138,6 +138,7 @@ No programa, todos os agregados do escalão de 6 000 MT têm CODIGO AF; nos outr
 | O **catálogo** é **por comerciante** e **estável entre ciclos**; vem da cadeia de abastecimento e do fornecedor, e **só o MEAL** (gestor MEAL e administrador) o regista. O gestor do comerciante só o consulta. | O dono da loja não decide o que o programa lhe compra. |
 | O **oficial MEAL regista e edita comerciantes** (e os seus terminais) **na sua província**; só escolhe distritos dela. O **catálogo** fica com o gestor MEAL (e o administrador): um comerciante registado pelo oficial só vende depois de o **gestor MEAL confirmar o catálogo**. | Quem regista os comerciantes no terreno é o oficial; o gestor confirma o que a cadeia de abastecimento entrega a cada um. |
 | **Todos os utilizadores entram da mesma forma**, incluindo o gestor e o operador do comerciante: **nome de utilizador ou e-mail, e palavra-passe**. O e-mail continua obrigatório em todas as contas. | Um só modo de entrar, mais simples de ensinar e de dar apoio; o e-mail serve para repor a palavra-passe. |
+| O back office tem um **sino de notificações** no canto superior direito, ao lado do nome. O primeiro aviso é **"Comerciantes à espera do catálogo"** (para o gestor MEAL e o administrador), que leva à lista de Comerciantes filtrada pelos que não têm catálogo. Só aparece o que tem valor. | O gestor fica a saber que há algo à sua espera, sem ter de ir procurar. |
 | O **gestor do comerciante é o dono**: vê as **vendas de toda a loja** no ciclo (de qualquer operador) e a página **Pagamentos**, com o que lhe devem por fase (por reconciliar, no MEAL, nas Finanças, validado) e as suas reconciliações. Só anula as vendas que ele próprio fez. | Responde ao comerciante sem ele ter de telefonar ao MEAL. |
 | O passo "Comerciantes" dos primeiros passos fica feito com um comerciante activo **com catálogo** (o terminal já existe). | O terminal deixou de ser um passo. |
 

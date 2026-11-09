@@ -26,6 +26,42 @@ export function UserMenu({ className = '' }: { className?: string }) {
     );
 }
 
+// Sino das notificações, ao lado do nome: o que está à espera de quem está
+// ligado (NotificationService). Abre uma lista com ligação para cada caso.
+export function NotificationBell() {
+    const { notifications } = usePage<SharedProps>().props;
+    const [open, setOpen] = useState(false);
+    const total = notifications.reduce((sum, n) => sum + n.value, 0);
+    useEffect(() => {
+        if (!open) return;
+        const close = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.notify')) setOpen(false); };
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+        document.addEventListener('click', close);
+        document.addEventListener('keydown', onKey);
+        return () => { document.removeEventListener('click', close); document.removeEventListener('keydown', onKey); };
+    }, [open]);
+
+    return (
+        <div className="notify">
+            <button type="button" className="notify-button" aria-expanded={open} aria-label={total > 0 ? `Notificações: ${total}` : 'Notificações'} onClick={() => setOpen((o) => !o)}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16Z" /><path d="M10 20a2 2 0 0 0 4 0" /></svg>
+                {total > 0 && <span className="notify-count">{total > 99 ? '99+' : total}</span>}
+            </button>
+            {open && (
+                <div className="notify-panel" role="dialog" aria-label="Notificações">
+                    <strong>Notificações</strong>
+                    {notifications.length === 0 && <p>Nada à sua espera.</p>}
+                    {notifications.map((n) => (
+                        <Link key={n.key} href={n.href} className={`notify-item notify-${n.level}`} onClick={() => setOpen(false)}>
+                            <b>{n.value}</b><span>{n.label}</span><i aria-hidden="true">›</i>
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // Menu lateral do back office, igual ao AdminHeader do sistema Next.js
 // (app/components/admin-header.tsx). As secções vêm do servidor
 // (NavigationService), já filtradas pelo papel da pessoa.
@@ -85,7 +121,7 @@ export function AdminHeader({ topbar = true }: { topbar?: boolean }) {
                 </button>
             </header>
             {open && <div className="mobile-menu-backdrop" onClick={() => setOpen(false)} />}
-            {topbar && <div className="admin-topbar"><UserMenu /></div>}
+            {topbar && <div className="admin-topbar"><NotificationBell /><UserMenu /></div>}
         </>
     );
 }

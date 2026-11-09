@@ -7,6 +7,7 @@ use App\Models\CardLogo;
 use App\Services\CardLogoService;
 use App\Services\ClientProfileService;
 use App\Services\NavigationService;
+use App\Services\NotificationService;
 use App\Services\PosTerminal;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -52,6 +53,8 @@ class HandleInertiaRequests extends Middleware
             ],
             // Menu lateral do back office (vazio para quem não tem secções).
             'navigation' => fn () => $user ? app(NavigationService::class)->sectionsFor($user) : [],
+            // Notificações do sino (canto superior direito do back office).
+            'notifications' => fn () => $user ? app(NotificationService::class)->forUser($user) : [],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { AdminHeader, UserMenu } from '@/components/admin-layout';
+import { AdminHeader, NotificationBell, UserMenu } from '@/components/admin-layout';
 import { type Alert, AlertList, Bar, Donut, Icon, number, pct, Pill, share } from '@/components/dashboard-ui';
 import { MozambiqueMap, type ProvinceFigure } from '@/components/mozambique-map';
 import { formatDate, formatDateTime, formatMT } from '@/lib/format';
@@ -159,6 +159,7 @@ export default function MealDashboard({ dashboard: data, setup }: { dashboard: D
                 </select>
               </label>
             )}
+            <NotificationBell />
             <UserMenu />
           </div>
         </div>
