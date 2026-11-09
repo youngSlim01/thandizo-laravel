@@ -283,61 +283,75 @@ export default function Products({ products, districts, canManage }: Props) {
     return (
         <BackOfficeLayout>
             <Head title="Produtos e preços" />
-            <div className="admin-page-heading">
+            <div className="admin-page-heading catalog-heading">
                 <div>
                     <div className="eyebrow">MEAL · CATÁLOGO</div>
                     <h1>Produtos e preços</h1>
-                    <p>Manter produtos, preços por distrito e importações de tabelas de preços.</p>
+                    <p>Gerir produtos e definir preços de venda por distrito.</p>
                 </div>
+                {canManage && <div className="catalog-actions">
+                    <button className="primary-button" onClick={() => setForm('new')}>+ Novo produto</button>
+                    <button className="secondary-button" onClick={() => setForm('import')}>Importar Excel</button>
+                    <button className="secondary-button" onClick={() => setForm('district')}>+ Distrito</button>
+                </div>}
             </div>
-            <div className="info-box">
-                Cada distrito tem os seus preços: o MEAL lança aqui a lista entregue por cada comité, à mão ou por Excel. Um comerciante vende ao preço do seu distrito os produtos do seu catálogo.
-                Mudar um preço tem efeito imediato; o preço antigo fica no histórico e as vendas feitas não mudam.
-                Um distrito sem preço para um produto não o vende.
+
+            <div className="catalog-summary">
+                <div className="catalog-stat"><span>Produtos no catálogo</span><strong>{products.length}</strong><small>Produtos registados</small></div>
+                <div className="catalog-stat"><span>Distritos configurados</span><strong>{districts.length}</strong><small>Com preços próprios</small></div>
+                <div className="catalog-stat"><span>Preços definidos</span><strong>{products.reduce((sum, p) => sum + Object.keys(p.prices).length, 0)}</strong><small>Produto × distrito</small></div>
+                <div className="catalog-stat"><span>Sem preço definido</span><strong>{products.reduce((sum, p) => sum + Math.max(0, districts.length - Object.keys(p.prices).length), 0)}</strong><small>Combinações por configurar</small></div>
+            </div>
+
+            <div className="catalog-note">
+                <span className="catalog-note-icon">i</span>
+                <p>O preço é definido por distrito. Os comerciantes visualizam apenas os produtos com preço configurado no seu distrito. Alterações aplicam-se às novas vendas; o histórico mantém os preços anteriores.</p>
             </div>
 
             {flash.success && <div className="success-box">{flash.success}</div>}
 
-            {canManage && form === 'none' && (
-                <div className="admin-form-actions">
-                    <button className="primary-button" onClick={() => setForm('new')}>+ NOVO PRODUTO</button>
-                    <button className="secondary-button" onClick={() => setForm('import')}>IMPORTAR EXCEL</button>
-                    <button className="secondary-button" onClick={() => setForm('district')}>+ ADICIONAR DISTRITO</button>
-                </div>
-            )}
             {form === 'new' && <ProductForm product={null} districts={districts} onDone={close} />}
             {form === 'import' && <PriceImport districts={districts} products={products} onDone={close} />}
             {form === 'district' && <DistrictForm onDone={close} />}
             {typeof form === 'object' && <ProductForm key={form.id} product={form} districts={districts} onDone={close} />}
 
-            <input className="input" placeholder="Procurar produto" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Procurar produto" />
+            <section className="catalog-section">
+                <div className="catalog-section-head">
+                    <div><h2>Catálogo e preços distritais</h2><p>Consulte e actualize os preços por produto e localização.</p></div>
+                    <span className="catalog-count">{visible.length} de {products.length} produtos</span>
+                </div>
+                <div className="catalog-toolbar">
+                    <div className="catalog-search"><span aria-hidden="true">⌕</span><input className="input" placeholder="Pesquisar por nome ou código…" value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="Procurar produto" /></div>
+                    <span className="catalog-hint">Valores em Meticais (MT)</span>
+                </div>
 
-            {products.length === 0 && <p className="muted-text">Ainda não há produtos.</p>}
-            {products.length > 0 && (
-                <div className="table-scroll">
-                    <table className="price-table">
+                {products.length === 0 && <div className="catalog-empty"><div className="catalog-empty-icon">＋</div><strong>O catálogo ainda está vazio</strong><p>Adicione o primeiro produto para começar a configurar os preços por distrito.</p>{canManage && <button className="primary-button" onClick={() => setForm('new')}>Criar primeiro produto</button>}</div>}
+                {products.length > 0 && visible.length === 0 && <div className="catalog-empty"><strong>Nenhum produto encontrado</strong><p>Tente pesquisar por outro nome ou código.</p></div>}
+                {visible.length > 0 && <div className="table-scroll catalog-table-wrap">
+                    <table className="price-table catalog-table">
                         <thead>
                             <tr>
-                                <th>Produto</th>
-                                {districts.map((d) => <th key={d.id}>{d.name}<small>{d.province}</small></th>)}
+                                <th className="catalog-product-col">Produto</th>
+                                {districts.map((d) => <th key={d.id} className="catalog-district-col">{d.name}<small>{d.province}</small></th>)}
+                            {canManage && <th className="catalog-action-col">Acções</th>}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {visible.map((p) => (
+                            <tr key={p.id} className={p.status === 'INACTIVE' ? 'inactive-row' : ''}>
+                                <td className="product-cell catalog-product-cell">
+                                    <strong>{p.name}</strong>
+                                    <small>{p.code} · {p.unit}{p.category ? ` · ${p.category}` : ''}</small>
+                                    <div className="catalog-product-meta"><span>{p.agrodealers} comerciante(s)</span>{p.status === 'INACTIVE' && <span className="badge">Inactivo</span>}</div>
+                                </td>
+                                {districts.map((d) => <PriceCell key={d.id} product={p} district={d} canManage={canManage} />)}
+                                {canManage && <td className="catalog-row-action"><button className="sc-link" onClick={() => setForm(p)}>Editar produto</button></td>}
                             </tr>
-                        </thead>
-                        <tbody>
-                            {visible.map((p) => (
-                                <tr key={p.id} className={p.status === 'INACTIVE' ? 'inactive-row' : ''}>
-                                    <td className="product-cell">
-                                        <strong>{p.name}</strong>
-                                        <small>{p.code} · {p.unit}{p.category ? ` · ${p.category}` : ''} · {p.agrodealers} comerciante(s)</small>
-                                        {p.status === 'INACTIVE' && <span className="badge">Inativo</span>}
-                                        {canManage && <button className="quick-link small-link" onClick={() => setForm(p)}>Editar</button>}
-                                    </td>
-                                    {districts.map((d) => <PriceCell key={d.id} product={p} district={d} canManage={canManage} />)}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+                        ))}
+                    </tbody>
+                </table>
+                </div>}
+            </section>
         </BackOfficeLayout>
     );
 }
